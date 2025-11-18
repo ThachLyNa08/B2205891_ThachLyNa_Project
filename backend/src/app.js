@@ -5,9 +5,10 @@ const cookieParser = require('cookie-parser');
 
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
-const bookRoutes = require('./routes/bookRoutes'); // Import book routes
-const categoryRoutes = require('./routes/categoryRoutes'); // Import category routes
-const publisherRoutes = require('./routes/publisherRoutes'); // Import publisher routes
+const bookRoutes = require('./routes/bookRoutes'); 
+const categoryRoutes = require('./routes/categoryRoutes'); 
+const publisherRoutes = require('./routes/publisherRoutes'); 
+const loanRoutes = require('./routes/loanRoutes');
 
 const app = express();
 
@@ -21,7 +22,7 @@ app.use(cookieParser());
 
 // Basic route for testing
 app.get('/', (req, res) => {
-  res.send('Welcome to the Online Library API!');
+  res.send('Welcome to the Online Library!');
 });
 
 // API Routes
@@ -30,7 +31,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/books', bookRoutes); // Sử dụng book routes
 app.use('/api/categories', categoryRoutes); // Sử dụng category routes
 app.use('/api/publishers', publisherRoutes); // Sử dụng publisher routes
-
+app.use('/api/loans', loanRoutes);
 // TODO: Error handling middleware
 // app.use(errorHandler);
 
