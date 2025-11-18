@@ -1,80 +1,85 @@
-
+// frontend/src/stores/auth.js
 import { defineStore } from 'pinia';
-import AuthService from '../services/auth.service';
-import ApiService from '../services/api.service'; // Cần để set header
+import api from '../services/api'; // Import axios instance
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    token: localStorage.getItem('jwt_token') || null,
-    user: JSON.parse(localStorage.getItem('user_data')) || null,
-    isAuthenticated: !!localStorage.getItem('jwt_token'),
+    user: JSON.parse(localStorage.getItem('user')) || null,
+    token: localStorage.getItem('token') || null,
+    isAuthenticated: !!localStorage.getItem('token'),
+    error: null,
+    loading: false,
   }),
   getters: {
-    currentUser: (state) => state.user,
-    isLoggedIn: (state) => state.isAuthenticated,
-    userRole: (state) => state.user ? state.user.role : null,
+    // getters ở đây
+    isAdmin: (state) => state.user?.role === 'admin',
+    isStaff: (state) => state.user?.role === 'staff',
+    isReader: (state) => state.user?.role === 'reader',
   },
   actions: {
-    setAuth(token, user) {
-      this.token = token;
-      this.user = user;
-      this.isAuthenticated = true;
-      localStorage.setItem('jwt_token', token);
-      localStorage.setItem('user_data', JSON.stringify(user));
-      ApiService.setHeader(token); // Set header cho tất cả các request
+    async register(userData) {
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await api.post('/auth/register', userData);
+        // Lưu token và user vào localStorage
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+
+        this.token = response.data.token;
+        this.user = response.data.user;
+        this.isAuthenticated = true;
+        this.loading = false;
+        return response.data;
+      } catch (err) {
+        this.error = err.response?.data?.message || 'Registration failed.';
+        this.loading = false;
+        throw err; // Ném lỗi để component có thể xử lý
+      }
     },
-    purgeAuth() {
+
+    async login(credentials) {
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await api.post('/auth/login', credentials);
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+
+        this.token = response.data.token;
+        this.user = response.data.user;
+        this.isAuthenticated = true;
+        this.loading = false;
+        return response.data;
+      } catch (err) {
+        this.error = err.response?.data?.message || 'Login failed. Invalid credentials.';
+        this.loading = false;
+        throw err;
+      }
+    },
+
+    logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       this.token = null;
       this.user = null;
       this.isAuthenticated = false;
-      localStorage.removeItem('jwt_token');
-      localStorage.removeItem('user_data');
-      ApiService.removeHeader(); // Xóa header
+      this.error = null;
+      // TODO: Có thể gọi API logout nếu cần xóa refresh token trên server
     },
-    async login(credentials) {
-      try {
-        const response = await AuthService.login(credentials);
-        const { token, user } = response.data;
-        this.setAuth(token, user);
-        return response;
-      } catch (error) {
-        this.purgeAuth();
-        throw error;
-      }
-    },
-    async register(userData) {
-      try {
-        const response = await AuthService.register(userData);
-        const { token, user } = response.data; // Register có thể trả về token ngay
-        this.setAuth(token, user);
-        return response;
-      } catch (error) {
-        this.purgeAuth();
-        throw error;
-      }
-    },
-    async logout() {
-      try {
-        // Nếu có API logout ở backend, gọi ở đây
-        // await AuthService.logout();
-      } finally {
-        this.purgeAuth();
-      }
-    },
-    async refreshToken() {
+
+    // Action để kiểm tra và lấy lại thông tin user nếu chỉ có token trong localStorage (khi refresh trang)
+    async fetchUser() {
+      if (this.isAuthenticated && !this.user) {
         try {
-            const response = await AuthService.refreshToken();
-            const { token } = response.data;
-            this.token = token;
-            this.isAuthenticated = true;
-            localStorage.setItem('jwt_token', token);
-            ApiService.setHeader(token);
-            return response;
+          // Gọi API để lấy thông tin user dựa trên token hiện có
+          const response = await api.get('/users/me'); // Cần tạo API '/users/me' trên backend
+          this.user = response.data;
         } catch (error) {
-            console.error("Failed to refresh token, logging out:", error);
-            this.purgeAuth();
-            throw error;
+          console.error('Failed to fetch user data on refresh:', error);
+          this.logout(); // Nếu token không hợp lệ, logout
         }
-    },
+      }
+    }
   },
 });

@@ -1,70 +1,59 @@
-
+// frontend/src/services/api.js
 import axios from 'axios';
 
-// Lấy base URL từ biến môi trường
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
-const ApiService = {
-  init() {
-    axios.defaults.baseURL = API_BASE_URL;
-    // Cho phép gửi cookies qua các request cross-origin
-    axios.defaults.withCredentials = true;
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true, // Quan trọng để gửi cookie (refresh token)
+});
+
+// Interceptor để thêm Authorization header cho mỗi request
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token'); // Lấy JWT từ localStorage
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
   },
-
-  setHeader(token) {
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-  },
-
-  removeHeader() {
-    delete axios.defaults.headers.common['Authorization'];
-  },
-
-  get(resource) {
-    return axios.get(resource);
-  },
-
-  post(resource, data) {
-    return axios.post(resource, data);
-  },
-
-  put(resource, data) {
-    return axios.put(resource, data);
-  },
-
-  delete(resource) {
-    return axios.delete(resource);
-  },
-  
-  // Axios interceptor for error handling and token refresh
-  setupInterceptors(store) { // Truyền Pinia store vào để có thể dispatch actions
-    axios.interceptors.response.use(
-      response => response,
-      async error => {
-        const originalRequest = error.config;
-        // Nếu lỗi là 401 Unauthorized và không phải request refresh token
-        if (error.response.status === 401 && !originalRequest._retry) {
-          originalRequest._retry = true; // Đánh dấu request này đã được thử lại
-
-          try {
-            // Gọi API refresh token
-            await store.dispatch('auth/refreshToken'); // Gọi action refreshToken từ Pinia store
-            // Sau khi refresh thành công, cập nhật header và thử lại request gốc
-            originalRequest.headers['Authorization'] = `Bearer ${store.state.auth.token}`;
-            return axios(originalRequest);
-          } catch (refreshError) {
-            // Nếu refresh token thất bại, chuyển hướng về trang đăng nhập
-            console.error('Refresh token failed:', refreshError);
-            store.dispatch('auth/logout'); // Đăng xuất người dùng
-            // Redirect to login page (assuming you have a router instance)
-            // import router from '@/router';
-            // router.push('/login');
-            return Promise.reject(refreshError);
-          }
-        }
-        return Promise.reject(error);
-      }
-    );
+  (error) => {
+    return Promise.reject(error);
   }
-};
+);
 
-export default ApiService;
+// Interceptor để xử lý refresh token
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    // Nếu lỗi là 401 (Unauthorized) và không phải request refresh token
+    if (error.response.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true; // Đánh dấu request này đã được thử lại
+
+      try {
+        // Gọi API refresh token
+        const res = await axios.post(`${API_BASE_URL}/auth/refresh`, {}, { withCredentials: true });
+        const newToken = res.data.token;
+
+        // Cập nhật token trong localStorage và header của request gốc
+        localStorage.setItem('token', newToken);
+        api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+        originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+
+        // Thử lại request gốc với token mới
+        return api(originalRequest);
+      } catch (refreshError) {
+        // Nếu refresh token thất bại, chuyển hướng về trang login
+        console.error('Refresh token failed:', refreshError);
+        localStorage.removeItem('token'); // Xóa token cũ
+        window.location.href = '/login'; // Chuyển hướng đến trang đăng nhập
+        return Promise.reject(refreshError);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+
+export default api;

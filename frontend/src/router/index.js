@@ -1,107 +1,74 @@
-
 import { createRouter, createWebHistory } from 'vue-router';
+import { useAuthStore } from '../stores/auth'; // Import auth store
+
+// Layouts
+import AuthLayout from '../layouts/AuthLayout.vue';
+import DefaultLayout from '../layouts/DefaultLayout.vue';
+
+// Views
 import HomeView from '../views/HomeView.vue';
-import LoginView from '../views/Auth/LoginView.vue'; 
-import RegisterView from '../views/Auth/RegisterView.vue'; 
-//import DashboardView from '../views/Admin/DashboardView.vue'; 
-// import BookListView from '../views/Books/BookListView.vue'; 
-// import BookDetailView from '../views/Books/BookDetailView.vue'; 
-// import MyLoansView from '../views/Loans/MyLoansView.vue'; 
-// import LoanManagementView from '../views/Admin/LoanManagementView.vue'; 
-// import UserManagementView from '../views/Admin/UserManagementView.vue'; 
-// import PublisherManagementView from '../views/Admin/PublisherManagementView.vue'; 
-// import CategoryManagementView from '../views/Admin/CategoryManagementView.vue'; 
-import NotFoundView from '../views/NotFoundView.vue'; 
+import LoginView from '../views/LoginView.vue';
+import RegisterView from '../views/RegisterView.vue';
+import BookListView from '../views/BookListView.vue';
+import BookDetailView from '../views/BookDetailView.vue';
+import UserProfileView from '../views/UserProfileView.vue';
+import AdminDashboardView from '../views/AdminDashboardView.vue';
+import StaffDashboardView from '../views/StaffDashboardView.vue';
+import NotFoundView from '../views/NotFoundView.vue';
+
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      name: 'home',
-      component: HomeView,
-      meta: { requiresAuth: false } // Trang chủ không yêu cầu đăng nhập
+      component: DefaultLayout, // Sử dụng DefaultLayout cho các trang chính
+      children: [
+        { path: '', name: 'home', component: HomeView },
+        { path: 'books', name: 'books', component: BookListView },
+        { path: 'books/:id', name: 'book-detail', component: BookDetailView },
+        { path: 'profile', name: 'profile', component: UserProfileView, meta: { requiresAuth: true } },
+        { path: 'admin', name: 'admin-dashboard', component: AdminDashboardView, meta: { requiresAuth: true, requiresRole: 'admin' } },
+        { path: 'staff', name: 'staff-dashboard', component: StaffDashboardView, meta: { requiresAuth: true, requiresRole: 'staff' } },
+      ],
     },
     {
-      path: '/login',
-      name: 'login',
-      component: LoginView,
-      meta: { requiresAuth: false }
+      path: '/auth',
+      component: AuthLayout, // Sử dụng AuthLayout cho các trang đăng nhập/đăng ký
+      children: [
+        { path: 'login', name: 'login', component: LoginView, meta: { guestOnly: true } },
+        { path: 'register', name: 'register', component: RegisterView, meta: { guestOnly: true } },
+      ],
     },
-    {
-      path: '/register',
-      name: 'register',
-      component: RegisterView,
-      meta: { requiresAuth: false }
-    },
-    {
-        path: '/books',
-        name: 'book-list',
-        component: BookListView,
-        meta: { requiresAuth: false }
-    },
-    {
-        path: '/books/:id',
-        name: 'book-detail',
-        component: BookDetailView,
-        meta: { requiresAuth: false }
-    },
-    {
-        path: '/my-loans',
-        name: 'my-loans',
-        component: MyLoansView,
-        meta: { requiresAuth: true, requiresReader: true } // Reader xem lịch sử mượn của mình
-    },
-    {
-        path: '/admin',
-        name: 'admin-dashboard',
-        component: DashboardView,
-        meta: { requiresAuth: true, requiresAdmin: true, requiresStaff: true } // Chỉ admin/staff truy cập
-    },
-    {
-        path: '/admin/loans',
-        name: 'admin-loan-management',
-        component: LoanManagementView,
-        meta: { requiresAuth: true, requiresAdmin: true, requiresStaff: true }
-    },
-    {
-        path: '/admin/users',
-        name: 'admin-user-management',
-        component: UserManagementView,
-        meta: { requiresAuth: true, requiresAdmin: true } // Chỉ admin quản lý user
-    },
-    {
-        path: '/admin/publishers',
-        name: 'admin-publisher-management',
-        component: PublisherManagementView,
-        meta: { requiresAuth: true, requiresAdmin: true, requiresStaff: true }
-    },
-    {
-        path: '/admin/categories',
-        name: 'admin-category-management',
-        component: CategoryManagementView,
-        meta: { requiresAuth: true, requiresAdmin: true, requiresStaff: true }
-    },
-    // catch all 404
+    // Catch-all route for 404
     {
       path: '/:pathMatch(.*)*',
-      name: 'not-found',
-      component: NotFoundView,
-      meta: { requiresAuth: false }
+      name: 'NotFound',
+      component: NotFoundView
     }
-  ]
+  ],
 });
 
-// Thêm một navigation guard để handle requiresReader/requiresStaff
+// Navigation Guard
 router.beforeEach((to, from, next) => {
-    const authStore = useAuthStore();
-    if (to.meta.requiresReader && authStore.isLoggedIn && authStore.userRole !== 'reader') {
-        next('/');
-    } else if (to.meta.requiresStaff && authStore.isLoggedIn && !['admin', 'staff'].includes(authStore.userRole)) {
-        next('/');
-    } else {
-        next();
-    }
+  const authStore = useAuthStore();
+
+  // Kiểm tra nếu route yêu cầu đăng nhập
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    next({ name: 'login' }); // Chuyển hướng đến trang đăng nhập
+  }
+  // Kiểm tra nếu route chỉ dành cho khách (chưa đăng nhập)
+  else if (to.meta.guestOnly && authStore.isAuthenticated) {
+    next({ name: 'home' }); // Chuyển hướng về trang chủ nếu đã đăng nhập
+  }
+  // Kiểm tra quyền
+  else if (to.meta.requiresRole && !authStore.user?.role.includes(to.meta.requiresRole)) {
+    // Nếu user không có quyền, chuyển hướng về trang chủ hoặc trang 403
+    next({ name: 'home' }); // Hoặc một trang lỗi "Access Denied"
+  }
+  else {
+    next();
+  }
 });
 
 export default router;

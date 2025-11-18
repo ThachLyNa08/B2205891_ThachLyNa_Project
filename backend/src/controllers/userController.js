@@ -16,22 +16,26 @@ const getUsers = async (req, res, next) => {
 // @desc    Get user by ID
 // @route   GET /api/users/:id
 // @access  Private/Admin or User itself
+// @desc    Get user by ID or current logged-in user
+// @route   GET /api/users/:id or /api/users/me
+// @access  Private/Admin or User itself
 const getUser = async (req, res, next) => {
-  try {
-    const user = await userService.getUserById(req.params.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found.' });
-    }
+    try {
+        const userIdToFetch = req.params.id === 'me' ? req.user._id : req.params.id;
+        const user = await userService.getUserById(userIdToFetch);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
 
-    // Cho phép user xem profile của mình, hoặc admin/staff xem user khác
-    if (req.user._id.toString() === req.params.id || ['admin', 'staff'].includes(req.user.role)) {
-      res.status(200).json(user);
-    } else {
-      res.status(403).json({ message: 'Not authorized to view this user profile.' });
+        // Cho phép user xem profile của mình, hoặc admin/staff xem user khác
+        if (req.user._id.toString() === userIdToFetch.toString() || ['admin', 'staff'].includes(req.user.role)) {
+            res.status(200).json(user);
+        } else {
+            res.status(403).json({ message: 'Not authorized to view this user profile.' });
+        }
+    } catch (error) {
+        next(error);
     }
-  } catch (error) {
-    next(error);
-  }
 };
 
 // @desc    Create a user (for admin panel)
