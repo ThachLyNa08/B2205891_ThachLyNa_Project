@@ -1,10 +1,13 @@
-
+// backend/src/app.js
 const express = require('express');
 const cors = require('cors');
-const cookieParser = require('cookie-parser'); 
+const cookieParser = require('cookie-parser');
 
-const authRoutes = require('./routes/authRoutes'); 
+const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
+const bookRoutes = require('./routes/bookRoutes'); // Import book routes
+const categoryRoutes = require('./routes/categoryRoutes'); // Import category routes
+const publisherRoutes = require('./routes/publisherRoutes'); // Import publisher routes
 
 const app = express();
 
@@ -14,7 +17,7 @@ app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:8080',
   credentials: true
 }));
-app.use(cookieParser()); // Sử dụng cookie-parser
+app.use(cookieParser());
 
 // Basic route for testing
 app.get('/', (req, res) => {
@@ -22,14 +25,13 @@ app.get('/', (req, res) => {
 });
 
 // API Routes
-app.use('/api/auth', authRoutes); // Sử dụng auth routes
+app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-// TODO: Import and use other API routes here
+app.use('/api/books', bookRoutes); // Sử dụng book routes
+app.use('/api/categories', categoryRoutes); // Sử dụng category routes
+app.use('/api/publishers', publisherRoutes); // Sử dụng publisher routes
 
-// app.use('/api/books', bookRoutes);
-// app.use('/api/loans', loanRoutes);
-
-// Error handling middleware (will create later)
+// TODO: Error handling middleware
 // app.use(errorHandler);
 
 module.exports = app;
