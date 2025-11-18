@@ -1,20 +1,29 @@
 
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser'); 
+
+const authRoutes = require('./routes/authRoutes'); 
 
 const app = express();
 
 // Middleware
-app.use(express.json()); // Parse JSON request bodies
-app.use(cors()); // Enable CORS for all routes
+app.use(express.json());
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:8080',
+  credentials: true
+}));
+app.use(cookieParser()); // Sử dụng cookie-parser
 
 // Basic route for testing
 app.get('/', (req, res) => {
   res.send('Welcome to the Online Library API!');
 });
 
-// TODO: Import and use API routes here
-// app.use('/api/auth', authRoutes);
+// API Routes
+app.use('/api/auth', authRoutes); // Sử dụng auth routes
+
+// TODO: Import and use other API routes here
 // app.use('/api/users', userRoutes);
 // app.use('/api/books', bookRoutes);
 // app.use('/api/loans', loanRoutes);
