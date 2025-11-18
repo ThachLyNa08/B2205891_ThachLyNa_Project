@@ -28,11 +28,20 @@ app.get('/', (req, res) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/books', bookRoutes); // Sử dụng book routes
-app.use('/api/categories', categoryRoutes); // Sử dụng category routes
-app.use('/api/publishers', publisherRoutes); // Sử dụng publisher routes
+app.use('/api/books', bookRoutes); 
+app.use('/api/categories', categoryRoutes); 
+app.use('/api/publishers', publisherRoutes); 
 app.use('/api/loans', loanRoutes);
+const paymentRoutes = require('./routes/paymentRoutes');
+app.use('/api/payments', paymentRoutes);
+
 // TODO: Error handling middleware
-// app.use(errorHandler);
+app.use((err, req, res, next) => {
+  console.error(err.stack); // Log lỗi chi tiết
+  res.status(err.statusCode || 500).json({
+    message: err.message || 'An unexpected error occurred.',
+    stack: process.env.NODE_ENV === 'production' ? null : err.stack // Chỉ gửi stack trong dev
+  });
+});
 
 module.exports = app;
