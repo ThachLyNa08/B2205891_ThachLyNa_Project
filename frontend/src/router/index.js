@@ -3,14 +3,14 @@ import { createRouter, createWebHistory } from 'vue-router';
 import HomeView from '../views/HomeView.vue';
 import LoginView from '../views/Auth/LoginView.vue'; 
 import RegisterView from '../views/Auth/RegisterView.vue'; 
-import DashboardView from '../views/Admin/DashboardView.vue'; 
-import BookListView from '../views/Books/BookListView.vue'; 
-import BookDetailView from '../views/Books/BookDetailView.vue'; 
-import MyLoansView from '../views/Loans/MyLoansView.vue'; 
-import LoanManagementView from '../views/Admin/LoanManagementView.vue'; 
-import UserManagementView from '../views/Admin/UserManagementView.vue'; 
-import PublisherManagementView from '../views/Admin/PublisherManagementView.vue'; 
-import CategoryManagementView from '../views/Admin/CategoryManagementView.vue'; 
+//import DashboardView from '../views/Admin/DashboardView.vue'; 
+// import BookListView from '../views/Books/BookListView.vue'; 
+// import BookDetailView from '../views/Books/BookDetailView.vue'; 
+// import MyLoansView from '../views/Loans/MyLoansView.vue'; 
+// import LoanManagementView from '../views/Admin/LoanManagementView.vue'; 
+// import UserManagementView from '../views/Admin/UserManagementView.vue'; 
+// import PublisherManagementView from '../views/Admin/PublisherManagementView.vue'; 
+// import CategoryManagementView from '../views/Admin/CategoryManagementView.vue'; 
 import NotFoundView from '../views/NotFoundView.vue'; 
 
 const router = createRouter({
