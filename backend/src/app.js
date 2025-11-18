@@ -4,6 +4,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser'); 
 
 const authRoutes = require('./routes/authRoutes'); 
+const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 
@@ -22,9 +23,9 @@ app.get('/', (req, res) => {
 
 // API Routes
 app.use('/api/auth', authRoutes); // Sử dụng auth routes
-
+app.use('/api/users', userRoutes);
 // TODO: Import and use other API routes here
-// app.use('/api/users', userRoutes);
+
 // app.use('/api/books', bookRoutes);
 // app.use('/api/loans', loanRoutes);
 
