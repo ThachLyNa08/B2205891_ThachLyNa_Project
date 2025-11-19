@@ -46,6 +46,18 @@ const loanSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
+  },
+  rentCost: { // Tiền thuê sách (Tính lúc mượn)
+    type: Number,
+    default: 0
+  },
+  phatTien: { // Tiền phạt (Tính lúc trả)
+    type: Number,
+    default: 0
+  },
+  isPaid: { // Đã thanh toán chưa (cả tiền thuê + phạt)
+    type: Boolean,
+    default: false
   }
 });
 

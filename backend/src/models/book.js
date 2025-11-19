@@ -10,7 +10,8 @@ const bookSchema = new mongoose.Schema({
   tenSach: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    index: true
   },
   moTa: {
     type: String,
@@ -66,6 +67,11 @@ const bookSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
+  },
+  pricePerDay: { 
+    type: Number, 
+    default: 2000, 
+    min: 0 
   }
 });
 

@@ -4,7 +4,7 @@ const Book = require('../models/book');
 const User = require('../models/user'); 
 const mongoose = require('mongoose');
 
-const OVERDUE_FINE_PER_DAY = 5000; // Ví dụ: 5,000 VND mỗi ngày
+const OVERDUE_FINE_PER_DAY = 5000; 
 
 const requestLoan = async (userId, bookId, ngayHenTra) => {
   const session = await mongoose.startSession();
@@ -12,32 +12,35 @@ const requestLoan = async (userId, bookId, ngayHenTra) => {
 
   try {
     const book = await Book.findById(bookId).session(session);
-    if (!book) {
-      throw new Error('Book not found.');
-    }
-    if (book.availableCopies <= 0) {
-      throw new Error('Book is currently out of stock.');
-    }
+    if (!book) throw new Error('Book not found.');
+    if (book.availableCopies <= 0) throw new Error('Book out of stock.');
 
-    // Tạo yêu cầu mượn
+    // 1. TÍNH TOÁN TIỀN THUÊ
+    const start = new Date();
+    const end = new Date(ngayHenTra);
+    
+    // Tính số ngày mượn (tối thiểu 1 ngày)
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1; 
+    
+    // Công thức: Số ngày * Giá thuê 1 ngày của sách đó
+    const rentCost = diffDays * (book.pricePerDay || 2000); 
+
     const newLoan = await loanRepository.createLoan({
       userId,
       bookId,
-      ngayHenTra: new Date(ngayHenTra),
-      status: 'pending' // Ban đầu là pending, chờ nhân viên xác nhận
+      ngayMuon: start,
+      ngayHenTra: end,
+      rentCost: rentCost, // Lưu tiền thuê vào phiếu mượn
+      status: 'pending'
     });
 
-    // Giảm số lượng sách có sẵn (tạm thời) hoặc khi xác nhận
-    // Logic này có thể để sau khi xác nhận bởi nhân viên
-    // For now, let's decrease immediately if we assume auto-approval or simplified flow
+    // Giữ sách (trừ kho)
     // book.availableCopies -= 1;
     // await book.save({ session });
 
     await session.commitTransaction();
     session.endSession();
-
-    // TODO: Gửi notification cho nhân viên về yêu cầu mượn mới
-
     return newLoan;
   } catch (error) {
     await session.abortTransaction();
@@ -95,45 +98,40 @@ const processReturn = async (loanId, staffUserId) => {
   session.startTransaction();
   try {
     const loan = await loanRepository.getLoanById(loanId);
-    if (!loan) {
-      throw new Error('Loan not found.');
-    }
-    if (loan.status === 'returned' || loan.status === 'cancelled') {
-      throw new Error('Loan has already been returned or cancelled.');
-    }
+    if (!loan) throw new Error('Loan not found.');
+    if (loan.status === 'returned') throw new Error('Already returned.');
 
     const book = await Book.findById(loan.bookId).session(session);
-    if (!book) {
-      throw new Error('Associated book not found.');
-    }
 
+    // 2. TÍNH TOÁN TIỀN PHẠT
     const ngayTraThucTe = new Date();
     let phatTien = 0;
 
-    // Tính tiền phạt nếu quá hạn
-    if (ngayTraThucTe > loan.ngayHenTra) {
-      const diffTime = Math.abs(ngayTraThucTe.getTime() - loan.ngayHenTra.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      phatTien = diffDays * OVERDUE_FINE_PER_DAY;
+    // Nếu trả muộn hơn ngày hẹn
+    if (ngayTraThucTe > new Date(loan.ngayHenTra)) {
+      const diffTime = Math.abs(ngayTraThucTe - loan.ngayHenTra);
+      const overdueDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      // Công thức phạt: Số ngày trễ * 10.000đ
+      phatTien = overdueDays * OVERDUE_FINE_PER_DAY;
     }
 
-    // Cập nhật trạng thái mượn và ngày trả thực tế, tiền phạt
+    // Cập nhật Loan
     const updatedLoan = await loanRepository.updateLoan(loanId, {
       ngayTraThucTe,
-      status: phatTien > 0 ? 'overdue' : 'returned', // Nếu có phạt thì set là overdue, không thì returned
-      phatTien
+      status: 'returned',
+      phatTien: phatTien,
+      // Nếu có tiền phạt thì chưa gọi là hoàn tất thanh toán (isPaid giữ nguyên hoặc check lại)
     });
 
-    // Tăng số lượng sách có sẵn
-    book.availableCopies += 1;
-    await book.save({ session });
+    // Cộng lại kho sách
+    if (book) {
+        book.availableCopies += 1;
+        await book.save({ session });
+    }
 
     await session.commitTransaction();
     session.endSession();
-
-    // TODO: Gửi notification cho độc giả về việc trả sách và tiền phạt (nếu có)
-    // TODO: Nếu có phạt, cần tạo một Payment record
-
     return updatedLoan;
   } catch (error) {
     await session.abortTransaction();

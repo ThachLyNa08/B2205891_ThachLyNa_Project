@@ -1,111 +1,129 @@
 <template>
   <v-container class="mt-8" v-if="book">
-    <v-card class="pa-6 overflow-visible" elevation="0" color="transparent">
+    <v-card class="pa-6" elevation="0">
       <v-row>
-        <v-col cols="12" md="4" lg="3" class="text-center">
-          <v-card elevation="10" class="rounded-lg overflow-hidden mb-6 mx-auto" max-width="300">
+        <v-col cols="12" md="4" lg="3">
+          <v-card elevation="10" class="rounded-lg mb-6">
             <v-img :src="book.coverUrl" aspect-ratio="2/3" cover></v-img>
           </v-card>
-          
-          <div class="d-flex flex-column gap-3">
-             <v-btn 
-              block 
-              color="primary" 
-              size="large" 
-              @click="requestLoan"
-              :disabled="book.availableCopies === 0"
-              :loading="loanLoading"
-            >
-              {{ book.availableCopies > 0 ? 'Borrow Now' : 'Unavailable' }}
-            </v-btn>
-            <v-btn block variant="outlined" color="secondary" prepend-icon="mdi-heart-outline">
-              Add to Wishlist
-            </v-btn>
-          </div>
-        </v-col>
 
-        <v-col cols="12" md="8" lg="9" class="pl-md-8">
-          <div class="d-flex justify-space-between align-start">
-            <div>
-              <h1 class="text-h3 font-weight-bold text-primary mb-2">{{ book.tenSach }}</h1>
-              <div class="text-h6 text-medium-emphasis mb-4">by {{ book.tacGia.join(', ') }}</div>
+          <v-card variant="tonal" color="primary" class="pa-4 mb-4">
+            <div class="text-subtitle-2 mb-2 font-weight-bold">Rental Details</div>
+            
+            <v-text-field
+              v-model="returnDate"
+              label="Return Date"
+              type="date"
+              variant="outlined"
+              density="compact"
+              bg-color="white"
+              :min="minDate"
+              @change="calculateRent"
+            ></v-text-field>
+
+            <v-divider class="my-3"></v-divider>
+            
+            <div class="d-flex justify-space-between text-caption">
+              <span>Price/Day:</span>
+              <strong>{{ formatCurrency(book.pricePerDay || 2000) }}</strong>
             </div>
-            <v-chip :color="book.availableCopies > 0 ? 'success' : 'error'" prepend-icon="mdi-check-circle">
-              {{ book.availableCopies > 0 ? 'AVAILABLE' : 'OUT OF STOCK' }}
-            </v-chip>
-          </div>
+            <div class="d-flex justify-space-between text-caption">
+              <span>Duration:</span>
+              <strong>{{ duration }} days</strong>
+            </div>
+            <div class="d-flex justify-space-between mt-2 text-h6 text-primary font-weight-bold">
+              <span>Total:</span>
+              <span>{{ formatCurrency(estimatedCost) }}</span>
+            </div>
+          </v-card>
 
-          <v-divider class="my-4"></v-divider>
-
-          <v-row class="my-2">
-            <v-col cols="6" sm="3">
-              <div class="text-caption text-medium-emphasis">Publisher</div>
-              <div class="font-weight-medium">{{ book.maNXB?.tenNXB }}</div>
-            </v-col>
-             <v-col cols="6" sm="3">
-              <div class="text-caption text-medium-emphasis">Year</div>
-              <div class="font-weight-medium">{{ book.namXuatBan }}</div>
-            </v-col>
-             <v-col cols="6" sm="3">
-              <div class="text-caption text-medium-emphasis">ISBN</div>
-              <div class="font-weight-medium">{{ book.isbn }}</div>
-            </v-col>
-             <v-col cols="6" sm="3">
-              <div class="text-caption text-medium-emphasis">Copies</div>
-              <div class="font-weight-medium">{{ book.availableCopies }} / {{ book.soQuyen }}</div>
-            </v-col>
-          </v-row>
-
-          <div class="mt-6">
-            <h3 class="text-h5 font-weight-bold mb-3">Description</h3>
-            <p class="text-body-1 text-grey-darken-1" style="line-height: 1.8;">
-              {{ book.moTa || 'No description available.' }}
-            </p>
-          </div>
-
-          <div class="mt-6">
-            <v-chip-group>
-              <v-chip v-for="cat in book.categories" :key="cat._id" color="secondary" variant="tonal">
-                {{ cat.tenTheLoai }}
-              </v-chip>
-            </v-chip-group>
-          </div>
+          <v-btn 
+            block color="primary" size="large" 
+            @click="requestLoan"
+            :loading="loanLoading"
+            :disabled="book.availableCopies === 0 || !returnDate"
+          >
+            Confirm & Borrow
+          </v-btn>
         </v-col>
-      </v-row>
 
-      <v-divider class="my-12"></v-divider>
-      <h3 class="text-h5 font-weight-bold mb-6">You Might Also Like</h3>
-      <v-row>
-        <v-col cols="6" md="2" v-for="i in 4" :key="i">
-           <v-card color="grey-lighten-4" height="200" class="d-flex align-center justify-center">
-             <span class="text-caption">Book Suggestion {{ i }}</span>
-           </v-card>
-        </v-col>
+        <v-col cols="12" md="8" lg="9">
+           <h1>{{ book.tenSach }}</h1>
+           </v-col>
       </v-row>
     </v-card>
   </v-container>
 </template>
 
 <script setup>
-// ... (Giữ nguyên script logic từ file cũ, chỉ thay đổi template)
-import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { ref, computed, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import api from '../services/api.service';
 import { useAuthStore } from '../stores/auth';
 
 const route = useRoute();
+const router = useRouter();
 const authStore = useAuthStore();
+
 const book = ref(null);
 const loanLoading = ref(false);
+
+// Logic tính ngày & tiền
+const returnDate = ref('');
+const duration = ref(1);
+const estimatedCost = ref(0);
+
+// Ngày tối thiểu là ngày mai
+const minDate = computed(() => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return tomorrow.toISOString().split('T')[0];
+});
+
+const calculateRent = () => {
+  if (!returnDate.value || !book.value) return;
+  
+  const start = new Date();
+  const end = new Date(returnDate.value);
+  const diffTime = Math.abs(end - start);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  duration.value = diffDays;
+  estimatedCost.value = diffDays * (book.value.pricePerDay || 2000);
+};
 
 const fetchBook = async () => {
   try {
     const res = await api.get(`/books/${route.params.id}`);
     book.value = res.data;
+    // Default set ngày trả là 7 ngày sau
+    const defaultDate = new Date();
+    defaultDate.setDate(defaultDate.getDate() + 7);
+    returnDate.value = defaultDate.toISOString().split('T')[0];
+    calculateRent();
   } catch (e) { console.error(e); }
 };
+
 const requestLoan = async () => {
-  // ... logic mượn sách cũ
+  if(!authStore.isAuthenticated) return router.push('/auth/login');
+
+  loanLoading.value = true;
+  try {
+    await api.post('/loans/request', {
+      bookId: book.value._id,
+      ngayHenTra: returnDate.value
+    });
+    alert("Borrow request successful! Please wait for approval.");
+    router.push('/my-loans');
+  } catch (error) {
+    alert(error.response?.data?.message || "Error borrowing book");
+  } finally {
+    loanLoading.value = false;
+  }
+};
+
+const formatCurrency = (value) => {
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
 };
 
 onMounted(fetchBook);
