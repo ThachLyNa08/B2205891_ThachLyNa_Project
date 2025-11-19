@@ -1,4 +1,3 @@
-<!-- frontend/src/components/admin/UserManagement.vue -->
 <template>
     <v-card class="pa-4">
         <v-card-title class="text-h5 d-flex justify-space-between align-center">
@@ -41,7 +40,6 @@
             </v-data-table-server>
         </v-card-text>
 
-        <!-- Create/Edit User Dialog -->
         <v-dialog v-model="dialog" max-width="600px">
             <v-card>
                 <v-card-title>
@@ -84,7 +82,6 @@
             </v-card>
         </v-dialog>
 
-        <!-- Delete Confirmation Dialog -->
         <v-dialog v-model="deleteDialog" max-width="500px">
             <v-card>
                 <v-card-title class="text-h5">Confirm Deletion</v-card-title>
@@ -112,8 +109,9 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick } from 'vue';
-import api from '../../services/api.service';
+import { ref, computed, nextTick, watch } from 'vue';
+// --- SỬA LỖI IMPORT TẠI ĐÂY ---
+import api from '../../services/api.service'; 
 import debounce from 'lodash.debounce';
 
 const users = ref([]);
@@ -168,14 +166,13 @@ const loadUsers = debounce(async ({ page, itemsPerPage: perPage, sortBy }) => {
             page: page || currentPage.value,
             limit: perPage || itemsPerPage.value,
             search: search.value,
-            // sortBy: sortBy.length ? sortBy[0].key : undefined, // TODO: Implement sort on backend
-            // sortDesc: sortBy.length ? sortBy[0].order === 'desc' : undefined,
         };
         const response = await api.get('/users', { params });
-        users.value = response.data;
-        totalUsers.value = response.data.length; // Backend API currently doesn't return total count
-        // For accurate pagination, backend should return total count
-        // totalUsers.value = response.data.total;
+        users.value = response.data; 
+        // Lưu ý: API /users hiện tại trả về mảng users trực tiếp, 
+        // nếu bạn đã update controller trả về { data, total } thì sửa lại dòng này.
+        // Tạm thời giả định trả về mảng như code cũ:
+        totalUsers.value = response.data.length; 
         loading.value = false;
     } catch (error) {
         console.error('Error loading users:', error);
@@ -207,7 +204,6 @@ const editUser = (item) => {
     if (editedItem.value.ngaySinh) {
         editedItem.value.ngaySinh = new Date(editedItem.value.ngaySinh).toISOString().split('T')[0];
     }
-    // Không hiển thị password trong edit
     editedItem.value.password = '';
     dialogError.value = null;
     dialog.value = true;
@@ -229,25 +225,24 @@ const saveUser = async () => {
 
     dialogError.value = null;
     try {
-        if (editedIndex.value > -1) { // Edit existing user
+        if (editedIndex.value > -1) { 
             const userId = editedItem.value._id;
             const payload = { ...editedItem.value };
-            delete payload._id; // Không gửi _id trong body
-            // Nếu không có password, không gửi trường password
+            delete payload._id; 
             if (!payload.password) {
                 delete payload.password;
             }
             const response = await api.put(`/users/${userId}`, payload);
             Object.assign(users.value[editedIndex.value], response.data.user);
             snackbar.value = { show: true, message: 'User updated successfully.', color: 'success' };
-        } else { // Create new user
+        } else { 
             const response = await api.post('/users', editedItem.value);
             users.value.push(response.data.user);
             totalUsers.value++;
             snackbar.value = { show: true, message: 'User created successfully.', color: 'success' };
         }
         closeDialog();
-        loadUsers({}); // Refresh list
+        loadUsers({}); 
     } catch (error) {
         dialogError.value = error.response?.data?.message || 'Failed to save user.';
         console.error('Error saving user:', error);
@@ -284,6 +279,5 @@ watch(search, (newVal) => {
     loadUsers({});
 });
 
-// Load users initially
 loadUsers({});
 </script>

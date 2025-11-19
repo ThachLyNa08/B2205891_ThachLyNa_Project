@@ -1,86 +1,78 @@
 <template>
-  <v-container fluid class="bg-grey-darken-4 fill-height align-start pa-6">
-    <v-row>
-      <v-col cols="12">
-        <div class="d-flex justify-space-between align-center mb-6">
-          <h1 class="text-h4 font-weight-bold text-white">Admin Dashboard</h1>
-          <v-btn color="primary" prepend-icon="mdi-plus" class="px-6">Create New Loan</v-btn>
+  <v-container fluid class="admin-container pa-0 fill-height align-start">
+    <div class="w-100 pa-6">
+      <div class="d-flex justify-space-between align-center mb-6">
+        <h1 class="text-h4 font-weight-bold text-white">
+          <v-icon start color="primary">mdi-shield-crown</v-icon> Admin Dashboard
+        </h1>
         </div>
-      </v-col>
 
-      <v-col cols="12" md="4">
-        <v-card color="#1E1E1E" class="pa-4 rounded-xl" elevation="0" border>
-          <div class="text-subtitle-2 text-grey mb-1">Total Loans</div>
-          <div class="d-flex justify-space-between align-end">
-            <div class="text-h3 font-weight-bold text-white">1,245</div>
-            <v-sparkline
-              :value="[0, 2, 5, 9, 5, 10, 3, 5, 0, 0, 1, 8, 2, 9, 0]"
-              color="primary"
-              line-width="2"
-              padding="16"
-              height="50"
-              width="100"
-              auto-draw
-            ></v-sparkline>
-          </div>
-        </v-card>
-      </v-col>
+      <v-card color="#1e293b" class="rounded-lg mb-6 elevation-4 border-opacity-12">
+        <v-tabs v-model="activeTab" bg-color="transparent" color="primary" align-tabs="start" show-arrows>
+          <v-tab value="loans" class="text-capitalize">Loan Management</v-tab> <v-tab value="books" class="text-capitalize">Book Management</v-tab>
+          <v-tab value="users" class="text-capitalize">Users</v-tab>
+          <v-tab value="categories" class="text-capitalize">Categories</v-tab>
+          <v-tab value="publishers" class="text-capitalize">Publishers</v-tab>
+          <v-tab value="payments" class="text-capitalize">Payments</v-tab>
+        </v-tabs>
+      </v-card>
 
-      <v-col cols="12" md="4">
-        <v-card color="#1E1E1E" class="pa-4 rounded-xl" elevation="0" border>
-          <div class="text-subtitle-2 text-grey mb-1">Borrowed Books</div>
-          <div class="d-flex justify-space-between align-end">
-            <div class="text-h3 font-weight-bold text-white">850</div>
-            <v-icon color="success" size="48">mdi-book-check</v-icon>
-          </div>
-        </v-card>
-      </v-col>
-
-      <v-col cols="12" md="4">
-        <v-card color="#1E1E1E" class="pa-4 rounded-xl" elevation="0" border>
-          <div class="text-subtitle-2 text-grey mb-1">Overdue Books</div>
-          <div class="d-flex justify-space-between align-end">
-            <div class="text-h3 font-weight-bold text-white">125</div>
-             <v-progress-linear model-value="70" color="error" height="8" rounded></v-progress-linear>
-          </div>
-        </v-card>
-      </v-col>
-
-      <v-col cols="12" class="mt-4">
-        <v-card color="#1E1E1E" class="rounded-xl" elevation="0" border>
-          <v-tabs v-model="activeTab" bg-color="transparent" color="primary" align-tabs="start">
-            <v-tab value="users">Users</v-tab>
-            <v-tab value="books">Books</v-tab>
-            <v-tab value="loans">Loans Management</v-tab>
-            <v-tab value="payments">Payments</v-tab>
-          </v-tabs>
-
-          <v-window v-model="activeTab" class="pa-4">
-             <v-window-item value="users"><UserManagement /></v-window-item>
-             <v-window-item value="books"><BookManagement /></v-window-item>
-             <v-window-item value="loans"><LoanManagement /></v-window-item>
-             <v-window-item value="payments"><PaymentHistory /></v-window-item>
-          </v-window>
-        </v-card>
-      </v-col>
-    </v-row>
+      <v-window v-model="activeTab" class="bg-transparent">
+        <v-window-item value="loans">
+          <LoanManagement />
+        </v-window-item>
+        <v-window-item value="books">
+          <BookManagement />
+        </v-window-item>
+        <v-window-item value="users">
+          <UserManagement />
+        </v-window-item>
+        <v-window-item value="categories">
+          <CategoryManagement />
+        </v-window-item>
+        <v-window-item value="publishers">
+          <PublisherManagement />
+        </v-window-item>
+        <v-window-item value="payments">
+          <PaymentHistory />
+        </v-window-item>
+      </v-window>
+    </div>
   </v-container>
 </template>
 
 <script setup>
 import { ref } from 'vue';
-// Import các component quản lý cũ
+// Import các component con
 import UserManagement from '../components/admin/UserManagement.vue';
 import BookManagement from '../components/admin/BookManagement.vue';
+import CategoryManagement from '../components/admin/CategoryManagement.vue';
+import PublisherManagement from '../components/admin/PublisherManagement.vue';
 import LoanManagement from '../components/admin/LoanManagement.vue';
 import PaymentHistory from '../components/admin/PaymentHistory.vue';
 
-const activeTab = ref('loans');
+const activeTab = ref('loans'); // Mặc định vào Loans để giống hình
 </script>
 
 <style scoped>
-/* Custom dark styling adjustments */
-.v-card {
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.admin-container {
+  background-color: #0f172a; /* Màu nền xanh đen đậm (Dark Slate) */
+  min-height: 100vh;
+}
+
+/* Tùy chỉnh thanh cuộn cho đẹp trên nền tối */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0f172a; 
+}
+::-webkit-scrollbar-thumb {
+  background: #334155; 
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569; 
 }
 </style>
