@@ -1,0 +1,22 @@
+list_Url = {
+    "Thiếu nhi": "https://www.fahasa.com/sach-trong-nuoc/thieu-nhi.html?order=num_orders&limit=48&p=",
+    "Văn học": "https://www.fahasa.com/sach-trong-nuoc/van-hoc-trong-nuoc.html?order=num_orders&limit=48&p=",
+    "Comic-Manga": "https://www.fahasa.com/sach-trong-nuoc/manga-comic.html?order=num_orders&limit=48&p=",
+    "Tâm lí - Kỹ năng sống": "https://www.fahasa.com/sach-trong-nuoc/tam-ly-ky-nang-song.html?order=num_orders&limit=48&p=",
+    "Kinh tế": "https://www.fahasa.com/sach-trong-nuoc/kinh-te-chinh-tri-phap-ly.html?order=num_orders&limit=48&p=",
+    "Lịch sử - Địa lý - Tôn giáo": "https://www.fahasa.com/sach-trong-nuoc/lich-su-dia-ly-ton-giao.html?order=num_orders&limit=48&p=",
+    "Khoa học - Kỹ thuật": "https://www.fahasa.com/sach-trong-nuoc/khoa-hoc-ky-thuat.html?order=num_orders&limit=48&p=",
+    "Văn hóa - Nghệ thuật - Du lịch": "https://www.fahasa.com/sach-trong-nuoc/van-hoa-nghe-thuat-du-lich.html?order=num_orders&limit=48&p=",
+    "Chính trị - Pháp Luật - Triết học": "https://www.fahasa.com/sach-trong-nuoc/chinh-tri-phap-ly-triet-hoc.html?order=num_orders&limit=48&p=",
+    "Âm Nhạc - Mỹ thuật - Thời trang": "https://www.fahasa.com/sach-trong-nuoc/am-nhac-my-thuat-thoi-trang.html?order=num_orders&limit=48&p=",
+    "Thể dục thể thao - Giải trí": "https://www.fahasa.com/sach-trong-nuoc/the-duc-the-thao-giai-tri.html?order=num_orders&limit=48&p="
+}
+
+
+## cho tiêu đề (thẻ h2)
+
+<p> cho đoạn văn (thẻ p)
+
+* cho mục con (thẻ li)
+
+Nếu có chữ in đậm (<strong>) thì giữ nguyên thẻ hoặc thay bằng [Đậm]...[/Đậm]
