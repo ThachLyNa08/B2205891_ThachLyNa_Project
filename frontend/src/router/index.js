@@ -1,9 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { useAuthStore } from '../stores/auth'; // Import auth store
+import { useAuthStore } from '../stores/auth';
 
-// Layouts
-import AuthLayout from '../layouts/AuthLayout.vue';
-import DefaultLayout from '../layouts/DefaultLayout.vue';
+// Layouts: ĐÃ XÓA HẾT IMPORT TỪ THƯ MỤC LAYOUTS
+// Không còn import AuthLayout hay DefaultLayout nữa
 
 // Views
 import HomeView from '../views/HomeView.vue';
@@ -15,32 +14,67 @@ import UserProfileView from '../views/UserProfileView.vue';
 import AdminDashboardView from '../views/AdminDashboardView.vue';
 import StaffDashboardView from '../views/StaffDashboardView.vue';
 import NotFoundView from '../views/NotFoundView.vue';
-
+import MyLoansView from '../views/MyLoansView.vue'; 
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    // --- CÁC ROUTE CHÍNH ---
     {
       path: '/',
-      component: DefaultLayout, // Sử dụng DefaultLayout cho các trang chính
-      children: [
-        { path: '', name: 'home', component: HomeView },
-        { path: 'books', name: 'books', component: BookListView },
-        { path: 'books/:id', name: 'book-detail', component: BookDetailView },
-        { path: 'profile', name: 'profile', component: UserProfileView, meta: { requiresAuth: true } },
-        { path: 'admin', name: 'admin-dashboard', component: AdminDashboardView, meta: { requiresAuth: true, requiresRole: 'admin' } },
-        { path: 'staff', name: 'staff-dashboard', component: StaffDashboardView, meta: { requiresAuth: true, requiresRole: 'staff' } },
-      ],
+      name: 'home',
+      component: HomeView
     },
     {
-      path: '/auth',
-      component: AuthLayout, // Sử dụng AuthLayout cho các trang đăng nhập/đăng ký
-      children: [
-        { path: 'login', name: 'login', component: LoginView, meta: { guestOnly: true } },
-        { path: 'register', name: 'register', component: RegisterView, meta: { guestOnly: true } },
-      ],
+      path: '/books',
+      name: 'books',
+      component: BookListView
     },
-    // Catch-all route for 404
+    {
+      path: '/books/:id',
+      name: 'book-detail',
+      component: BookDetailView
+    },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: UserProfileView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/my-loans',
+      name: 'my-loans',
+      component: MyLoansView, 
+      meta: { requiresAuth: true, requiresRole: 'reader' }
+    },
+    {
+      path: '/admin',
+      name: 'admin-dashboard',
+      component: AdminDashboardView,
+      meta: { requiresAuth: true, requiresRole: 'admin' }
+    },
+    {
+      path: '/staff',
+      name: 'staff-dashboard',
+      component: StaffDashboardView,
+      meta: { requiresAuth: true, requiresRole: 'staff' }
+    },
+
+    // --- AUTH ROUTES (Đưa thẳng ra ngoài vì mất Layout) ---
+    { 
+      path: '/auth/login', 
+      name: 'login', 
+      component: LoginView, 
+      meta: { guestOnly: true, hideLayout: true } // Thêm meta để ẩn layout nếu cần xử lý bên App.vue
+    },
+    { 
+      path: '/auth/register', 
+      name: 'register', 
+      component: RegisterView, 
+      meta: { guestOnly: true, hideLayout: true } 
+    },
+
+    // --- 404 NOT FOUND ---
     {
       path: '/:pathMatch(.*)*',
       name: 'NotFound',
@@ -53,22 +87,24 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
 
-  // Kiểm tra nếu route yêu cầu đăng nhập
+  // 1. Kiểm tra yêu cầu đăng nhập
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    next({ name: 'login' }); // Chuyển hướng đến trang đăng nhập
+    return next({ name: 'login' });
   }
-  // Kiểm tra nếu route chỉ dành cho khách (chưa đăng nhập)
-  else if (to.meta.guestOnly && authStore.isAuthenticated) {
-    next({ name: 'home' }); // Chuyển hướng về trang chủ nếu đã đăng nhập
+  
+  // 2. Kiểm tra trang chỉ dành cho khách
+  if (to.meta.guestOnly && authStore.isAuthenticated) {
+    return next({ name: 'home' });
   }
-  // Kiểm tra quyền
-  else if (to.meta.requiresRole && !authStore.user?.role.includes(to.meta.requiresRole)) {
-    // Nếu user không có quyền, chuyển hướng về trang chủ hoặc trang 403
-    next({ name: 'home' }); // Hoặc một trang lỗi "Access Denied"
+  
+  // 3. Kiểm tra quyền (Role)
+  if (to.meta.requiresRole) {
+      if (!authStore.user?.role || !to.meta.requiresRole.includes(authStore.user.role)) {
+          return next({ name: 'home' });
+      }
   }
-  else {
-    next();
-  }
+
+  next();
 });
 
 export default router;

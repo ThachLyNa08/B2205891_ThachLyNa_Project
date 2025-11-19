@@ -113,7 +113,7 @@
 
 <script setup>
 import { ref, computed, nextTick } from 'vue';
-import api from '../../services/api';
+import api from '../../services/api.service';
 import debounce from 'lodash.debounce';
 
 const users = ref([]);

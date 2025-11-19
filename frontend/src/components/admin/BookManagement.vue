@@ -148,7 +148,7 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick, watch } from 'vue';
-import api from '../../services/api';
+import api from '../../services/api.service';
 import debounce from 'lodash.debounce';
 
 const books = ref([]);

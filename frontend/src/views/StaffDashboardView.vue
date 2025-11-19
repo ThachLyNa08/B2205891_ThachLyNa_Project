@@ -45,18 +45,4 @@ import PaymentHistory from '../components/admin/PaymentHistory.vue';
 
 const activeTab = ref('books');
 </script>
-```
 
-**`frontend/src/views/NotFoundView.vue`**
-```vue
-<!-- frontend/src/views/NotFoundView.vue -->
-<template>
-  <v-container fill-height class="d-flex align-center justify-center text-center">
-    <div>
-      <h1 class="text-h1 font-weight-bold text-error">404</h1>
-      <h2 class="text-h4 mb-4">Page Not Found</h2>
-      <p class="text-h6 mb-8">The page you are looking for does not exist.</p>
-      <v-btn color="primary" to="/">Go to Home</v-btn>
-    </div>
-  </v-container>
-</template>

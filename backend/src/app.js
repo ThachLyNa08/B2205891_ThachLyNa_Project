@@ -2,27 +2,61 @@
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const helmet = require('helmet'); // Bảo mật HTTP headers
+const morgan = require('morgan'); // Log request để debug
 
+// Import Routes
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const bookRoutes = require('./routes/bookRoutes'); 
 const categoryRoutes = require('./routes/categoryRoutes'); 
 const publisherRoutes = require('./routes/publisherRoutes'); 
 const loanRoutes = require('./routes/loanRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 
 const app = express();
 
-// Middleware
+// --- MIDDLEWARES ---
+
+// 1. Bảo mật Headers
+app.use(helmet());
+
+// 2. Logging (Chỉ hiện trong môi trường dev)
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
+
+// 3. Parser
 app.use(express.json());
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:8080',
-  credentials: true
-}));
 app.use(cookieParser());
 
-// Basic route for testing
+// 4. CORS Configuration (Quan trọng để fix lỗi kết nối Frontend)
+const allowedOrigins = [
+  'http://localhost:5173', // Frontend Vue (Vite)
+  'http://localhost:8080', // Frontend Vue (Webpack cũ nếu có)
+  process.env.CLIENT_URL   // Biến môi trường (Production)
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Cho phép các request không có origin (như Postman, Mobile App) hoặc nằm trong whitelist
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('Blocked by CORS:', origin); // Log để dễ debug
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true, // Cho phép gửi cookie (refresh token)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// --- ROUTES ---
+
+// Test route
 app.get('/', (req, res) => {
-  res.send('Welcome to the Online Library!');
+  res.send('Welcome to the Library Nexus API!');
 });
 
 // API Routes
@@ -32,15 +66,31 @@ app.use('/api/books', bookRoutes);
 app.use('/api/categories', categoryRoutes); 
 app.use('/api/publishers', publisherRoutes); 
 app.use('/api/loans', loanRoutes);
-const paymentRoutes = require('./routes/paymentRoutes');
 app.use('/api/payments', paymentRoutes);
 
-// TODO: Error handling middleware
+// --- ERROR HANDLING ---
+
+// 404 Not Found Handler
+app.use((req, res, next) => {
+  const error = new Error(`Not Found - ${req.originalUrl}`);
+  error.statusCode = 404;
+  next(error);
+});
+
+// Global Error Handler
 app.use((err, req, res, next) => {
-  console.error(err.stack); // Log lỗi chi tiết
-  res.status(err.statusCode || 500).json({
-    message: err.message || 'An unexpected error occurred.',
-    stack: process.env.NODE_ENV === 'production' ? null : err.stack // Chỉ gửi stack trong dev
+  const statusCode = err.statusCode || 500;
+  
+  // Chỉ log stack trace nếu không phải production
+  if (process.env.NODE_ENV !== 'production') {
+    console.error('❌ Error:', err.message);
+    console.error(err.stack);
+  }
+
+  res.status(statusCode).json({
+    success: false,
+    message: err.message || 'Internal Server Error',
+    stack: process.env.NODE_ENV === 'production' ? null : err.stack
   });
 });
 
