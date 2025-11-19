@@ -11,7 +11,7 @@ const api = axios.create({
 // Interceptor để thêm Authorization header cho mỗi request
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token'); // Lấy JWT từ localStorage
+    const token = sessionStorage.getItem('token'); // Lấy JWT từ sessionStorage
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -36,8 +36,8 @@ api.interceptors.response.use(
         const res = await axios.post(`${API_BASE_URL}/auth/refresh`, {}, { withCredentials: true });
         const newToken = res.data.token;
 
-        // Cập nhật token trong localStorage và header của request gốc
-        localStorage.setItem('token', newToken);
+        // Cập nhật token trong sessionStorage và header của request gốc
+        sessionStorage.setItem('token', newToken);
         api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
         originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
 
@@ -46,7 +46,7 @@ api.interceptors.response.use(
       } catch (refreshError) {
         // Nếu refresh token thất bại, chuyển hướng về trang login
         console.error('Refresh token failed:', refreshError);
-        localStorage.removeItem('token'); // Xóa token cũ
+        sessionStorage.removeItem('token'); // Xóa token cũ
         window.location.href = '/login'; // Chuyển hướng đến trang đăng nhập
         return Promise.reject(refreshError);
       }

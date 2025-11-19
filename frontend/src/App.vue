@@ -1,4 +1,4 @@
-<script setup>
+<!-- <script setup>
 import { ref, computed } from 'vue';
 import { RouterView, useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
@@ -134,4 +134,12 @@ const visibleNavItems = computed(() => {
 
 <style scoped>
 /* Tùy chỉnh thêm nếu cần */
-</style>
+</style> -->
+
+<template>
+  <RouterView />
+</template>
+
+<script setup>
+// Không cần script gì ở đây nữa
+</script>

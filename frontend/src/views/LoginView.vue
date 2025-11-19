@@ -86,8 +86,12 @@ const showPass = ref(false);
 const handleLogin = async () => {
   try {
     await authStore.login({ emailOrUsername: emailOrUsername.value, password: password.value });
-    const redirectPath = authStore.user?.role === 'admin' || authStore.user?.role === 'staff' ? '/admin' : '/profile';
-    router.push(redirectPath);
+    if (['admin', 'staff'].includes(authStore.user?.role)) {
+        // QUAN TRỌNG: Chuyển sang 'admin-dashboard'
+        router.push({ name: 'admin-dashboard' }); 
+    } else {
+        router.push({ name: 'home' });
+    }
   } catch (error) {
     console.error('Login error:', error);
   }

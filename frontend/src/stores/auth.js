@@ -4,9 +4,9 @@ import api from '../services/api.service'; // Import axios instance
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    user: JSON.parse(localStorage.getItem('user')) || null,
-    token: localStorage.getItem('token') || null,
-    isAuthenticated: !!localStorage.getItem('token'),
+    user: JSON.parse(sessionStorage.getItem('user')) || null,
+    token: sessionStorage.getItem('token') || null,
+    isAuthenticated: !!sessionStorage.getItem('token'),
     error: null,
     loading: false,
   }),
@@ -22,9 +22,9 @@ export const useAuthStore = defineStore('auth', {
       this.error = null;
       try {
         const response = await api.post('/auth/register', userData);
-        // Lưu token và user vào localStorage
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+        // Lưu token và user vào sessionStorage
+        sessionStorage.setItem('token', response.data.token);
+        sessionStorage.setItem('user', JSON.stringify(response.data.user));
 
         this.token = response.data.token;
         this.user = response.data.user;
@@ -43,8 +43,8 @@ export const useAuthStore = defineStore('auth', {
       this.error = null;
       try {
         const response = await api.post('/auth/login', credentials);
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+        sessionStorage.setItem('token', response.data.token);
+        sessionStorage.setItem('user', JSON.stringify(response.data.user));
 
         this.token = response.data.token;
         this.user = response.data.user;
@@ -59,8 +59,8 @@ export const useAuthStore = defineStore('auth', {
     },
 
     logout() {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
       this.token = null;
       this.user = null;
       this.isAuthenticated = false;
@@ -68,7 +68,7 @@ export const useAuthStore = defineStore('auth', {
       // TODO: Có thể gọi API logout nếu cần xóa refresh token trên server
     },
 
-    // Action để kiểm tra và lấy lại thông tin user nếu chỉ có token trong localStorage (khi refresh trang)
+    // Action để kiểm tra và lấy lại thông tin user nếu chỉ có token trong sessionStorage (khi refresh trang)
     async fetchUser() {
       if (this.isAuthenticated && !this.user) {
         try {
