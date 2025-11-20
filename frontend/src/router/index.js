@@ -13,6 +13,8 @@ import UserProfileView from '../views/UserProfileView.vue';
 import MyLoansView from '../views/MyLoansView.vue';
 import LoginView from '../views/LoginView.vue';
 import RegisterView from '../views/RegisterView.vue';
+import FavoritesView from '../views/FavoritesView.vue';
+import ReadingView from '../views/ReadingView.vue';
 
 // 3. VIEWS (ADMIN)
 import AdminDashboardView from '../views/AdminDashboardView.vue';
@@ -34,6 +36,25 @@ const router = createRouter({
         { path: 'books/:id', name: 'book-detail', component: BookDetailView },
         { path: 'profile', name: 'profile', component: UserProfileView, meta: { requiresAuth: true } },
         { path: 'my-loans', name: 'my-loans', component: MyLoansView, meta: { requiresAuth: true } },
+        { 
+            path: 'favorites', // Lưu ý: không cần dấu / ở đầu khi nằm trong children
+            name: 'favorites', 
+            component: FavoritesView, 
+            meta: { requiresAuth: true } 
+        },
+        { 
+            path: 'reading', 
+            name: 'reading', 
+            component: ReadingView, 
+            meta: { requiresAuth: true } 
+        },
+         // Route cho lịch sử nếu cần
+        { 
+            path: 'history', 
+            name: 'history', 
+            component: () => import('../views/MyLoansView.vue'), // Tái sử dụng trang MyLoans
+            meta: { requiresAuth: true } 
+        },
       ]
     },
 
