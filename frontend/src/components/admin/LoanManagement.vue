@@ -135,6 +135,18 @@
             {{ item.status }}
           </v-chip>
         </template>
+        
+        <template v-slot:item.isPaid="{ item }">
+            <v-chip :color="item.isPaid ? 'success' : 'warning'" size="x-small" label class="font-weight-bold">
+                {{ item.isPaid ? 'PAID' : 'UNPAID' }}
+            </v-chip>
+             <v-tooltip v-if="item.status === 'pending' && item.rentCost > 0 && !item.isPaid" location="top">
+                <template v-slot:activator="{ props }">
+                   <v-icon v-bind="props" color="error" size="small" class="ml-2">mdi-alert-circle</v-icon>
+                </template>
+                <span>Unpaid Fee: {{ formatCurrency(item.rentCost) }}</span>
+             </v-tooltip>
+        </template>
 
         <template v-slot:item.ngayHenTra="{ item }">
            <div :class="isOverdue(item) ? 'text-error font-weight-bold' : ''">
@@ -172,7 +184,12 @@
         <v-card color="#1e293b" class="text-white pa-4 rounded-lg">
             <v-card-title class="text-h6">Confirm Loan?</v-card-title>
             <v-card-text class="text-grey-lighten-2">
-                Approve loan for book "{{ confirmDialog.loan?.bookId?.tenSach }}"?
+                Approve loan for book "<strong>{{ confirmDialog.loan?.bookId?.tenSach }}</strong>"?
+                
+                <v-alert v-if="confirmDialog.loan?.rentCost > 0 && !confirmDialog.loan?.isPaid" type="error" variant="tonal" class="mt-3" density="compact">
+                   <v-icon start>mdi-alert-circle</v-icon>
+                   Warning: User has NOT paid the rental fee ({{ formatCurrency(confirmDialog.loan.rentCost) }}).
+                </v-alert>
             </v-card-text>
             <v-card-actions class="justify-end">
                 <v-btn color="grey" variant="text" @click="confirmDialog.show = false">Cancel</v-btn>
@@ -185,7 +202,7 @@
         <v-card color="#1e293b" class="text-white pa-4 rounded-lg">
             <v-card-title class="text-h6">Process Return</v-card-title>
             <v-card-text class="text-grey-lighten-2">
-                Confirm return for "{{ returnDialog.loan?.bookId?.tenSach }}"?
+                Confirm return for "<strong>{{ returnDialog.loan?.bookId?.tenSach }}</strong>"?
                 <div v-if="returnDialog.loan?.phatTien > 0" class="mt-2 text-error font-weight-bold">
                     Fine Required: {{ formatCurrency(returnDialog.loan.phatTien) }}
                 </div>
@@ -197,12 +214,23 @@
         </v-card>
     </v-dialog>
 
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="4000" location="top right">
+        <v-icon start color="white" v-if="snackbar.color === 'error'">mdi-alert-circle</v-icon>
+        <v-icon start color="white" v-else>mdi-check-circle</v-icon>
+        {{ snackbar.message }}
+        <template v-slot:actions>
+            <v-btn icon variant="text" @click="snackbar.show = false" density="compact">
+                <v-icon>mdi-close</v-icon>
+            </v-btn>
+        </template>
+    </v-snackbar>
+
   </div>
 </template>
 
 <script setup>
 import { ref, watch, computed } from 'vue';
-import api from '../../services/api.service'; // Đảm bảo import đúng
+import api from '../../services/api.service'; 
 import debounce from 'lodash.debounce';
 
 const loans = ref([]);
@@ -213,42 +241,37 @@ const currentPage = ref(1);
 const search = ref('');
 const filterStatus = ref(''); 
 
-// Mock stats (Có thể tính từ API nếu backend hỗ trợ)
+// Stats
 const borrowedCount = ref(850);
 const overdueCount = ref(125);
 
 const confirmDialog = ref({ show: false, loan: null });
 const returnDialog = ref({ show: false, loan: null });
+const snackbar = ref({ show: false, message: '', color: '' });
 
-// Headers cho v-data-table
 const headers = [
   { title: 'User', key: 'userId.username', align: 'start' },
   { title: 'Book Title', key: 'bookId', align: 'start' },
   { title: 'Borrow Date', key: 'ngayMuon' },
   { title: 'Status', key: 'status' },
-  { title: 'Due Date', key: 'ngayHenTra' },
-  { title: 'Payment', key: 'isPaid', align: 'center' }, 
+  { title: 'Payment', key: 'isPaid', align: 'center' },
   { title: 'Due Date', key: 'ngayHenTra' },
   { title: 'Actions', key: 'actions', align: 'end', sortable: false },
 ];
 
-// --- LOGIC CALL API ---
 const loadLoans = debounce(async ({ page, itemsPerPage: perPage } = {}) => {
     loading.value = true;
     try {
         const params = {
             page: page || currentPage.value,
             limit: perPage || itemsPerPage.value,
-            status: filterStatus.value || undefined, // Nếu rỗng thì undefined để lấy all
+            status: filterStatus.value || undefined, 
             search: search.value
         };
         
         const response = await api.get('/loans', { params });
         loans.value = response.data.data;
         totalLoans.value = response.data.total;
-        
-        // Update stats giả lập từ dữ liệu thật (hoặc gọi API thống kê riêng)
-        // borrowedCount.value = ...
     } catch (error) {
         console.error('Load loans error:', error);
     } finally {
@@ -261,12 +284,33 @@ const confirmLoan = (item) => {
     confirmDialog.value.show = true;
 }
 
+// --- HÀM DUYỆT ĐƠN (Có hiển thị lỗi lên Snackbar) ---
 const executeConfirmLoan = async () => {
     try {
         await api.put(`/loans/${confirmDialog.value.loan._id}/confirm`);
+        
+        snackbar.value = { 
+            show: true, 
+            message: 'Loan approved successfully!', 
+            color: 'success' 
+        };
         confirmDialog.value.show = false;
         loadLoans();
-    } catch(e) { console.error(e); }
+    } catch (error) {
+        console.error("Approve failed:", error);
+        // Lấy message từ Backend
+        const errorMessage = error.response?.data?.message || 'Failed to approve loan.';
+        
+        // Hiện Snackbar đỏ
+        snackbar.value = { 
+            show: true, 
+            message: errorMessage, 
+            color: 'error' 
+        };
+        
+        // Đóng dialog để User nhìn thấy lỗi
+        confirmDialog.value.show = false;
+    }
 }
 
 const processReturn = (item) => {
@@ -277,9 +321,15 @@ const processReturn = (item) => {
 const executeProcessReturn = async () => {
     try {
         await api.put(`/loans/${returnDialog.value.loan._id}/return`);
+        snackbar.value = { show: true, message: 'Book returned successfully!', color: 'success' };
         returnDialog.value.show = false;
         loadLoans();
-    } catch(e) { console.error(e); }
+    } catch (error) {
+        console.error(error);
+        const errorMsg = error.response?.data?.message || 'Return failed';
+        snackbar.value = { show: true, message: errorMsg, color: 'error' };
+        returnDialog.value.show = false;
+    }
 }
 
 const confirmDeleteLoan = async (item) => {
@@ -290,7 +340,6 @@ const confirmDeleteLoan = async (item) => {
     } catch(e) { console.error(e); }
 }
 
-// --- HELPERS ---
 const debouncedSearch = debounce(() => { currentPage.value = 1; loadLoans(); }, 500);
 
 const getStatusColor = (status) => {
@@ -307,7 +356,6 @@ const formatDate = (date) => date ? new Date(date).toLocaleDateString('vi-VN') :
 const formatCurrency = (val) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
 const isOverdue = (item) => item.status !== 'returned' && new Date(item.ngayHenTra) < new Date();
 
-// Watch filter change
 watch(filterStatus, () => {
     currentPage.value = 1;
     loadLoans();
@@ -315,37 +363,16 @@ watch(filterStatus, () => {
 </script>
 
 <style scoped>
-/* CSS tùy chỉnh cho giao diện tối */
-.dark-btn-toggle {
-  background-color: #0f172a !important;
-  border: 1px solid #334155;
-}
-.dark-btn-toggle .v-btn--active {
-  background-color: #334155 !important;
-  color: white !important;
-}
-
+/* CSS tối cho Admin */
+.dark-btn-toggle { background-color: #0f172a !important; border: 1px solid #334155; }
+.dark-btn-toggle .v-btn--active { background-color: #334155 !important; color: white !important; }
 .border-left-primary { border-left: 4px solid #2196F3 !important; }
 .border-left-success { border-left: 4px solid #4CAF50 !important; }
 .border-left-error { border-left: 4px solid #FF5252 !important; }
-
 .gap-4 { gap: 16px; }
 .tracking-wide { letter-spacing: 1px; }
-
-/* Tùy chỉnh bảng */
-:deep(.custom-dark-table) {
-  background-color: transparent !important;
-  color: white !important;
-}
-:deep(.custom-dark-table th) {
-  color: #94a3b8 !important; /* Màu xám nhạt cho header */
-  text-transform: uppercase;
-  font-size: 0.75rem;
-}
-:deep(.custom-dark-table td) {
-  border-bottom: 1px solid #334155 !important;
-}
-:deep(.custom-dark-table tbody tr:hover) {
-  background-color: #1e293b !important; /* Highlight khi hover dòng */
-}
+:deep(.custom-dark-table) { background-color: transparent !important; color: white !important; }
+:deep(.custom-dark-table th) { color: #94a3b8 !important; text-transform: uppercase; font-size: 0.75rem; }
+:deep(.custom-dark-table td) { border-bottom: 1px solid #334155 !important; }
+:deep(.custom-dark-table tbody tr:hover) { background-color: #1e293b !important; }
 </style>

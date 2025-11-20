@@ -38,7 +38,11 @@ const confirmLoan = async (loanId, staffUserId) => {
     const loan = await loanRepository.getLoanById(loanId);
     if (!loan) throw new Error('Loan request not found.');
     if (loan.status !== 'pending') throw new Error('Loan is not in pending status.');
-
+    if (loan.rentCost > 0 && !loan.isPaid) {
+      throw new Error(
+        `Cannot approve: User has not paid the rental fee (${loan.rentCost} VND).`
+      );
+    }
     const book = await Book.findById(loan.bookId);
     if (!book || book.availableCopies <= 0) throw new Error('Book out of stock.');
 
