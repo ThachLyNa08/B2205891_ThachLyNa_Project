@@ -38,13 +38,13 @@
           <div class="text-subtitle-2 text-grey-lighten-1 mb-1">Total Loans</div>
           <div class="d-flex justify-space-between align-end">
              <div>
-                <div class="text-h3 font-weight-bold text-white">{{ totalLoans }}</div>
+                <div class="text-h3 font-weight-bold text-white">{{ stats.total }}</div>
                 <div class="text-caption text-success mt-1">
-                  <v-icon size="small" start>mdi-arrow-up</v-icon> 12% vs last week
+                  <v-icon size="small" start>mdi-chart-bar</v-icon> All time records
                 </div>
              </div>
              <v-sparkline
-                :model-value="[10, 15, 8, 12, 20, 18, 25]"
+                :model-value="stats.chartData"
                 color="primary"
                 line-width="3"
                 padding="10"
@@ -63,11 +63,11 @@
           <div class="text-subtitle-2 text-grey-lighten-1 mb-1">Borrowed Books</div>
           <div class="d-flex justify-space-between align-end">
              <div>
-                <div class="text-h3 font-weight-bold text-white">{{ borrowedCount }}</div>
+                <div class="text-h3 font-weight-bold text-white">{{ stats.borrowed }}</div>
                 <div class="text-caption text-white mt-1">Active loans</div>
              </div>
              <v-sparkline
-                :model-value="[5, 8, 12, 15, 10, 8, 15]"
+                :model-value="stats.chartData"
                 color="success"
                 type="bar"
                 line-width="8"
@@ -85,11 +85,11 @@
           <div class="text-subtitle-2 text-grey-lighten-1 mb-1">Overdue Books</div>
           <div class="d-flex justify-space-between align-end">
              <div>
-                <div class="text-h3 font-weight-bold text-white">{{ overdueCount }}</div>
+                <div class="text-h3 font-weight-bold text-white">{{ stats.overdue }}</div>
                 <div class="text-caption text-error mt-1">Needs attention</div>
              </div>
              <v-sparkline
-                :model-value="[2, 4, 1, 5, 2, 6, 3]"
+                :model-value="[0,0,0,0,0,0, stats.overdue]" 
                 color="error"
                 type="bar"
                 line-width="8"
@@ -125,9 +125,17 @@
         class="bg-transparent text-white custom-dark-table"
         hover
       >
+        <template v-slot:item.userId="{ item }">
+          <div class="font-weight-bold">{{ item.userId?.username }}</div>
+          <div class="text-caption text-grey">{{ item.userId?.email }}</div>
+        </template>
+
         <template v-slot:item.bookId="{ item }">
-          <div class="font-weight-medium">{{ item.bookId?.tenSach || 'Unknown Book' }}</div>
-          <div class="text-caption text-grey">{{ item.bookId?.maSach }}</div>
+          <div v-if="item.bookId">
+             <div class="font-weight-medium">{{ item.bookId.tenSach }}</div>
+             <div class="text-caption text-grey">Code: {{ item.bookId.maSach }}</div>
+          </div>
+          <span v-else class="text-error font-italic">Book Deleted</span>
         </template>
 
         <template v-slot:item.status="{ item }">
@@ -135,7 +143,7 @@
             {{ item.status }}
           </v-chip>
         </template>
-        
+
         <template v-slot:item.isPaid="{ item }">
             <v-chip :color="item.isPaid ? 'success' : 'warning'" size="x-small" label class="font-weight-bold">
                 {{ item.isPaid ? 'PAID' : 'UNPAID' }}
@@ -184,8 +192,7 @@
         <v-card color="#1e293b" class="text-white pa-4 rounded-lg">
             <v-card-title class="text-h6">Confirm Loan?</v-card-title>
             <v-card-text class="text-grey-lighten-2">
-                Approve loan for book "<strong>{{ confirmDialog.loan?.bookId?.tenSach }}</strong>"?
-                
+                Approve request for <strong>{{ confirmDialog.loan?.bookId?.tenSach }}</strong>?
                 <v-alert v-if="confirmDialog.loan?.rentCost > 0 && !confirmDialog.loan?.isPaid" type="error" variant="tonal" class="mt-3" density="compact">
                    <v-icon start>mdi-alert-circle</v-icon>
                    Warning: User has NOT paid the rental fee ({{ formatCurrency(confirmDialog.loan.rentCost) }}).
@@ -215,21 +222,14 @@
     </v-dialog>
 
     <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="4000" location="top right">
-        <v-icon start color="white" v-if="snackbar.color === 'error'">mdi-alert-circle</v-icon>
-        <v-icon start color="white" v-else>mdi-check-circle</v-icon>
         {{ snackbar.message }}
-        <template v-slot:actions>
-            <v-btn icon variant="text" @click="snackbar.show = false" density="compact">
-                <v-icon>mdi-close</v-icon>
-            </v-btn>
-        </template>
+        <template v-slot:actions><v-btn text @click="snackbar.show = false">Close</v-btn></template>
     </v-snackbar>
-
   </div>
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import api from '../../services/api.service'; 
 import debounce from 'lodash.debounce';
 
@@ -241,9 +241,13 @@ const currentPage = ref(1);
 const search = ref('');
 const filterStatus = ref(''); 
 
-// Stats
-const borrowedCount = ref(850);
-const overdueCount = ref(125);
+// --- BIẾN THỐNG KÊ REAL-TIME (Không hardcode nữa) ---
+const stats = ref({
+    total: 0,
+    borrowed: 0,
+    overdue: 0,
+    chartData: [0,0,0,0,0,0,0] // Khởi tạo mảng rỗng để chart không lỗi
+});
 
 const confirmDialog = ref({ show: false, loan: null });
 const returnDialog = ref({ show: false, loan: null });
@@ -259,111 +263,89 @@ const headers = [
   { title: 'Actions', key: 'actions', align: 'end', sortable: false },
 ];
 
-const loadLoans = debounce(async ({ page, itemsPerPage: perPage } = {}) => {
+// --- HÀM LẤY THỐNG KÊ ---
+const fetchStats = async () => {
+    try {
+        const res = await api.get('/loans/stats');
+        stats.value = res.data;
+    } catch (e) { 
+        console.error("Stats error:", e); 
+    }
+}
+
+const loadLoans = debounce(async () => {
     loading.value = true;
     try {
         const params = {
-            page: page || currentPage.value,
-            limit: perPage || itemsPerPage.value,
-            status: filterStatus.value || undefined, 
+            page: currentPage.value,
+            limit: itemsPerPage.value,
+            status: filterStatus.value || undefined,
             search: search.value
         };
-        
         const response = await api.get('/loans', { params });
         loans.value = response.data.data;
         totalLoans.value = response.data.total;
+        
+        // Tự động cập nhật thống kê sau khi tải dữ liệu xong
+        fetchStats();
+        
     } catch (error) {
-        console.error('Load loans error:', error);
+        showSnackbar('Failed to load data', 'error');
     } finally {
         loading.value = false;
     }
 }, 300);
 
-const confirmLoan = (item) => {
-    confirmDialog.value.loan = item;
-    confirmDialog.value.show = true;
-}
-
-// --- HÀM DUYỆT ĐƠN (Có hiển thị lỗi lên Snackbar) ---
+// Actions
+const confirmLoan = (item) => { confirmDialog.value.loan = item; confirmDialog.value.show = true; }
 const executeConfirmLoan = async () => {
     try {
         await api.put(`/loans/${confirmDialog.value.loan._id}/confirm`);
-        
-        snackbar.value = { 
-            show: true, 
-            message: 'Loan approved successfully!', 
-            color: 'success' 
-        };
+        showSnackbar('Loan approved successfully!', 'success');
         confirmDialog.value.show = false;
-        loadLoans();
+        loadLoans(); // Reload bảng + Stats
     } catch (error) {
-        console.error("Approve failed:", error);
-        // Lấy message từ Backend
-        const errorMessage = error.response?.data?.message || 'Failed to approve loan.';
-        
-        // Hiện Snackbar đỏ
-        snackbar.value = { 
-            show: true, 
-            message: errorMessage, 
-            color: 'error' 
-        };
-        
-        // Đóng dialog để User nhìn thấy lỗi
+        const errorMsg = error.response?.data?.message || 'Failed to approve.';
+        showSnackbar(errorMsg, 'error');
         confirmDialog.value.show = false;
     }
 }
 
-const processReturn = (item) => {
-    returnDialog.value.loan = item;
-    returnDialog.value.show = true;
-}
-
+const processReturn = (item) => { returnDialog.value.loan = item; returnDialog.value.show = true; }
 const executeProcessReturn = async () => {
     try {
         await api.put(`/loans/${returnDialog.value.loan._id}/return`);
-        snackbar.value = { show: true, message: 'Book returned successfully!', color: 'success' };
+        showSnackbar('Book returned!', 'success');
         returnDialog.value.show = false;
-        loadLoans();
+        loadLoans(); // Reload bảng + Stats
     } catch (error) {
-        console.error(error);
-        const errorMsg = error.response?.data?.message || 'Return failed';
-        snackbar.value = { show: true, message: errorMsg, color: 'error' };
+        showSnackbar(error.response?.data?.message || 'Return failed', 'error');
         returnDialog.value.show = false;
     }
 }
 
 const confirmDeleteLoan = async (item) => {
     if(!confirm("Delete this record?")) return;
-    try {
-        await api.delete(`/loans/${item._id}`);
-        loadLoans();
-    } catch(e) { console.error(e); }
+    try { await api.delete(`/loans/${item._id}`); showSnackbar('Deleted', 'success'); loadLoans(); } 
+    catch(e) { showSnackbar('Delete failed', 'error'); }
 }
 
+// Helpers
+const showSnackbar = (msg, color) => { snackbar.value = { show: true, message: msg, color: color }; }
 const debouncedSearch = debounce(() => { currentPage.value = 1; loadLoans(); }, 500);
+const getStatusColor = (s) => ({'borrowed':'info','returned':'success','overdue':'error','pending':'warning'}[s] || 'grey');
+const formatDate = (d) => d ? new Date(d).toLocaleDateString('vi-VN') : '-';
+const formatCurrency = (v) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v || 0);
+const isOverdue = (item) => item.status !== 'returned' && item.status !== 'cancelled' && new Date(item.ngayHenTra) < new Date();
 
-const getStatusColor = (status) => {
-  switch (status) {
-    case 'borrowed': return 'info';
-    case 'returned': return 'success';
-    case 'overdue': return 'error';
-    case 'pending': return 'warning';
-    default: return 'grey';
-  }
-};
+watch(filterStatus, () => { currentPage.value = 1; loadLoans(); });
 
-const formatDate = (date) => date ? new Date(date).toLocaleDateString('vi-VN') : '-';
-const formatCurrency = (val) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
-const isOverdue = (item) => item.status !== 'returned' && new Date(item.ngayHenTra) < new Date();
-
-watch(filterStatus, () => {
-    currentPage.value = 1;
+onMounted(() => {
     loadLoans();
 });
 </script>
 
 <style scoped>
-/* CSS tối cho Admin */
 .dark-btn-toggle { background-color: #0f172a !important; border: 1px solid #334155; }
 .dark-btn-toggle .v-btn--active { background-color: #334155 !important; color: white !important; }
 .border-left-primary { border-left: 4px solid #2196F3 !important; }

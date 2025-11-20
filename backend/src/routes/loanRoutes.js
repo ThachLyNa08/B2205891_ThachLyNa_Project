@@ -1,26 +1,91 @@
-
 const express = require('express');
 const loanController = require('../controllers/loanController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-// Reader requests to borrow a book
-router.post('/request', protect, authorize('reader'), loanController.requestLoan);
+/* --------------------------------------------------------
+ * 1. STATIC ROUTES (ƯU TIÊN CAO)
+ * -------------------------------------------------------- */
 
-// Admin/Staff manage loans
-router.route('/')
-  .get(protect, authorize('admin', 'staff', 'reader'), loanController.getLoans); // Get all loans (admin/staff) or user's loans (reader)
+// Reader sends loan request
+router.post(
+  '/request',
+  protect,
+  authorize('reader'),
+  loanController.requestLoan
+);
 
-router.route('/:id')
-  .get(protect, authorize('admin', 'staff', 'reader'), loanController.getLoan); // Get specific loan
+// Loan stats
+router.get(
+  '/stats',
+  protect,
+  authorize('admin', 'staff'),
+  loanController.getStats
+);
 
-router.put('/:id/confirm', protect, authorize('admin', 'staff'), loanController.confirmLoan); // Confirm a loan
-router.put('/:id/return', protect, authorize('admin', 'staff', 'reader'), loanController.processReturn); // Process a return
-router.put('/:id/cancel', protect, authorize('admin', 'staff', 'reader'), loanController.cancelLoan); // Cancel a pending loan
-//router.put('/:id/return', protect, authorize('admin', 'staff', 'reader'), loanController.returnBook);
 // Calendar view
-router.get('/calendar', protect, authorize('admin', 'staff', 'reader'), loanController.getLoansForCalendar);
+router.get(
+  '/calendar',
+  protect,
+  authorize('admin', 'staff', 'reader'),
+  loanController.getLoansForCalendar
+);
+
+
+/* --------------------------------------------------------
+ * 2. COLLECTION ROUTES /loans
+ * -------------------------------------------------------- */
+
+// List all loans (admin/staff) or user's loans (reader)
+router.get(
+  '/',
+  protect,
+  authorize('admin', 'staff', 'reader'),
+  loanController.getLoans
+);
+
+
+/* --------------------------------------------------------
+ * 3. ACTION ROUTES ON A SPECIFIC RESOURCE
+ * -------------------------------------------------------- */
+
+// Confirm a pending loan
+router.put(
+  '/:id/confirm',
+  protect,
+  authorize('admin', 'staff'),
+  loanController.confirmLoan
+);
+
+// Process returning a book
+router.put(
+  '/:id/return',
+  protect,
+  authorize('admin', 'staff', 'reader'),
+  loanController.processReturn
+);
+
+// Cancel a pending loan
+router.put(
+  '/:id/cancel',
+  protect,
+  authorize('admin', 'staff', 'reader'),
+  loanController.cancelLoan
+);
+
+
+/* --------------------------------------------------------
+ * 4. RESOURCE ROUTE /loans/:id
+ * -------------------------------------------------------- */
+
+// Get a specific loan details
+router.get(
+  '/:id',
+  protect,
+  authorize('admin', 'staff', 'reader'),
+  loanController.getLoan
+);
 
 
 module.exports = router;

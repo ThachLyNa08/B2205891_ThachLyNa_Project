@@ -159,6 +159,15 @@ const getLoansForCalendar = async (req, res, next) => {
     }
 };
 
+const getStats = async (req, res, next) => {
+  try {
+    const stats = await loanService.getLoanStats();
+    res.status(200).json(stats);
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 module.exports = {
   requestLoan,
@@ -167,5 +176,6 @@ module.exports = {
   cancelLoan,
   getLoans,
   getLoan,
-  getLoansForCalendar
+  getLoansForCalendar,
+  getStats
 };
