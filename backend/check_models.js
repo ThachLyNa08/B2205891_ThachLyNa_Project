@@ -1,8 +1,8 @@
 // backend/check_models.js
 const axios = require('axios');
 
-// Key của bạn (Lưu ý: Tuyệt đối không chia sẻ Key này công khai)
-const API_KEY = 'AIzaSyC82reaSK7WnqaeuSS4c4lLfsFp7TjLHcQ'; 
+// Key của bạn 
+const API_KEY = ''; 
 
 async function checkAvailableModels() {
   try {
