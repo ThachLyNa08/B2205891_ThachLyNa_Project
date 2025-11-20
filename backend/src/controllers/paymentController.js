@@ -36,19 +36,18 @@ const createPaymentIntent = async (req, res, next) => {
 // @access  Private/Reader (simulated success from client), Staff, Admin
 const processPayment = async (req, res, next) => {
   try {
-    const paymentId = req.params.id;
-    const { paymentMethod } = req.body; // Ví dụ: 'credit_card', 'paypal'
-
-    if (!paymentMethod) {
-        return res.status(400).json({ message: 'Payment method is required.' });
-    }
-
-    const processedPayment = await paymentService.processPayment(paymentId, paymentMethod);
-    res.status(200).json({ message: 'Payment processed.', payment: processedPayment });
+    // Lấy thêm billingDetails từ body
+    const { paymentMethod, billingDetails } = req.body; 
+    
+    // Truyền billingDetails vào service
+    const payment = await paymentService.processPayment(
+        req.params.id, 
+        paymentMethod, 
+        billingDetails 
+    );
+    
+    res.status(200).json({ message: 'Payment processed successfully', payment });
   } catch (error) {
-    if (error.message.includes('Payment intent not found') || error.message.includes('already been processed')) {
-      return res.status(400).json({ message: error.message });
-    }
     next(error);
   }
 };

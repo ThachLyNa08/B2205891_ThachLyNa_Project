@@ -32,6 +32,10 @@ const paymentSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  billingDetails: {
+    name: { type: String },
+    phone: { type: String }
+  },
   paidAt: {
     type: Date,
     default: null

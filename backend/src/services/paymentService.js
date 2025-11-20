@@ -26,23 +26,22 @@ const createPaymentIntent = async (userId, loanId, amount, paymentType) => {
     return newPayment;
 };
 
-const processPayment = async (paymentId, paymentMethod) => {
-    // BỎ transaction session
+const processPayment = async (paymentId, paymentMethod, billingDetails) => {
     const payment = await paymentRepository.getPaymentById(paymentId);
     if (!payment) throw new Error('Payment intent not found.');
     if (payment.status !== 'pending') throw new Error('Payment already processed.');
 
-    // Gọi giả lập thanh toán
     const gatewayResponse = await mockProcessPayment(payment.amount, 'VND', paymentMethod);
 
-    // Cập nhật Payment
     const updatedPayment = await paymentRepository.updatePayment(paymentId, {
       paymentGatewayId: gatewayResponse.transactionId,
       paidAt: new Date(),
-      status: gatewayResponse.status === 'succeeded' ? 'completed' : 'failed'
+      status: gatewayResponse.status === 'succeeded' ? 'completed' : 'failed',
+      
+      // LƯU THÔNG TIN VÀO ĐÂY
+      billingDetails: billingDetails 
     });
 
-    // Nếu thanh toán thành công -> Cập nhật Loan là đã trả tiền
     if (updatedPayment.status === 'completed' && updatedPayment.loanId) {
         await loanRepository.updateLoan(updatedPayment.loanId._id, { isPaid: true });
     }

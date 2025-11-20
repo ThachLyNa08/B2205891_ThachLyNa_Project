@@ -158,36 +158,48 @@
           </v-card-actions>
         </div>
 
-        <div v-else-if="currentStep === 2" class="text-center py-4">
-          <v-icon color="success" size="64" class="mb-4">mdi-check-circle</v-icon>
-          <h3 class="text-h5 font-weight-bold text-success mb-2">Borrow Successful!</h3>
-          <p class="text-body-1 text-medium-emphasis mb-6 px-4">
-            Your loan has been created. Do you want to pay the rental fee now?
-          </p>
-          
-          <v-card variant="outlined" color="grey-lighten-1" class="mx-6 mb-6 pa-4 rounded-lg bg-grey-lighten-5">
-            <div class="text-caption text-uppercase font-weight-bold text-grey-darken-1 mb-1">Total Amount Due</div>
-            <div class="text-h4 font-weight-bold text-primary">{{ formatCurrency(createdLoan?.rentCost || estimatedCost) }}</div>
-          </v-card>
+        <div v-else-if="currentStep === 2" class="py-4">
+          <div class="text-center mb-4">
+             <v-icon color="success" size="50">mdi-check-circle</v-icon>
+             <h3 class="text-h6 font-weight-bold text-success">Loan Created!</h3>
+          </div>
 
-          <div class="d-flex flex-column gap-3 px-6">
-             <v-btn 
-               color="success" 
-               variant="flat" 
-               size="large" 
-               prepend-icon="mdi-credit-card"
-               @click="processPayment"
-               :loading="paymentLoading"
-             >
-               Pay Now
-             </v-btn>
-             <v-btn 
-               variant="text" 
-               color="secondary"
-               @click="finishProcess"
-             >
-               Pay Later
-             </v-btn>
+          <div class="px-4">
+              <v-text-field 
+                label="Billing Name" 
+                v-model="billingName" 
+                density="compact" 
+                variant="outlined" 
+                prepend-inner-icon="mdi-account"
+                class="mb-2"
+              ></v-text-field>
+              
+              <v-text-field 
+                label="Phone Number" 
+                v-model="billingPhone" 
+                density="compact" 
+                variant="outlined" 
+                prepend-inner-icon="mdi-phone"
+                class="mb-2"
+              ></v-text-field>
+
+              <div class="text-subtitle-2 font-weight-bold mb-1">Payment Method</div>
+              <v-radio-group v-model="paymentMethod" color="primary" inline density="compact">
+                <v-radio value="e-wallet" label="E-Wallet"></v-radio>
+                <v-radio value="credit_card" label="Credit Card"></v-radio>
+              </v-radio-group>
+              
+              <v-card variant="outlined" class="pa-3 mb-4 bg-grey-lighten-5 text-center">
+                <div class="text-caption text-uppercase">Amount to Pay</div>
+                <div class="text-h5 font-weight-bold text-primary">{{ formatCurrency(createdLoan?.rentCost || estimatedCost) }}</div>
+              </v-card>
+
+              <v-btn block color="success" size="large" @click="processPayment" :loading="paymentLoading" class="mb-2">
+                 Pay Now
+              </v-btn>
+              <v-btn block variant="text" color="secondary" @click="finishProcess">
+                 Pay Later
+              </v-btn>
           </div>
         </div>
 
@@ -210,15 +222,21 @@ const authStore = useAuthStore();
 const book = ref(null);
 const relatedBooks = ref([]);
 const dialog = ref(false);
-const currentStep = ref(1); // Biến quan trọng để chuyển bước
+const currentStep = ref(1); // 1: Borrow, 2: Payment
 const createdLoan = ref(null);
 
 const loanLoading = ref(false);
 const paymentLoading = ref(false);
 
+// Rental Logic
 const returnDate = ref('');
 const duration = ref(1);
 const estimatedCost = ref(0);
+
+// Payment Info
+const billingName = ref('');
+const billingPhone = ref('');
+const paymentMethod = ref('e-wallet');
 
 const minDate = computed(() => {
   const d = new Date();
@@ -230,6 +248,7 @@ const fetchBook = async (id) => {
   try {
     const res = await api.get(`/books/${id}`);
     book.value = res.data;
+    
     const defDate = new Date();
     defDate.setDate(defDate.getDate() + 7);
     returnDate.value = defDate.toISOString().split('T')[0];
@@ -256,11 +275,17 @@ const calculateRent = () => {
 
 const openBorrowDialog = () => {
   if (!authStore.isAuthenticated) return router.push('/auth/login');
-  currentStep.value = 1; // Reset về bước 1 khi mở dialog
+  
+  // Reset form thanh toán với thông tin user
+  billingName.value = authStore.user?.ten ? `${authStore.user.hoLot || ''} ${authStore.user.ten}`.trim() : authStore.user?.username;
+  billingPhone.value = authStore.user?.dienThoai || '';
+  paymentMethod.value = 'e-wallet';
+  
+  currentStep.value = 1;
   dialog.value = true;
 };
 
-// --- XỬ LÝ BƯỚC 1: TẠO LOAN ---
+// --- BƯỚC 1: TẠO LOAN ---
 const confirmLoan = async () => {
   loanLoading.value = true;
   try {
@@ -269,11 +294,8 @@ const confirmLoan = async () => {
       ngayHenTra: returnDate.value
     });
     
-    // Lưu thông tin loan vừa tạo
     createdLoan.value = response.data.loan;
-    
-    // QUAN TRỌNG: Chuyển sang bước 2 thay vì đóng dialog
-    currentStep.value = 2; 
+    currentStep.value = 2; // Chuyển sang thanh toán
 
   } catch (error) {
     alert(error.response?.data?.message || "Error borrowing book");
@@ -282,20 +304,29 @@ const confirmLoan = async () => {
   }
 };
 
-// --- XỬ LÝ BƯỚC 2: THANH TOÁN ---
+// --- BƯỚC 2: THANH TOÁN ---
 const processPayment = async () => {
   if (!createdLoan.value) return;
+  if (!billingName.value || !billingPhone.value) {
+      alert("Please enter billing name and phone number.");
+      return;
+  }
+
   paymentLoading.value = true;
 
   try {
     const intentRes = await api.post('/payments/create-intent', {
         loanId: createdLoan.value._id,
         amount: createdLoan.value.rentCost || estimatedCost.value,
-        paymentType: 'deposit' 
+        paymentType: 'rent_and_fine' // Hoặc 'rent'
     });
 
     await api.post(`/payments/${intentRes.data.payment._id}/process`, {
-        paymentMethod: 'e-wallet'
+        paymentMethod: paymentMethod.value, // Gửi phương thức thanh toán
+        billingDetails: { // Gửi thông tin người dùng
+            name: billingName.value,
+            phone: billingPhone.value
+        }
     });
 
     alert("Payment Successful! Book is yours.");
