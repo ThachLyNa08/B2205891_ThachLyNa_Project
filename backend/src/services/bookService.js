@@ -1,6 +1,7 @@
 const bookRepository = require('../repositories/bookRepository');
 const Category = require('../models/Category');
 const Publisher = require('../models/publisher');
+const Loan = require('../models/loan');
 
 // Hàm sinh mã ngẫu nhiên (Ví dụ: B123456)
 const generateBookCode = () => {
@@ -71,7 +72,20 @@ const updateBook = async (id, updateData) => {
   return book;
 };
 
+// --- CẬP NHẬT HÀM XÓA SÁCH ---
 const deleteBook = async (id) => {
+  // 1. Kiểm tra ràng buộc: Sách có đang được mượn không?
+  const isBorrowed = await Loan.exists({
+      bookId: id,
+      // Các trạng thái ngăn cản việc xóa:
+      status: { $in: ['pending', 'borrowed', 'overdue'] } 
+  });
+
+  if (isBorrowed) {
+      throw new Error('Cannot delete: This book is currently borrowed or has pending requests.');
+  }
+
+  // 2. Nếu "sạch" thì mới xóa
   const result = await bookRepository.deleteBook(id);
   if (!result) throw new Error('Book not found.');
   return result;

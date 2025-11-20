@@ -375,11 +375,25 @@ const saveBook = async () => {
 };
 const confirmDeleteBook = (item) => { bookToDelete.value = item; deleteDialog.value = true; };
 const deleteBook = async () => {
-     try {
+    try {
         await api.delete(`/books/${bookToDelete.value._id}`);
-        deleteDialog.value = false;
+        
+        // Thông báo thành công
+        snackbar.value = { show: true, message: 'Book deleted successfully.', color: 'success' };
+        closeDeleteDialog();
         loadBooks();
-    } catch(e) {}
+    } catch (error) {
+        console.error('Error deleting book:', error);
+        
+        // 1. Lấy thông báo lỗi cụ thể từ Backend (Chính là câu "Cannot delete...")
+        const errorMessage = error.response?.data?.message || 'Failed to delete book.';
+        
+        // 2. Hiển thị lên Snackbar
+        snackbar.value = { show: true, message: errorMessage, color: 'error' };
+        
+        // 3. Đóng dialog để người dùng nhìn thấy thông báo lỗi trên màn hình chính
+        closeDeleteDialog();
+    }
 };
 const showImagePreview = (url) => { previewImageUrl.value = url; imageDialog.value = true; };
 
