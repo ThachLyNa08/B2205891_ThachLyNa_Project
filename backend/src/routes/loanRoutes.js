@@ -73,6 +73,12 @@ router.put(
   authorize('admin', 'staff', 'reader'),
   loanController.cancelLoan
 );
+router.delete(
+  '/:id',
+  protect,
+  authorize('admin'),
+  loanController.deleteLoan
+);
 
 
 /* --------------------------------------------------------

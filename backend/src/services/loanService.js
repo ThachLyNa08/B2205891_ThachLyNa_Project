@@ -136,7 +136,23 @@ const getLoanStats = async () => {
 const getLoans = async (query, pagination) => loanRepository.getLoans(query, pagination);
 const getLoanById = async (id) => loanRepository.getLoanById(id);
 const getLoansForCalendar = async (userId, year, month) => loanRepository.getLoansForCalendar(userId, year, month);
+const deleteLoan = async (loanId) => {
+    const loan = await loanRepository.getLoanById(loanId);
+    if (!loan) throw new Error('Loan record not found.');
 
+    // LOGIC CHẶN XÓA:
+    // Nếu đang mượn (borrowed) hoặc quá hạn (overdue) -> KHÔNG ĐƯỢC XÓA
+    if (['borrowed', 'overdue'].includes(loan.status)) {
+        throw new Error('Cannot delete: Book is currently borrowed. Please return it first.');
+    }
+
+    // Chỉ cho phép xóa khi:
+    // 1. status = 'pending' (Chưa duyệt/Chưa thanh toán xong)
+    // 2. status = 'cancelled' (Đã hủy)
+    // 3. status = 'returned' (Đã trả xong xuôi)
+    await loanRepository.deleteLoan(loanId);
+    return true;
+};
 module.exports = {
   requestLoan,
   confirmLoan,
@@ -145,5 +161,6 @@ module.exports = {
   getLoans,
   getLoanById,
   getLoansForCalendar,
-  getLoanStats 
+  getLoanStats,
+  deleteLoan
 };

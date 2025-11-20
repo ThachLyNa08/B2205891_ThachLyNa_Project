@@ -167,6 +167,14 @@ const getStats = async (req, res, next) => {
     next(error);
   }
 };
+const deleteLoan = async (req, res, next) => {
+  try {
+    await loanService.deleteLoan(req.params.id);
+    res.status(200).json({ message: 'Loan record deleted successfully.' });
+  } catch (error) {
+    next(error);
+  }
+};
 
 
 module.exports = {
@@ -177,5 +185,6 @@ module.exports = {
   getLoans,
   getLoan,
   getLoansForCalendar,
-  getStats
+  getStats,
+  deleteLoan
 };
