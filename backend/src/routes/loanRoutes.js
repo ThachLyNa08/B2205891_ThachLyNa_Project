@@ -16,9 +16,9 @@ router.route('/:id')
   .get(protect, authorize('admin', 'staff', 'reader'), loanController.getLoan); // Get specific loan
 
 router.put('/:id/confirm', protect, authorize('admin', 'staff'), loanController.confirmLoan); // Confirm a loan
-router.put('/:id/return', protect, authorize('admin', 'staff'), loanController.processReturn); // Process a return
+router.put('/:id/return', protect, authorize('admin', 'staff', 'reader'), loanController.processReturn); // Process a return
 router.put('/:id/cancel', protect, authorize('admin', 'staff', 'reader'), loanController.cancelLoan); // Cancel a pending loan
-
+//router.put('/:id/return', protect, authorize('admin', 'staff', 'reader'), loanController.returnBook);
 // Calendar view
 router.get('/calendar', protect, authorize('admin', 'staff', 'reader'), loanController.getLoansForCalendar);
 

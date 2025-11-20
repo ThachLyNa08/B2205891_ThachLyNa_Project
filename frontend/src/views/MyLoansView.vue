@@ -41,27 +41,39 @@
           </span>
         </template>
 
-        <template v-slot:item.actions="{ item }">
-          <v-btn 
-            v-if="!item.isPaid && (item.rentCost > 0 || item.phatTien > 0) && item.status !== 'cancelled'"
-            color="success" 
-            size="small" 
-            variant="flat"
-            class="text-capitalize"
-            @click="payLoan(item)"
-            :loading="paymentLoading === item._id"
-          >
-            Pay {{ formatCurrency((item.rentCost || 0) + (item.phatTien || 0)) }}
-          </v-btn>
-          
-          <v-chip v-else-if="item.isPaid" color="success" size="small" variant="outlined" class="font-weight-bold">
-            <v-icon start size="small">mdi-check-circle</v-icon> Paid
-          </v-chip>
-          
-          <v-chip v-if="item.status === 'pending' && item.isPaid" size="small" color="warning" variant="text" class="ml-2">
-            Waiting Approval
-          </v-chip>
-        </template>
+<template v-slot:item.actions="{ item }">
+  <v-btn 
+    v-if="!item.isPaid && (item.rentCost > 0 || item.phatTien > 0) && item.status !== 'cancelled'"
+    color="success" 
+    size="small" 
+    variant="flat"
+    class="text-capitalize mr-2"
+    @click="payLoan(item)"
+    :loading="paymentLoading === item._id"
+  >
+    Pay {{ formatCurrency((item.rentCost || 0) + (item.phatTien || 0)) }}
+  </v-btn>
+  
+  <v-btn
+    v-if="['borrowed', 'overdue'].includes(item.status)"
+    color="primary"
+    size="small"
+    variant="outlined"
+    class="text-capitalize"
+    @click="returnBook(item)"
+    :loading="returnLoading === item._id"
+  >
+    Return Book
+  </v-btn>
+
+  <v-chip v-if="item.isPaid && item.status === 'returned'" color="success" size="small" variant="text">
+    Completed
+  </v-chip>
+  
+  <v-chip v-if="item.status === 'pending'" size="small" color="warning" variant="text">
+    Pending
+  </v-chip>
+</template>
 
         <template v-slot:no-data>
           <v-alert type="info" variant="tonal" class="mt-4">
@@ -83,6 +95,7 @@ const authStore = useAuthStore();
 const loans = ref([]);
 const loading = ref(true);
 const paymentLoading = ref(null);
+const returnLoading = ref(null);
 
 const headers = [
   { title: 'Book Title', key: 'bookId', align: 'start', width: '25%' },
@@ -150,6 +163,22 @@ const getStatusColor = (status) => {
 const formatDate = (d) => d ? new Date(d).toLocaleDateString('vi-VN') : '-';
 const formatCurrency = (v) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v || 0);
 const isOverdue = (item) => item.status !== 'returned' && item.status !== 'cancelled' && item.ngayHenTra && new Date(item.ngayHenTra) < new Date();
+const returnBook = async (loan) => {
+  if (!confirm(`Return book "${loan.bookId?.tenSach}"?`)) return;
 
+  returnLoading.value = loan._id;
+  try {
+    // Gọi API trả sách
+    await api.put(`/loans/${loan._id}/return`);
+    
+    alert("Book returned successfully!");
+    await fetchLoans(); // Load lại danh sách để cập nhật trạng thái
+  } catch (error) {
+    console.error("Return failed:", error);
+    alert(error.response?.data?.message || "Failed to return book.");
+  } finally {
+    returnLoading.value = null;
+  }
+};
 onMounted(fetchLoans);
 </script>
