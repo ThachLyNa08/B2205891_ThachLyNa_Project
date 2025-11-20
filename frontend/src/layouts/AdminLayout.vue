@@ -1,5 +1,5 @@
 <template>
-  <v-app theme="dark"> <v-navigation-drawer app permanent color="#1e293b">
+  <div class="v-theme--dark fill-height"> <v-navigation-drawer app permanent color="#1e293b">
       <div class="pa-4 d-flex align-center">
         <v-icon color="primary" size="large" start>mdi-shield-crown</v-icon>
         <span class="text-h6 font-weight-bold">Admin Portal</span>
@@ -31,7 +31,7 @@
         <router-view />
       </v-container>
     </v-main>
-  </v-app>
+  </div>
 </template>
 
 <script setup>

@@ -137,9 +137,17 @@ const visibleNavItems = computed(() => {
 </style> -->
 
 <template>
-  <RouterView />
+  <v-app>
+    
+    <RouterView />
+
+    <ChatWidget />
+    
+  </v-app>
 </template>
 
 <script setup>
-// Không cần script gì ở đây nữa
+import { RouterView } from 'vue-router';
+// Import ChatWidget vào đây để dùng chung cho toàn app
+import ChatWidget from '@/components/ChatWidget.vue'; 
 </script>

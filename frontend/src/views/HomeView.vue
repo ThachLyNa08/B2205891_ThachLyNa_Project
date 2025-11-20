@@ -208,12 +208,12 @@
       </v-row>
     </v-container>
 
-    <div class="ai-chat-container">
+    <!-- <div class="ai-chat-container">
       <v-btn icon size="x-large" class="ai-chat-btn elevation-10" @click="openChat">
         <v-icon color="white" size="32">mdi-robot-excited-outline</v-icon>
       </v-btn>
       <div class="ai-chat-label">AI CHAT</div>
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -247,9 +247,9 @@ const handleActionClick = (action) => {
   }
 };
 
-const openChat = () => {
-  alert("Tính năng Chat AI đang phát triển!");
-};
+// const openChat = () => {
+//   alert("Tính năng Chat AI đang phát triển!");
+// };
 
 const handleSearch = () => {
     if (searchQuery.value) {

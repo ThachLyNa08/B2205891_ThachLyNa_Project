@@ -13,6 +13,7 @@ const categoryRoutes = require('./routes/categoryRoutes');
 const publisherRoutes = require('./routes/publisherRoutes'); 
 const loanRoutes = require('./routes/loanRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 const app = express();
 
@@ -66,7 +67,8 @@ app.use('/api/books', bookRoutes);
 app.use('/api/categories', categoryRoutes); 
 app.use('/api/publishers', publisherRoutes); 
 app.use('/api/loans', loanRoutes);
-app.use('/api/payments', paymentRoutes);
+app.use('/api/payments', paymentRoutes);2
+app.use('/api/ai', aiRoutes);
 
 // --- ERROR HANDLING ---
 

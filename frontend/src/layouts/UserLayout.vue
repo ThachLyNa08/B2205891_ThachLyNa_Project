@@ -1,5 +1,5 @@
 <template>
-  <v-app>
+  <div class="fill-height">
     <v-app-bar app color="#1565C0" elevation="2">
       <v-toolbar-title class="text-uppercase font-weight-bold text-white">
         <v-icon start>mdi-library</v-icon> Library Nexus - Ứng dụng mượn sách online
@@ -36,7 +36,7 @@
     <v-footer app color="#1565C0" class="text-center d-flex flex-column py-4 text-white">
       <div>{{ new Date().getFullYear() }} — Library Nexus</div>
     </v-footer>
-  </v-app>
+  </div>
 </template>
 
 <script setup>
