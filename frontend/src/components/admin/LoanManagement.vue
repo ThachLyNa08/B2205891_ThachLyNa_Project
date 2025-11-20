@@ -227,6 +227,8 @@ const headers = [
   { title: 'Borrow Date', key: 'ngayMuon' },
   { title: 'Status', key: 'status' },
   { title: 'Due Date', key: 'ngayHenTra' },
+  { title: 'Payment', key: 'isPaid', align: 'center' }, 
+  { title: 'Due Date', key: 'ngayHenTra' },
   { title: 'Actions', key: 'actions', align: 'end', sortable: false },
 ];
 
