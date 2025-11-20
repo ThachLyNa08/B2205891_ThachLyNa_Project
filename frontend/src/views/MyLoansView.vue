@@ -188,7 +188,7 @@ const headers = [
 const fetchLoans = async () => {
   loading.value = true;
   try {
-    const response = await api.get(`/loans?userId=${authStore.user._id}`);
+    const response = await api.get(`/loans?userId=${authStore.user._id}&limit=1000`);
     loans.value = response.data.data;
   } catch (error) { console.error(error); } 
   finally { loading.value = false; }
