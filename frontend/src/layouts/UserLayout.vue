@@ -2,7 +2,7 @@
   <v-app>
     <v-app-bar app color="#1565C0" elevation="2">
       <v-toolbar-title class="text-uppercase font-weight-bold text-white">
-        <v-icon start>mdi-library</v-icon> Library Nexus
+        <v-icon start>mdi-library</v-icon> Library Nexus - Ứng dụng mượn sách online
       </v-toolbar-title>
       <v-spacer></v-spacer>
       
