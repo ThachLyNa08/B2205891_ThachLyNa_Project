@@ -30,6 +30,7 @@ const vuetify = createVuetify({
           background: '#FFFFFF',
           surface: '#FFFFFF',
           
+          
           // Các màu tùy chỉnh theo hình ảnh bạn gửi:
           fantasy: '#7E57C2',   // Tím (Fantasy)
           mystery: '#00897B',   // Xanh Teal (Mystery)

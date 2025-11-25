@@ -4,6 +4,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const helmet = require('helmet'); // Bảo mật HTTP headers
 const morgan = require('morgan'); // Log request để debug
+const path = require('path');
 
 // Import Routes
 const authRoutes = require('./routes/authRoutes');
@@ -20,7 +21,11 @@ const app = express();
 // --- MIDDLEWARES ---
 
 // 1. Bảo mật Headers
-app.use(helmet());
+// QUAN TRỌNG: Cần cấu hình crossOriginResourcePolicy: false 
+// để Frontend (port 5173) có thể load được ảnh từ Backend (port 5000/uploads)
+app.use(helmet({
+  crossOriginResourcePolicy: false,
+}));
 
 // 2. Logging (Chỉ hiện trong môi trường dev)
 if (process.env.NODE_ENV === 'development') {
@@ -30,8 +35,9 @@ if (process.env.NODE_ENV === 'development') {
 // 3. Parser
 app.use(express.json());
 app.use(cookieParser());
+app.use(express.urlencoded({ extended: true })); // Để đọc form data
 
-// 4. CORS Configuration (Quan trọng để fix lỗi kết nối Frontend)
+// 4. CORS Configuration
 const allowedOrigins = [
   'http://localhost:5173', // Frontend Vue (Vite)
   'http://localhost:8080', // Frontend Vue (Webpack cũ nếu có)
@@ -44,7 +50,7 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.log('Blocked by CORS:', origin); // Log để dễ debug
+      console.log('Blocked by CORS:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -60,6 +66,10 @@ app.get('/', (req, res) => {
   res.send('Welcome to the Library Nexus API!');
 });
 
+// Cấu hình Static Folder cho ảnh
+// Giả định cấu trúc thư mục là: backend/src/app.js và backend/uploads
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -67,7 +77,7 @@ app.use('/api/books', bookRoutes);
 app.use('/api/categories', categoryRoutes); 
 app.use('/api/publishers', publisherRoutes); 
 app.use('/api/loans', loanRoutes);
-app.use('/api/payments', paymentRoutes);2
+app.use('/api/payments', paymentRoutes); // Đã xóa số 2 thừa ở đây
 app.use('/api/ai', aiRoutes);
 
 // --- ERROR HANDLING ---
@@ -86,7 +96,7 @@ app.use((err, req, res, next) => {
   // Chỉ log stack trace nếu không phải production
   if (process.env.NODE_ENV !== 'production') {
     console.error('❌ Error:', err.message);
-    console.error(err.stack);
+    if (err.stack) console.error(err.stack);
   }
 
   res.status(statusCode).json({

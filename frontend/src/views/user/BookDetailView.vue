@@ -212,8 +212,8 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import api from '../services/api.service';
-import { useAuthStore } from '../stores/auth';
+import api from '@/services/api.service';
+import { useAuthStore } from '@/stores/auth';
 
 const route = useRoute();
 const router = useRouter();

@@ -81,7 +81,7 @@
 
           <div class="text-center text-body-2">
             Already have an account? 
-            <router-link to="/auth/login" class="text-secondary font-weight-bold text-decoration-none">
+            <router-link to="/login" class="text-secondary font-weight-bold text-decoration-none">
               Login here
             </router-link>
           </div>
@@ -94,7 +94,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '../stores/auth';
+import { useAuthStore } from '../../stores/auth';
 
 const router = useRouter();
 const authStore = useAuthStore();

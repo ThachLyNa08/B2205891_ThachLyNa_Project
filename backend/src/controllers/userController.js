@@ -1,4 +1,3 @@
-
 const userService = require('../services/userService');
 
 // @desc    Get all users
@@ -13,9 +12,6 @@ const getUsers = async (req, res, next) => {
   }
 };
 
-// @desc    Get user by ID
-// @route   GET /api/users/:id
-// @access  Private/Admin or User itself
 // @desc    Get user by ID or current logged-in user
 // @route   GET /api/users/:id or /api/users/me
 // @access  Private/Admin or User itself
@@ -27,7 +23,6 @@ const getUser = async (req, res, next) => {
             return res.status(404).json({ message: 'User not found.' });
         }
 
-        // Cho phép user xem profile của mình, hoặc admin/staff xem user khác
         if (req.user._id.toString() === userIdToFetch.toString() || ['admin', 'staff'].includes(req.user.role)) {
             res.status(200).json(user);
         } else {
@@ -43,7 +38,6 @@ const getUser = async (req, res, next) => {
 // @access  Private/Admin
 const createUser = async (req, res, next) => {
   try {
-    // Basic validation, more advanced validation can be added later
     const { username, email, password } = req.body;
     if (!username || !email || !password) {
         return res.status(400).json({ message: 'Username, email, and password are required.' });
@@ -66,13 +60,10 @@ const updateUser = async (req, res, next) => {
     const userId = req.params.id;
     const updateData = req.body;
 
-    // Chỉ admin/staff mới có thể cập nhật role của người khác
-    // Người dùng chỉ có thể cập nhật role của chính họ
     if (updateData.role && req.user._id.toString() !== userId && !['admin'].includes(req.user.role)) {
         return res.status(403).json({ message: 'Not authorized to change user role.' });
     }
 
-    // Người dùng chỉ có thể cập nhật profile của mình, admin/staff có thể cập nhật user khác
     if (req.user._id.toString() !== userId && !['admin', 'staff'].includes(req.user.role)) {
       return res.status(403).json({ message: 'Not authorized to update this user profile.' });
     }
@@ -92,7 +83,6 @@ const updateUser = async (req, res, next) => {
 // @access  Private/Admin
 const deleteUser = async (req, res, next) => {
   try {
-    // Admin không thể tự xóa tài khoản của mình qua API này
     if (req.user._id.toString() === req.params.id) {
         return res.status(400).json({ message: 'Cannot delete your own account via this route.' });
     }
@@ -118,7 +108,6 @@ const updatePassword = async (req, res, next) => {
             return res.status(400).json({ message: 'New password must be at least 6 characters.' });
         }
 
-        // Chỉ user có thể cập nhật password của chính mình
         if (req.user._id.toString() !== userId) {
             return res.status(403).json({ message: 'Not authorized to update this password.' });
         }
@@ -133,6 +122,57 @@ const updatePassword = async (req, res, next) => {
     }
 };
 
+// ==========================================
+// --- CÁC HÀM MỚI CHO UPLOAD ẢNH ---
+// ==========================================
+
+// @desc    Upload Avatar
+// @route   POST /api/users/:id/avatar
+const uploadAvatar = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Vui lòng chọn file ảnh.' });
+    }
+
+    // Tạo URL ảnh: http://localhost:5000/uploads/filename.jpg
+    const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    const userId = req.params.id;
+
+    // Cập nhật URL vào DB
+    const updatedUser = await userService.updateUser(userId, { avatar: imageUrl });
+
+    res.status(200).json({
+      message: 'Avatar updated successfully',
+      avatar: imageUrl,
+      user: updatedUser
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Upload Cover Image
+// @route   POST /api/users/:id/cover
+const uploadCover = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Vui lòng chọn file ảnh.' });
+    }
+
+    const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    const userId = req.params.id;
+
+    const updatedUser = await userService.updateUser(userId, { coverImage: imageUrl });
+
+    res.status(200).json({
+      message: 'Cover image updated successfully',
+      coverImage: imageUrl,
+      user: updatedUser
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 module.exports = {
   getUsers,
@@ -140,5 +180,7 @@ module.exports = {
   createUser,
   updateUser,
   deleteUser,
-  updatePassword
+  updatePassword,
+  uploadAvatar, // <-- Nhớ export hàm này
+  uploadCover   // <-- Nhớ export hàm này
 };

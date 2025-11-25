@@ -94,7 +94,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import api from '../services/api.service';
+import api from '@/services/api.service';
 import debounce from 'lodash.debounce';
 
 const books = ref([]);

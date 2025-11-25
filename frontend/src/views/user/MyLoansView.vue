@@ -160,8 +160,8 @@
 
 <script setup>
 import { ref, onMounted, reactive } from 'vue';
-import api from '../services/api.service';
-import { useAuthStore } from '../stores/auth';
+import api from '@/services/api.service';
+import { useAuthStore } from '../../stores/auth';
 
 const authStore = useAuthStore();
 const loans = ref([]);

@@ -1,45 +1,25 @@
-// backend/check_models.js
-const axios = require('axios');
+// File: backend/check_models.js
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+require('dotenv').config();
 
-// Key của bạn 
-const API_KEY = ''; 
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-async function checkAvailableModels() {
+async function listModels() {
   try {
-    console.log("⏳ Đang kết nối đến Google API để lấy danh sách model...");
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); 
+    // Đoạn này chỉ để init, ta dùng genAI để list
+    // Google SDK hiện tại chưa có hàm list trực tiếp đơn giản trong document mới nhất
+    // Nhưng ta có thể test thử gọi 1 model cơ bản nhất:
     
-    // Gọi API lấy danh sách models
-    const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${API_KEY}`;
-    const response = await axios.get(url);
+    console.log("Đang kiểm tra model gemini-1.5-flash-latest...");
+    const testModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+    const result = await testModel.generateContent("Hello");
+    console.log("Kết quả: Model hoạt động tốt!", result.response.text());
     
-    const models = response.data.models;
-
-    console.log("\n✅ KẾT NỐI THÀNH CÔNG! Dưới đây là các model bạn có thể dùng:\n");
-
-    // Lọc ra các model dùng để chat/tạo nội dung (generateContent)
-    const chatModels = models.filter(m => 
-      m.supportedGenerationMethods && 
-      m.supportedGenerationMethods.includes("generateContent")
-    );
-
-    chatModels.forEach(model => {
-      // model.name sẽ có dạng "models/gemini-1.5-flash"
-      // Khi dùng trong code, bạn bỏ chữ "models/" đi
-      const shortName = model.name.replace('models/', '');
-      console.log(`🔹 Tên đầy đủ: ${model.name}`);
-      console.log(`   👉 Tên dùng trong code: "${shortName}"`);
-      console.log(`   📝 Mô tả: ${model.displayName}`);
-      console.log('-----------------------------------');
-    });
-
   } catch (error) {
-    console.error("\n❌ KHÔNG THỂ LẤY DANH SÁCH MODEL!");
-    if (error.response) {
-      console.error(`Lỗi HTTP ${error.response.status}:`, error.response.data);
-    } else {
-      console.error("Lỗi kết nối:", error.message);
-    }
+    console.error("Lỗi:", error.message);
+    console.log("Thử đổi sang 'gemini-pro' hoặc 'gemini-1.0-pro' xem sao.");
   }
 }
 
-checkAvailableModels();
+listModels();

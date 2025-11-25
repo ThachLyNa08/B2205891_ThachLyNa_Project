@@ -4,6 +4,7 @@ const bookService = require('../services/bookService');
 // @desc    Get all books with filters, search, and pagination
 // @route   GET /api/books?category=...&author=...&year=...&search=...&page=...&limit=...
 // @access  Public
+
 const getBooks = async (req, res, next) => {
   try {
     const filters = {
@@ -43,40 +44,46 @@ const getBook = async (req, res, next) => {
     next(error);
   }
 };
+const parseBookData = (req) => {
+  const data = { ...req.body };
+  
+  // Nếu có file ảnh mới -> tạo URL
+  if (req.file) {
+    const protocol = req.protocol;
+    const host = req.get('host');
+    // Tạo đường dẫn đầy đủ: http://localhost:3000/uploads/filename.jpg
+    data.coverUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+  }
 
+  // Vì gửi qua FormData, các mảng/object bị chuyển thành chuỗi JSON, cần parse lại
+  if (typeof data.categories === 'string') {
+      try { data.categories = JSON.parse(data.categories); } catch(e) { data.categories = [data.categories]; }
+  }
+  if (typeof data.tacGia === 'string') {
+      try { data.tacGia = JSON.parse(data.tacGia); } catch(e) { data.tacGia = [data.tacGia]; }
+  }
+  
+  return data;
+};
 // @desc    Create a new book
 // @route   POST /api/books
 // @access  Private/Staff, Admin
 const createBook = async (req, res, next) => {
   try {
-    const newBook = await bookService.createBook(req.body);
+    const bookData = parseBookData(req); // Xử lý dữ liệu
+    const newBook = await bookService.createBook(bookData);
     res.status(201).json({ message: 'Book created successfully.', book: newBook });
   } catch (error) {
-    // Check for duplicate ISBN error
-    if (error.code === 11000 && error.keyPattern && error.keyPattern.isbn) {
-        return res.status(409).json({ message: 'ISBN already exists.' });
-    }
-    if (error.message.includes('Category not found') || error.message.includes('Publisher not found')) {
-      return res.status(400).json({ message: error.message });
-    }
     next(error);
   }
 };
 
-// @desc    Update a book
-// @route   PUT /api/books/:id
-// @access  Private/Staff, Admin
 const updateBook = async (req, res, next) => {
   try {
-    const updatedBook = await bookService.updateBook(req.params.id, req.body);
+    const bookData = parseBookData(req); // Xử lý dữ liệu
+    const updatedBook = await bookService.updateBook(req.params.id, bookData);
     res.status(200).json({ message: 'Book updated successfully.', book: updatedBook });
   } catch (error) {
-    if (error.message.includes('Book not found')) {
-      return res.status(404).json({ message: error.message });
-    }
-    if (error.message.includes('New total copies cannot be less')) {
-        return res.status(400).json({ message: error.message });
-    }
     next(error);
   }
 };

@@ -1,72 +1,71 @@
-
 const mongoose = require('mongoose');
 
 const loanSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User', // Tham chiếu đến model User
+    ref: 'User',
     required: true
-  },
+  }, 
   bookId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Book', // Tham chiếu đến model Book
+    ref: 'Book',
     required: true
   },
   ngayMuon: {
     type: Date,
     default: Date.now
   },
-  ngayHenTra: { // Ngày hẹn trả sách
+  ngayHenTra: { // Ngày dự kiến trả
     type: Date,
     required: true
   },
-  ngayTraThucTe: { // Ngày trả sách thực tế
+  ngayTraThucTe: { // Ngày khách trả thật
     type: Date,
     default: null
   },
   status: {
     type: String,
-    enum: ['pending', 'borrowed', 'returned', 'overdue', 'cancelled'], // Các trạng thái có thể
-    default: 'pending'
+    enum: ['pending', 'borrowed', 'returned', 'overdue', 'cancelled'],
+    default: 'pending' // Nên set là 'borrowed' khi admin duyệt cho mượn
   },
-  phatTien: { // Tiền phạt (nếu có)
-    type: Number,
-    default: 0,
-    min: 0
-  },
-  deposit: { // Tiền đặt cọc (nếu có)
-    type: Number,
-    default: 0,
-    min: 0
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
-  },
-  rentCost: { // Tiền thuê sách (Tính lúc mượn)
+  
+  // --- NHÓM CHI PHÍ THUÊ ---
+  rentCost: { // Tiền thuê sách (Phí mượn)
     type: Number,
     default: 0
   },
-  phatTien: { // Tiền phạt (Tính lúc trả)
+  deposit: { // Tiền cọc
     type: Number,
     default: 0
   },
-  isPaid: { // Đã thanh toán chưa (cả tiền thuê + phạt)
+  isPaid: { // Đã thanh toán phí thuê/cọc chưa?
     type: Boolean,
     default: false
-  }
+  },
+
+  // --- NHÓM CHI PHÍ PHẠT (QUAN TRỌNG) ---
+  phatTien: { 
+    type: Number,
+    default: 0
+  },
+  lyDoPhat: { // Lưu lý do: "Quá hạn 3 ngày"
+    type: String,
+    default: ''
+  },
+  isFinePaid: { // Đã đóng tiền phạt chưa? (Tách riêng với isPaid của tiền thuê)
+    type: Boolean,
+    default: false
+  },
+
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
 });
 
-// Cập nhật updatedAt mỗi khi save
+// Middleware cập nhật thời gian
 loanSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
   next();
 });
 
 const Loan = mongoose.model('Loan', loanSchema);
-
 module.exports = Loan;

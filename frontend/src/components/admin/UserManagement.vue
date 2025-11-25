@@ -1,119 +1,152 @@
 <template>
-    <v-card class="pa-4">
-        <v-card-title class="text-h5 d-flex justify-space-between align-center">
-            User Management
-            <v-btn color="primary" @click="openCreateDialog">
-                <v-icon left>mdi-plus</v-icon> Create New User
-            </v-btn>
+  <div class="user-management-wrapper">
+    <v-card class="pa-4 rounded-lg" color="#1e293b" elevation="0">
+      <div class="d-flex justify-space-between align-center mb-4">
+        <div>
+          <h2 class="text-h6 text-white">User Management</h2>
+          <div class="text-caption text-grey">Manage system users and roles</div>
+        </div>
+        <v-btn color="primary" @click="openCreateDialog" prepend-icon="mdi-account-plus">
+          Add New User
+        </v-btn>
+      </div>
+
+      <v-text-field
+        v-model="search"
+        placeholder="Search by username, email, or phone..."
+        prepend-inner-icon="mdi-magnify"
+        variant="outlined"
+        density="compact"
+        bg-color="#0f172a"
+        color="white"
+        hide-details
+        class="mb-4 rounded-lg"
+        @input="debouncedLoad"
+      />
+
+      <v-data-table-server
+        :headers="headers"
+        :items="users"
+        :items-length="totalUsers"
+        :loading="loading"
+        v-model:items-per-page="itemsPerPage"
+        v-model:page="currentPage"
+        @update:options="loadUsers"
+        class="elevation-1 bg-transparent text-white custom-table"
+        hover
+      >
+        <template v-slot:item.username="{ item }">
+          <div class="d-flex align-center">
+             <v-avatar color="primary" size="32" class="mr-2">
+               <span class="text-white font-weight-bold">{{ item.username.charAt(0).toUpperCase() }}</span>
+             </v-avatar>
+             <div>
+               <div class="font-weight-bold">{{ item.username }}</div>
+               <div class="text-caption text-grey">{{ item.email }}</div>
+             </div>
+          </div>
+        </template>
+
+        <template v-slot:item.fullName="{ item }">
+           {{ item.hoLot }} {{ item.ten }}
+        </template>
+
+        <template v-slot:item.role="{ item }">
+          <v-chip :color="getRoleColor(item.role)" size="small" label class="font-weight-bold text-uppercase">
+            {{ item.role }}
+          </v-chip>
+        </template>
+
+        <template v-slot:item.actions="{ item }">
+          <v-icon small class="mr-2" color="primary" @click="editUser(item)">mdi-pencil</v-icon>
+          <v-icon small color="error" @click="confirmDeleteUser(item)">mdi-delete</v-icon>
+        </template>
+        
+        <template v-slot:no-data>
+          <v-alert type="info" variant="tonal" class="mt-2">No users found.</v-alert>
+        </template>
+      </v-data-table-server>
+    </v-card>
+
+    <v-dialog v-model="dialog" max-width="700px">
+      <v-card>
+        <v-card-title>
+          <span class="text-h5">{{ formTitle }}</span>
         </v-card-title>
         <v-card-text>
-            <v-text-field
-                v-model="search"
-                label="Search Users"
-                prepend-inner-icon="mdi-magnify"
-                single-line
-                hide-details
-                clearable
-                class="mb-4"
-            ></v-text-field>
+          <v-form ref="userForm" @submit.prevent="saveUser">
+            <v-row>
+              <v-col cols="12" md="6">
+                <v-text-field v-model="editedItem.username" label="Username *" variant="outlined" density="compact" :rules="[v => !!v || 'Required']" :disabled="editedIndex > -1" />
+                <v-text-field v-model="editedItem.email" label="Email *" type="email" variant="outlined" density="compact" :rules="[v => !!v || 'Required', v => /.+@.+\..+/.test(v) || 'Invalid email']" />
+                <v-text-field 
+                    v-model="editedItem.password" 
+                    label="Password" 
+                    type="password" 
+                    variant="outlined" 
+                    density="compact" 
+                    :rules="passwordRules" 
+                    :hint="editedIndex > -1 ? 'Leave empty to keep current password' : ''"
+                    persistent-hint
+                />
+                <v-select
+                  v-model="editedItem.role"
+                  :items="['reader', 'staff', 'admin']"
+                  label="Role *"
+                  variant="outlined"
+                  density="compact"
+                  :rules="[v => !!v || 'Required']"
+                />
+              </v-col>
+              
+              <v-col cols="12" md="6">
+                <v-text-field v-model="editedItem.hoLot" label="Last Name" variant="outlined" density="compact" />
+                <v-text-field v-model="editedItem.ten" label="First Name *" variant="outlined" density="compact" :rules="[v => !!v || 'Required']" />
+                <v-text-field v-model="editedItem.dienThoai" label="Phone" variant="outlined" density="compact" />
+                <v-text-field v-model="editedItem.diaChi" label="Address" variant="outlined" density="compact" />
+                <v-select v-model="editedItem.gioiTinh" :items="['M', 'F', 'Other']" label="Gender" variant="outlined" density="compact" />
+                <v-text-field v-model="editedItem.ngaySinh" label="Date of Birth" type="date" variant="outlined" density="compact" />
+              </v-col>
+            </v-row>
 
-            <v-data-table-server
-                :headers="headers"
-                :items="users"
-                :items-length="totalUsers"
-                :loading="loading"
-                v-model:items-per-page="itemsPerPage"
-                v-model:page="currentPage"
-                @update:options="loadUsers"
-                class="elevation-1"
-            >
-                <template v-slot:item.role="{ item }">
-                    <v-chip :color="getRoleColor(item.role)" size="small">{{ item.role }}</v-chip>
-                </template>
-                <template v-slot:item.actions="{ item }">
-                    <v-icon small class="mr-2" @click="editUser(item)">mdi-pencil</v-icon>
-                    <v-icon small @click="confirmDeleteUser(item)">mdi-delete</v-icon>
-                </template>
-                <template v-slot:no-data>
-                    <v-alert type="info">No users found.</v-alert>
-                </template>
-            </v-data-table-server>
+            <v-alert v-if="dialogError" type="error" class="mt-4" density="compact">{{ dialogError }}</v-alert>
+          </v-form>
         </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey-darken-1" variant="text" @click="closeDialog">Cancel</v-btn>
+          <v-btn color="primary" variant="flat" @click="saveUser">Save</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
-        <v-dialog v-model="dialog" max-width="600px">
-            <v-card>
-                <v-card-title>
-                    <span class="text-h5">{{ formTitle }}</span>
-                </v-card-title>
-                <v-card-text>
-                    <v-form ref="userForm" @submit.prevent="saveUser">
-                        <v-text-field v-model="editedItem.username" label="Username" :rules="[v => !!v || 'Username is required']"></v-text-field>
-                        <v-text-field v-model="editedItem.email" label="Email" type="email" :rules="[v => !!v || 'Email is required', v => /.+@.+\..+/.test(v) || 'Email must be valid']"></v-text-field>
-                        <v-text-field v-model="editedItem.password" label="Password" type="password" :rules="[v => (!!v && !editedItem._id) || (v.length >= 6 || 'Password must be at least 6 characters')]"></v-text-field>
-                        <v-select
-                            v-model="editedItem.role"
-                            :items="['reader', 'staff', 'admin']"
-                            label="Role"
-                            :rules="[v => !!v || 'Role is required']"
-                        ></v-select>
-                        <v-text-field v-model="editedItem.hoLot" label="Họ lót"></v-text-field>
-                        <v-text-field v-model="editedItem.ten" label="Tên"></v-text-field>
-                        <v-text-field v-model="editedItem.dienThoai" label="Điện thoại"></v-text-field>
-                        <v-text-field v-model="editedItem.diaChi" label="Địa chỉ"></v-text-field>
-                        <v-select
-                            v-model="editedItem.gioiTinh"
-                            :items="['M', 'F', 'Other']"
-                            label="Giới tính"
-                        ></v-select>
-                        <v-text-field
-                            v-model="editedItem.ngaySinh"
-                            label="Ngày sinh (YYYY-MM-DD)"
-                            type="date"
-                        ></v-text-field>
+    <v-dialog v-model="deleteDialog" max-width="400px">
+      <v-card>
+        <v-card-title class="text-h6">Confirm Deletion</v-card-title>
+        <v-card-text>Are you sure you want to delete user "<strong>{{ userToDelete?.username }}</strong>"?</v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey" variant="text" @click="closeDeleteDialog">Cancel</v-btn>
+          <v-btn color="error" variant="flat" @click="deleteUser">Delete</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
-                        <v-alert v-if="dialogError" type="error" class="mb-4">{{ dialogError }}</v-alert>
-                    </v-form>
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer></v-spacer>
-                    <v-btn color="blue darken-1" text @click="closeDialog">Cancel</v-btn>
-                    <v-btn color="blue darken-1" text @click="saveUser">Save</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
-
-        <v-dialog v-model="deleteDialog" max-width="500px">
-            <v-card>
-                <v-card-title class="text-h5">Confirm Deletion</v-card-title>
-                <v-card-text>Are you sure you want to delete this user ({{ userToDelete?.username }})?</v-card-text>
-                <v-card-actions>
-                    <v-spacer></v-spacer>
-                    <v-btn color="blue darken-1" text @click="closeDeleteDialog">Cancel</v-btn>
-                    <v-btn color="error darken-1" text @click="deleteUser">Delete</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
-
-        <v-snackbar
-            v-model="snackbar.show"
-            :color="snackbar.color"
-            timeout="3000"
-        >
-            {{ snackbar.message }}
-            <template v-slot:actions>
-                <v-btn text @click="snackbar.show = false">Close</v-btn>
-            </template>
-        </v-snackbar>
-
-    </v-card>
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000">
+        {{ snackbar.message }}
+        <template v-slot:actions>
+            <v-btn text @click="snackbar.show = false">Close</v-btn>
+        </template>
+    </v-snackbar>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, nextTick, watch } from 'vue';
-// --- SỬA LỖI IMPORT TẠI ĐÂY ---
-import api from '../../services/api.service'; 
+import { ref, computed, onMounted, nextTick, watch } from 'vue';
+import api from '@/services/api.service'; // Import chuẩn
 import debounce from 'lodash.debounce';
 
+// State
 const users = ref([]);
 const loading = ref(true);
 const totalUsers = ref(0);
@@ -123,43 +156,53 @@ const search = ref('');
 
 const dialog = ref(false);
 const deleteDialog = ref(false);
+const dialogError = ref(null);
+const snackbar = ref({ show: false, message: '', color: '' });
+
 const editedIndex = ref(-1);
 const editedItem = ref({});
 const defaultItem = {
-    username: '',
-    email: '',
-    password: '',
-    role: 'reader',
-    hoLot: '',
-    ten: '',
-    ngaySinh: '',
-    gioiTinh: '',
-    diaChi: '',
-    dienThoai: ''
+    username: '', email: '', password: '', role: 'reader',
+    hoLot: '', ten: '', ngaySinh: '', gioiTinh: 'Other', diaChi: '', dienThoai: ''
 };
 const userToDelete = ref(null);
-const dialogError = ref(null);
 const userForm = ref(null);
 
-const snackbar = ref({
-    show: false,
-    message: '',
-    color: ''
-});
-
-
 const headers = [
-    { title: 'Username', key: 'username' },
-    { title: 'Email', key: 'email' },
+    { title: 'User Info', key: 'username', align: 'start' },
+    { title: 'Full Name', key: 'fullName' },
     { title: 'Role', key: 'role' },
-    { title: 'Full Name', key: 'ten', value: item => `${item.hoLot || ''} ${item.ten || ''}` },
     { title: 'Phone', key: 'dienThoai' },
-    { title: 'Actions', key: 'actions', sortable: false },
+    { title: 'Actions', key: 'actions', align: 'end', sortable: false },
 ];
 
 const formTitle = computed(() => (editedIndex.value === -1 ? 'Create New User' : 'Edit User'));
 
-const loadUsers = debounce(async ({ page, itemsPerPage: perPage, sortBy }) => {
+// Validate Password chỉ bắt buộc khi tạo mới
+const passwordRules = computed(() => {
+    const rules = [];
+    if (editedIndex.value === -1) { // Create mode
+        rules.push(v => !!v || 'Password is required');
+        rules.push(v => (v && v.length >= 6) || 'Min 6 characters');
+    } else { // Edit mode
+        if (editedItem.value.password) {
+            rules.push(v => v.length >= 6 || 'Min 6 characters');
+        }
+    }
+    return rules;
+});
+
+const getRoleColor = (role) => {
+    switch (role) {
+        case 'admin': return 'error';   // Đỏ
+        case 'staff': return 'warning'; // Cam/Vàng
+        case 'reader': return 'success'; // Xanh lá
+        default: return 'grey';
+    }
+};
+
+// --- API CALLS ---
+const loadUsers = debounce(async ({ page, itemsPerPage: perPage } = {}) => {
     loading.value = true;
     try {
         const params = {
@@ -168,27 +211,22 @@ const loadUsers = debounce(async ({ page, itemsPerPage: perPage, sortBy }) => {
             search: search.value,
         };
         const response = await api.get('/users', { params });
-        users.value = response.data; 
-        // Lưu ý: API /users hiện tại trả về mảng users trực tiếp, 
-        // nếu bạn đã update controller trả về { data, total } thì sửa lại dòng này.
-        // Tạm thời giả định trả về mảng như code cũ:
-        totalUsers.value = response.data.length; 
-        loading.value = false;
+        
+        // Xử lý data trả về (nếu backend trả mảng hoặc object {data, total})
+        if (Array.isArray(response.data)) {
+             users.value = response.data;
+             totalUsers.value = response.data.length; // Tạm thời nếu backend chưa phân trang chuẩn
+        } else {
+             users.value = response.data.data || response.data;
+             totalUsers.value = response.data.total || users.value.length;
+        }
     } catch (error) {
         console.error('Error loading users:', error);
         snackbar.value = { show: true, message: 'Failed to load users.', color: 'error' };
+    } finally {
         loading.value = false;
     }
 }, 300);
-
-const getRoleColor = (role) => {
-    switch (role) {
-        case 'admin': return 'red';
-        case 'staff': return 'orange';
-        case 'reader': return 'blue';
-        default: return 'grey';
-    }
-};
 
 const openCreateDialog = () => {
     editedItem.value = { ...defaultItem };
@@ -201,10 +239,11 @@ const openCreateDialog = () => {
 const editUser = (item) => {
     editedIndex.value = users.value.indexOf(item);
     editedItem.value = { ...item };
+    // Format ngày sinh để hiện đúng trong input date
     if (editedItem.value.ngaySinh) {
         editedItem.value.ngaySinh = new Date(editedItem.value.ngaySinh).toISOString().split('T')[0];
     }
-    editedItem.value.password = '';
+    editedItem.value.password = ''; // Xóa password để tránh hiện hash
     dialogError.value = null;
     dialog.value = true;
     nextTick(() => userForm.value?.resetValidation());
@@ -225,27 +264,24 @@ const saveUser = async () => {
 
     dialogError.value = null;
     try {
-        if (editedIndex.value > -1) { 
-            const userId = editedItem.value._id;
-            const payload = { ...editedItem.value };
+        const payload = { ...editedItem.value };
+        
+        // Bỏ password nếu rỗng (khi edit)
+        if (!payload.password) delete payload.password;
+        
+        if (editedIndex.value > -1) { // Update
+            const userId = payload._id;
             delete payload._id; 
-            if (!payload.password) {
-                delete payload.password;
-            }
-            const response = await api.put(`/users/${userId}`, payload);
-            Object.assign(users.value[editedIndex.value], response.data.user);
+            await api.put(`/users/${userId}`, payload);
             snackbar.value = { show: true, message: 'User updated successfully.', color: 'success' };
-        } else { 
-            const response = await api.post('/users', editedItem.value);
-            users.value.push(response.data.user);
-            totalUsers.value++;
+        } else { // Create
+            await api.post('/users', payload);
             snackbar.value = { show: true, message: 'User created successfully.', color: 'success' };
         }
         closeDialog();
-        loadUsers({}); 
+        loadUsers();
     } catch (error) {
         dialogError.value = error.response?.data?.message || 'Failed to save user.';
-        console.error('Error saving user:', error);
     }
 };
 
@@ -262,22 +298,25 @@ const closeDeleteDialog = () => {
 const deleteUser = async () => {
     try {
         await api.delete(`/users/${userToDelete.value._id}`);
-        users.value = users.value.filter(u => u._id !== userToDelete.value._id);
-        totalUsers.value--;
         snackbar.value = { show: true, message: 'User deleted successfully.', color: 'success' };
         closeDeleteDialog();
+        loadUsers();
     } catch (error) {
-        dialogError.value = error.response?.data?.message || 'Failed to delete user.';
-        snackbar.value = { show: true, message: dialogError.value, color: 'error' };
-        console.error('Error deleting user:', error);
+        const msg = error.response?.data?.message || 'Failed to delete user.';
+        snackbar.value = { show: true, message: msg, color: 'error' };
         closeDeleteDialog();
     }
 };
 
-watch(search, (newVal) => {
-    currentPage.value = 1;
-    loadUsers({});
-});
+const debouncedLoad = debounce(() => { currentPage.value = 1; loadUsers(); }, 500);
 
-loadUsers({});
+watch(search, () => { currentPage.value = 1; loadUsers(); });
+
+onMounted(() => { loadUsers({}); });
 </script>
+
+<style scoped>
+.custom-table { color: white !important; }
+:deep(.custom-table td) { border-bottom: 1px solid #334155 !important; }
+:deep(.custom-table tbody tr:hover) { background-color: #1e293b !important; }
+</style>

@@ -1,9 +1,9 @@
-// frontend/src/stores/auth.js
 import { defineStore } from 'pinia';
-import api from '../services/api.service'; // Import axios instance
+import api from '../services/api.service';
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
+    // Giữ nguyên logic lấy từ sessionStorage của bạn
     user: JSON.parse(sessionStorage.getItem('user')) || null,
     token: sessionStorage.getItem('token') || null,
     isAuthenticated: !!sessionStorage.getItem('token'),
@@ -11,20 +11,19 @@ export const useAuthStore = defineStore('auth', {
     loading: false,
   }),
   getters: {
-    // getters ở đây
     isAdmin: (state) => state.user?.role === 'admin',
     isStaff: (state) => state.user?.role === 'staff',
     isReader: (state) => state.user?.role === 'reader',
   },
   actions: {
+    // --- GIỮ NGUYÊN CÁC HÀM CŨ: register, login, logout, fetchUser ---
     async register(userData) {
       this.loading = true;
       this.error = null;
       try {
         const response = await api.post('/auth/register', userData);
-        // Lưu token và user vào sessionStorage
         sessionStorage.setItem('token', response.data.token);
-        sessionStorage.setItem('user', JSON.stringify(response.data.user));
+        sessionStorage.setItem('user', JSON.stringify(response.data.user)); // Backend giờ đã trả về có avatar
 
         this.token = response.data.token;
         this.user = response.data.user;
@@ -34,7 +33,7 @@ export const useAuthStore = defineStore('auth', {
       } catch (err) {
         this.error = err.response?.data?.message || 'Registration failed.';
         this.loading = false;
-        throw err; // Ném lỗi để component có thể xử lý
+        throw err;
       }
     },
 
@@ -44,7 +43,7 @@ export const useAuthStore = defineStore('auth', {
       try {
         const response = await api.post('/auth/login', credentials);
         sessionStorage.setItem('token', response.data.token);
-        sessionStorage.setItem('user', JSON.stringify(response.data.user));
+        sessionStorage.setItem('user', JSON.stringify(response.data.user)); // Backend giờ đã trả về có avatar
 
         this.token = response.data.token;
         this.user = response.data.user;
@@ -65,20 +64,29 @@ export const useAuthStore = defineStore('auth', {
       this.user = null;
       this.isAuthenticated = false;
       this.error = null;
-      // TODO: Có thể gọi API logout nếu cần xóa refresh token trên server
     },
 
-    // Action để kiểm tra và lấy lại thông tin user nếu chỉ có token trong sessionStorage (khi refresh trang)
     async fetchUser() {
       if (this.isAuthenticated && !this.user) {
         try {
-          // Gọi API để lấy thông tin user dựa trên token hiện có
-          const response = await api.get('/users/me'); // Cần tạo API '/users/me' trên backend
+          const response = await api.get('/users/me');
           this.user = response.data;
         } catch (error) {
           console.error('Failed to fetch user data on refresh:', error);
-          this.logout(); // Nếu token không hợp lệ, logout
+          this.logout();
         }
+      }
+    },
+
+    // --- THÊM HÀM MỚI NÀY VÀO CUỐI ACTIONS ---
+    // Hàm này giúp cập nhật avatar/cover ngay lập tức vào sessionStorage
+    // Gọi hàm này ở UserProfileView.vue sau khi upload thành công
+    updateUser(fieldsToUpdate) {
+      if (this.user) {
+        // Gộp thông tin cũ và thông tin mới (ví dụ chỉ có avatar mới)
+        this.user = { ...this.user, ...fieldsToUpdate };
+        // Lưu ngược lại vào sessionStorage để F5 không bị mất
+        sessionStorage.setItem('user', JSON.stringify(this.user));
       }
     }
   },

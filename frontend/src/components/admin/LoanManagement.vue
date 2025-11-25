@@ -188,19 +188,48 @@
       </v-data-table-server>
     </v-card>
 
-    <v-dialog v-model="confirmDialog.show" max-width="400">
-        <v-card color="#1e293b" class="text-white pa-4 rounded-lg">
-            <v-card-title class="text-h6">Confirm Loan?</v-card-title>
-            <v-card-text class="text-grey-lighten-2">
-                Approve request for <strong>{{ confirmDialog.loan?.bookId?.tenSach }}</strong>?
-                <v-alert v-if="confirmDialog.loan?.rentCost > 0 && !confirmDialog.loan?.isPaid" type="error" variant="tonal" class="mt-3" density="compact">
-                   <v-icon start>mdi-alert-circle</v-icon>
-                   Warning: User has NOT paid the rental fee ({{ formatCurrency(confirmDialog.loan.rentCost) }}).
-                </v-alert>
+    <v-dialog v-model="returnDialog.show" max-width="450">
+        <v-card color="#1e293b" class="text-white pa-4 rounded-lg border-opacity-12">
+            <v-card-title class="text-h6 d-flex align-center">
+                <v-icon start color="success" class="mr-2">mdi-book-check</v-icon>
+                Process Return
+            </v-card-title>
+            
+            <v-card-text class="text-grey-lighten-2 pt-4">
+                <div class="mb-4">
+                    Confirm return for book: <br/>
+                    <strong class="text-h6 text-white">{{ returnDialog.loan?.bookId?.tenSach }}</strong>
+                </div>
+
+                <!-- HIỂN THỊ CẢNH BÁO PHẠT (Dựa trên tính toán Preview) -->
+                <v-expand-transition>
+                    <div v-if="previewFine > 0" class="pa-3 rounded bg-red-darken-4 text-center border-red">
+                        <div class="text-overline text-white mb-1">OVERDUE WARNING</div>
+                        <div class="text-h4 font-weight-bold text-white mb-1">
+                            {{ formatCurrency(previewFine) }}
+                        </div>
+                        <div class="text-caption text-white opacity-90">
+                            Overdue by <strong>{{ previewDays }} days</strong>. Please collect fine from user.
+                        </div>
+                    </div>
+                    <div v-else class="pa-3 rounded bg-green-darken-4 text-center border-green">
+                        <v-icon color="white" class="mb-1">mdi-check-circle-outline</v-icon>
+                        <div class="font-weight-bold">On Time Return</div>
+                        <div class="text-caption">No fine required.</div>
+                    </div>
+                </v-expand-transition>
             </v-card-text>
-            <v-card-actions class="justify-end">
-                <v-btn color="grey" variant="text" @click="confirmDialog.show = false">Cancel</v-btn>
-                <v-btn color="primary" variant="flat" @click="executeConfirmLoan">Approve</v-btn>
+
+            <v-card-actions class="justify-end pt-2">
+                <v-btn color="grey-lighten-1" variant="text" @click="returnDialog.show = false">Cancel</v-btn>
+                <v-btn 
+                    color="success" 
+                    variant="elevated" 
+                    class="px-6 font-weight-bold"
+                    @click="executeProcessReturn"
+                >
+                    Confirm & Return
+                </v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -230,7 +259,7 @@
 
 <script setup>
 import { ref, watch, onMounted } from 'vue';
-import api from '../../services/api.service'; 
+import api from '@/services/api.service'; 
 import debounce from 'lodash.debounce';
 
 const loans = ref([]);
@@ -240,7 +269,8 @@ const itemsPerPage = ref(10);
 const currentPage = ref(1);
 const search = ref('');
 const filterStatus = ref(''); 
-
+const previewFine = ref(0);
+const previewDays = ref(0);
 // --- BIẾN THỐNG KÊ REAL-TIME (Không hardcode nữa) ---
 const stats = ref({
     total: 0,
@@ -311,15 +341,44 @@ const executeConfirmLoan = async () => {
     }
 }
 
-const processReturn = (item) => { returnDialog.value.loan = item; returnDialog.value.show = true; }
+const processReturn = (item) => { 
+    returnDialog.value.loan = item; 
+    
+    // LOGIC TÍNH TOÁN DỰ KIẾN (PREVIEW)
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    
+    const duKien = new Date(item.ngayHenTra);
+    duKien.setHours(0,0,0,0);
+    
+    // Nếu quá hạn thì tính tiền phạt dự kiến để Admin báo khách
+    if (today > duKien && item.status !== 'returned') {
+        const diffTime = Math.abs(today - duKien);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        previewDays.value = diffDays;
+        previewFine.value = diffDays * 5000; // 5000đ/ngày
+    } else {
+        previewDays.value = 0;
+        previewFine.value = item.phatTien || 0; // Nếu đã có phạt cũ thì hiện, không thì 0
+    }
+    
+    returnDialog.value.show = true; 
+}
 const executeProcessReturn = async () => {
     try {
-        await api.put(`/loans/${returnDialog.value.loan._id}/return`);
-        showSnackbar('Book returned!', 'success');
+        const res = await api.put(`/loans/${returnDialog.value.loan._id}/return`);
+        
+        // Kiểm tra kết quả trả về từ Backend xem có phạt thật không
+        if (res.data.phat && res.data.phat.coPhat) {
+            showSnackbar(`Trả sách thành công. Phí phạt: ${formatCurrency(res.data.phat.soTien)}`, 'warning');
+        } else {
+            showSnackbar('Trả sách thành công!', 'success');
+        }
+        
         returnDialog.value.show = false;
-        loadLoans(); // Reload bảng + Stats
+        loadLoans(); // Reload lại bảng
     } catch (error) {
-        showSnackbar(error.response?.data?.message || 'Return failed', 'error');
+        showSnackbar(error.response?.data?.message || 'Lỗi trả sách', 'error');
         returnDialog.value.show = false;
     }
 }
@@ -357,4 +416,6 @@ onMounted(() => {
 :deep(.custom-dark-table th) { color: #94a3b8 !important; text-transform: uppercase; font-size: 0.75rem; }
 :deep(.custom-dark-table td) { border-bottom: 1px solid #334155 !important; }
 :deep(.custom-dark-table tbody tr:hover) { background-color: #1e293b !important; }
+.border-red { border: 1px solid #ff5252; }
+.border-green { border: 1px solid #4caf50; }
 </style>

@@ -46,7 +46,6 @@
               </v-avatar>
             </template>
             <template v-slot:item.maNXB="{ item }"> {{ item.maNXB?.tenNXB || 'N/A' }} </template>
-            
             <template v-slot:item.categories="{ item }">
               <div class="d-flex flex-wrap gap-1">
                 <template v-for="cat in item.categories" :key="cat._id || cat">
@@ -62,7 +61,6 @@
                 </template>
               </div>
             </template>
-
             <template v-slot:item.availableCopies="{ item }">
               <v-chip :color="item.availableCopies > 0 ? 'success' : 'error'" size="small" variant="tonal" class="font-weight-bold">
                 {{ item.availableCopies }} / {{ item.soQuyen }}
@@ -83,40 +81,18 @@
             <v-card color="#1e293b" class="h-100 rounded-lg pa-2" elevation="0">
               <v-list bg-color="transparent" density="compact" nav>
                 <v-list-subheader class="text-uppercase text-caption text-grey mb-2">Select Category</v-list-subheader>
-                
-                <v-list-item
-                  value="all_cat"
-                  active-color="primary"
-                  :active="!selectedCategoryFilter"
-                  @click="filterByCategory(null)"
-                  rounded="lg"
-                  class="mb-1 text-white"
-                >
+                <v-list-item value="all_cat" active-color="primary" :active="!selectedCategoryFilter" @click="filterByCategory(null)" rounded="lg" class="mb-1 text-white">
                   <template v-slot:prepend><v-icon size="small">mdi-apps</v-icon></template>
                   <v-list-item-title>All Categories</v-list-item-title>
                 </v-list-item>
-
                 <v-divider class="my-2 border-opacity-12"></v-divider>
-
-                <v-list-item
-                  v-for="cat in categories"
-                  :key="cat._id"
-                  :value="cat.tenTheLoai"
-                  active-color="primary"
-                  :active="selectedCategoryFilter === cat.tenTheLoai"
-                  @click="filterByCategory(cat.tenTheLoai)"
-                  rounded="lg"
-                  class="mb-1 text-white"
-                >
-                   <template v-slot:prepend>
-                      <v-icon size="small" :color="getCategoryColor(cat.tenTheLoai)">mdi-circle</v-icon>
-                   </template>
+                <v-list-item v-for="cat in categories" :key="cat._id" :value="cat.tenTheLoai" active-color="primary" :active="selectedCategoryFilter === cat.tenTheLoai" @click="filterByCategory(cat.tenTheLoai)" rounded="lg" class="mb-1 text-white">
+                   <template v-slot:prepend><v-icon size="small" :color="getCategoryColor(cat.tenTheLoai)">mdi-circle</v-icon></template>
                    <v-list-item-title>{{ cat.tenTheLoai }}</v-list-item-title>
                 </v-list-item>
               </v-list>
             </v-card>
           </v-col>
-
           <v-col cols="12" md="9">
             <v-card color="#1e293b" class="h-100 rounded-lg pa-4" elevation="0">
               <div class="d-flex justify-space-between align-center mb-4">
@@ -126,7 +102,6 @@
                  </h3>
                  <v-chip size="small" color="primary" variant="flat">{{ totalBooks }} books</v-chip>
               </div>
-
               <v-data-table-server
                 :headers="headers"
                 :items="books"
@@ -144,23 +119,15 @@
                   </v-avatar>
                 </template>
                 <template v-slot:item.maNXB="{ item }"> {{ item.maNXB?.tenNXB || 'N/A' }} </template>
-                
                 <template v-slot:item.categories="{ item }">
                   <div class="d-flex flex-wrap gap-1">
                     <template v-for="cat in item.categories" :key="cat._id || cat">
-                      <v-chip 
-                        v-if="cat && cat.tenTheLoai"
-                        :color="getCategoryColor(cat.tenTheLoai)" 
-                        variant="flat" 
-                        size="x-small" 
-                        class="font-weight-bold text-white"
-                      >
+                      <v-chip v-if="cat && cat.tenTheLoai" :color="getCategoryColor(cat.tenTheLoai)" variant="flat" size="x-small" class="font-weight-bold text-white">
                         {{ cat.tenTheLoai }}
                       </v-chip>
                     </template>
                   </div>
                 </template>
-
                 <template v-slot:item.availableCopies="{ item }">
                   <v-chip :color="item.availableCopies > 0 ? 'success' : 'error'" size="small" variant="tonal" class="font-weight-bold">
                     {{ item.availableCopies }} / {{ item.soQuyen }}
@@ -172,7 +139,6 @@
                   <v-icon small color="error" @click="confirmDeleteBook(item)">mdi-delete</v-icon>
                 </template>
               </v-data-table-server>
-
             </v-card>
           </v-col>
         </v-row>
@@ -200,8 +166,29 @@
                 <v-textarea v-model="editedItem.moTa" label="Description" variant="outlined" rows="3" />
                 <v-text-field v-model="editedItem.donGia" label="Price" type="number" variant="outlined" density="compact" />
                 <v-text-field v-model="editedItem.soQuyen" label="Total Copies" type="number" variant="outlined" density="compact" />
-                <v-text-field v-model="editedItem.coverUrl" label="Image URL" variant="outlined" density="compact" />
-                <v-img :src="editedItem.coverUrl || 'https://via.placeholder.com/150'" height="120" contain class="mt-2 bg-grey-lighten-4 rounded" />
+                
+                <!-- FIX: Xóa v-model và dùng @change hoặc @update:model-value -->
+                <v-file-input
+                  label="Cover Image (Upload from PC)"
+                  variant="outlined"
+                  density="compact"
+                  prepend-icon="mdi-camera"
+                  accept="image/*"
+                  :show-size="true"
+                  class="mb-2"
+                  @change="handleFileChange"
+                  clearable
+                ></v-file-input>
+
+                <div class="text-center">
+                   <span class="text-caption text-grey">Preview:</span>
+                   <v-img 
+                      :src="previewUploadUrl || editedItem.coverUrl || 'https://via.placeholder.com/150'" 
+                      height="140" 
+                      contain 
+                      class="mt-1 bg-grey-lighten-4 rounded border"
+                   />
+                </div>
               </v-col>
             </v-row>
           </v-form>
@@ -233,12 +220,12 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick, watch } from 'vue';
-import api from '../../services/api.service';
+import api from '@/services/api.service';
 import debounce from 'lodash.debounce';
 import CategoryManagement from './CategoryManagement.vue';
 import PublisherManagement from './PublisherManagement.vue';
 
-// --- STATE ---
+// State
 const currentTab = ref('all');
 const books = ref([]);
 const categories = ref([]);
@@ -250,14 +237,16 @@ const currentPage = ref(1);
 const search = ref('');
 const selectedCategoryFilter = ref(null);
 
-// Dialogs
+// File Upload State - FIX: Không cần fileInput ref nữa
+const selectedFile = ref(null);
+const previewUploadUrl = ref(null);
+
 const dialog = ref(false);
 const deleteDialog = ref(false);
 const imageDialog = ref(false);
 const previewImageUrl = ref('');
 const snackbar = ref({ show: false, message: '', color: '' });
 
-// Edit State
 const editedIndex = ref(-1);
 const editedItem = ref({ tacGia: [''], categories: [] });
 const defaultItem = {
@@ -279,27 +268,48 @@ const headers = [
 ];
 
 const formTitle = computed(() => (editedIndex.value === -1 ? 'Add New Book' : 'Edit Book'));
-
-// --- HELPERS ---
 const formatCurrency = (val) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
 
-// HÀM MÀU SẮC ĐÃ ĐƯỢC KHÔI PHỤC ĐẦY ĐỦ
 const getCategoryColor = (catName) => {
     if (!catName) return 'grey';
     const lower = catName.toLowerCase();
-    if (lower.includes('fantasy')) return '#8E24AA'; // Tím
-    if (lower.includes('sci')) return '#1E88E5';     // Xanh dương
-    if (lower.includes('history') || lower.includes('lịch sử')) return '#F57C00'; // Cam
-    if (lower.includes('mystery')) return '#00897B'; // Xanh Teal
-    if (lower.includes('thiếu nhi')) return '#43A047'; // Xanh lá
-    if (lower.includes('văn học')) return '#D81B60'; // Hồng đậm
-    if (lower.includes('kinh tế')) return '#5D4037'; // Nâu
-    if (lower.includes('tâm lý') || lower.includes('kỹ năng')) return '#00ACC1'; // Cyan
-    if (lower.includes('truyện tranh') || lower.includes('comic')) return '#FFC107'; // Vàng
-    return 'primary'; // Mặc định
+    if (lower.includes('fantasy')) return '#8E24AA';
+    if (lower.includes('sci')) return '#1E88E5';
+    if (lower.includes('history')) return '#F57C00';
+    if (lower.includes('mystery')) return '#00897B';
+    if (lower.includes('thiếu nhi')) return '#43A047';
+    if (lower.includes('văn học')) return '#D81B60';
+    if (lower.includes('kinh tế')) return '#5D4037';
+    return 'primary';
 };
 
-// --- LOAD DATA ---
+// --- FIX: Hàm xử lý file upload đơn giản và rõ ràng ---
+const handleFileChange = (event) => {
+    console.log('File change event:', event);
+    
+    // Xử lý cả event object và array từ v-file-input
+    const file = event?.target?.files?.[0] || event?.[0] || event;
+    
+    if (file && file instanceof File) {
+        console.log('File selected:', file.name, file.type, file.size);
+        selectedFile.value = file;
+        
+        // Tạo preview URL
+        if (previewUploadUrl.value) {
+            URL.revokeObjectURL(previewUploadUrl.value); // Clean up old URL
+        }
+        previewUploadUrl.value = URL.createObjectURL(file);
+        console.log('Preview URL created:', previewUploadUrl.value);
+    } else {
+        console.log('No valid file selected');
+        selectedFile.value = null;
+        if (previewUploadUrl.value) {
+            URL.revokeObjectURL(previewUploadUrl.value);
+        }
+        previewUploadUrl.value = null;
+    }
+};
+
 const loadBooks = debounce(async () => {
     loading.value = true;
     try {
@@ -314,36 +324,50 @@ const loadBooks = debounce(async () => {
         const response = await api.get('/books', { params });
         books.value = response.data.data;
         totalBooks.value = response.data.total;
-    } catch (error) {
-        console.error('Error:', error);
-    } finally {
-        loading.value = false;
-    }
+    } catch (error) { 
+        console.error('Load books error:', error); 
+        snackbar.value = { show: true, message: 'Failed to load books', color: 'error' };
+    } 
+    finally { loading.value = false; }
 }, 300);
 
 const fetchMetadata = async () => {
     try {
-        const [catRes, pubRes] = await Promise.all([api.get('/categories'), api.get('/publishers')]);
-        categories.value = catRes.data;
-        publishers.value = pubRes.data;
-    } catch (e) {}
+        const [catRes, pubRes] = await Promise.all([
+            api.get('/categories'),
+            api.get('/publishers')
+        ]);
+        categories.value = Array.isArray(catRes.data) ? catRes.data : (catRes.data.data || []);
+        publishers.value = Array.isArray(pubRes.data) ? pubRes.data : (pubRes.data.data || []);
+    } catch (e) { 
+        console.error("Metadata error:", e);
+        snackbar.value = { show: true, message: 'Failed to load metadata', color: 'error' };
+    }
 };
 
-// --- ACTIONS ---
 const filterByCategory = (catName) => {
     selectedCategoryFilter.value = catName;
     currentPage.value = 1;
     loadBooks();
 };
-
 const debouncedLoad = debounce(() => { currentPage.value = 1; loadBooks(); }, 500);
 
-const openCreateDialog = () => {
+const openCreateDialog = async () => {
+    await fetchMetadata();
+    
     editedItem.value = { ...defaultItem, tacGia: [''], categories: [] };
+    selectedFile.value = null;
+    if (previewUploadUrl.value) {
+        URL.revokeObjectURL(previewUploadUrl.value);
+    }
+    previewUploadUrl.value = null;
     editedIndex.value = -1;
     dialog.value = true;
 };
-const editBook = (item) => {
+
+const editBook = async (item) => {
+    await fetchMetadata();
+
     editedIndex.value = books.value.indexOf(item);
     const copy = JSON.parse(JSON.stringify(item));
     editedItem.value = {
@@ -352,62 +376,135 @@ const editBook = (item) => {
         categories: copy.categories.map(c => c._id || c),
         tacGia: copy.tacGia?.length ? copy.tacGia : ['']
     };
+    selectedFile.value = null;
+    if (previewUploadUrl.value) {
+        URL.revokeObjectURL(previewUploadUrl.value);
+    }
+    previewUploadUrl.value = null;
     dialog.value = true;
 };
-const saveBook = async () => {
-     try {
-        const payload = { ...editedItem.value };
-        if (payload.tacGia) payload.tacGia = payload.tacGia.filter(a => a.trim());
-        delete payload._id;
 
-        if (editedIndex.value > -1) {
-            await api.put(`/books/${editedItem.value._id}`, payload);
-            snackbar.value = { show: true, message: 'Updated!', color: 'success' };
-        } else {
-            await api.post('/books', payload);
-            snackbar.value = { show: true, message: 'Created!', color: 'success' };
+const saveBook = async () => {
+    const { valid } = await bookForm.value.validate();
+    if (!valid) {
+        snackbar.value = { show: true, message: 'Please fill all required fields', color: 'warning' };
+        return;
+    }
+    
+    try {
+        const formData = new FormData();
+        
+        // Thêm các trường bắt buộc
+        formData.append('tenSach', editedItem.value.tenSach);
+        
+        if (editedItem.value.maNXB) {
+            const publisherId = typeof editedItem.value.maNXB === 'object' 
+                ? editedItem.value.maNXB._id 
+                : editedItem.value.maNXB;
+            formData.append('maNXB', publisherId);
         }
+        
+        // Thêm các trường optional
+        if(editedItem.value.donGia) formData.append('donGia', editedItem.value.donGia);
+        if(editedItem.value.soQuyen) formData.append('soQuyen', editedItem.value.soQuyen);
+        if(editedItem.value.isbn) formData.append('isbn', editedItem.value.isbn);
+        if(editedItem.value.namXuatBan) formData.append('namXuatBan', editedItem.value.namXuatBan);
+        if(editedItem.value.moTa) formData.append('moTa', editedItem.value.moTa);
+
+        // Xử lý tác giả
+        if (editedItem.value.tacGia) {
+             const validAuthors = editedItem.value.tacGia.filter(a => a && a.trim());
+             formData.append('tacGia', JSON.stringify(validAuthors));
+        }
+        
+        // Xử lý categories
+        if (editedItem.value.categories && editedItem.value.categories.length > 0) {
+             formData.append('categories', JSON.stringify(editedItem.value.categories));
+        }
+
+        // FIX: Thêm file vào FormData nếu có
+        if (selectedFile.value) {
+            console.log('Appending file to FormData:', selectedFile.value.name);
+            formData.append('coverImage', selectedFile.value);
+        }
+
+        // Log FormData để debug
+        console.log('FormData entries:');
+        for (let pair of formData.entries()) {
+            console.log(pair[0], pair[1]);
+        }
+
+        let response;
+        if (editedIndex.value > -1) {
+            response = await api.put(`/books/${editedItem.value._id}`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            snackbar.value = { show: true, message: 'Book updated successfully!', color: 'success' };
+        } else {
+            response = await api.post('/books', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            snackbar.value = { show: true, message: 'Book created successfully!', color: 'success' };
+        }
+        
+        console.log('Save response:', response);
         dialog.value = false;
+        
+        // Clean up
+        if (previewUploadUrl.value) {
+            URL.revokeObjectURL(previewUploadUrl.value);
+        }
+        selectedFile.value = null;
+        previewUploadUrl.value = null;
+        
         loadBooks();
     } catch (e) {
-        dialogError.value = e.response?.data?.message || "Error";
+        console.error('Save error:', e);
+        const errorMsg = e.response?.data?.message || e.message || "Error saving book";
+        snackbar.value = { show: true, message: errorMsg, color: 'error' };
     }
 };
-const confirmDeleteBook = (item) => { bookToDelete.value = item; deleteDialog.value = true; };
+
+const confirmDeleteBook = (item) => { 
+    bookToDelete.value = item; 
+    deleteDialog.value = true; 
+};
+
 const deleteBook = async () => {
-    try {
+     try {
         await api.delete(`/books/${bookToDelete.value._id}`);
-        
-        // Thông báo thành công
-        snackbar.value = { show: true, message: 'Book deleted successfully.', color: 'success' };
-        closeDeleteDialog();
+        snackbar.value = { show: true, message: 'Book deleted successfully', color: 'success' };
+        deleteDialog.value = false;
         loadBooks();
     } catch (error) {
-        console.error('Error deleting book:', error);
-        
-        // 1. Lấy thông báo lỗi cụ thể từ Backend (Chính là câu "Cannot delete...")
-        const errorMessage = error.response?.data?.message || 'Failed to delete book.';
-        
-        // 2. Hiển thị lên Snackbar
-        snackbar.value = { show: true, message: errorMessage, color: 'error' };
-        
-        // 3. Đóng dialog để người dùng nhìn thấy thông báo lỗi trên màn hình chính
-        closeDeleteDialog();
+        console.error('Delete error:', error);
+        const errorMsg = error.response?.data?.message || 'Delete failed';
+        snackbar.value = { show: true, message: errorMsg, color: 'error' };
+        deleteDialog.value = false;
     }
 };
-const showImagePreview = (url) => { previewImageUrl.value = url; imageDialog.value = true; };
 
-// Watcher
-watch(currentTab, () => {
-    search.value = '';
-    selectedCategoryFilter.value = null;
-    currentPage.value = 1;
-    loadBooks();
+const showImagePreview = (url) => { 
+    if(url) { 
+        previewImageUrl.value = url; 
+        imageDialog.value = true; 
+    } 
+};
+
+watch(currentTab, () => { 
+    search.value = ''; 
+    selectedCategoryFilter.value = null; 
+    currentPage.value = 1; 
+    loadBooks(); 
 });
 
-onMounted(() => {
-    fetchMetadata();
-    loadBooks();
+onMounted(() => { 
+    fetchMetadata(); 
+    loadBooks(); 
 });
 </script>
 
@@ -416,4 +513,5 @@ onMounted(() => {
 .custom-table { color: white !important; }
 :deep(.custom-table td) { border-bottom: 1px solid #334155 !important; }
 :deep(.custom-table tbody tr:hover) { background-color: #1e293b !important; }
+.cursor-pointer { cursor: pointer; }
 </style>

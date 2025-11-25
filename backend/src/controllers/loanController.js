@@ -1,5 +1,7 @@
-
 const loanService = require('../services/loanService');
+// --- THÊM IMPORT MODEL ĐỂ XỬ LÝ LOGIC TRẢ SÁCH ---
+const Loan = require('../models/loan');
+const Book = require('../models/book');
 
 // @desc    Request to borrow a book
 // @route   POST /api/loans/request
@@ -7,7 +9,7 @@ const loanService = require('../services/loanService');
 const requestLoan = async (req, res, next) => {
   try {
     const { bookId, ngayHenTra } = req.body;
-    const userId = req.user._id; // Lấy ID của người dùng từ token
+    const userId = req.user._id;
 
     if (!bookId || !ngayHenTra) {
       return res.status(400).json({ message: 'Book ID and return due date are required.' });
@@ -29,7 +31,7 @@ const requestLoan = async (req, res, next) => {
 const confirmLoan = async (req, res, next) => {
   try {
     const loanId = req.params.id;
-    const staffUserId = req.user._id; // Lấy ID nhân viên/admin từ token
+    const staffUserId = req.user._id;
 
     const confirmedLoan = await loanService.confirmLoan(loanId, staffUserId);
     res.status(200).json({ message: 'Loan confirmed successfully.', loan: confirmedLoan });
@@ -41,20 +43,87 @@ const confirmLoan = async (req, res, next) => {
   }
 };
 
-// @desc    Process book return
+// ==================================================================
+// @desc    Process book return (ĐÃ CẬP NHẬT TÍNH TIỀN PHẠT)
 // @route   PUT /api/loans/:id/return
 // @access  Private/Staff, Admin
+// ==================================================================
 const processReturn = async (req, res, next) => {
   try {
     const loanId = req.params.id;
-    const staffUserId = req.user._id; // Lấy ID nhân viên/admin từ token
-
-    const returnedLoan = await loanService.processReturn(loanId, staffUserId);
-    res.status(200).json({ message: 'Book returned successfully.', loan: returnedLoan });
-  } catch (error) {
-    if (error.message.includes('Loan not found') || error.message.includes('already been returned')) {
-      return res.status(400).json({ message: error.message });
+    
+    // 1. Tìm phiếu mượn và populate thông tin sách
+    // Lưu ý: Dùng 'bookId' theo đúng Model bạn cung cấp
+    const loan = await Loan.findById(loanId).populate('bookId');
+    
+    if (!loan) {
+      return res.status(404).json({ message: 'Loan not found.' });
     }
+
+    if (loan.status === 'returned') {
+      return res.status(400).json({ message: 'This book has already been returned.' });
+    }
+
+    // 2. TÍNH TOÁN NGÀY QUÁ HẠN & TIỀN PHẠT
+    const today = new Date();
+    const duKien = new Date(loan.ngayHenTra); // Model của bạn dùng 'ngayHenTra'
+    
+    // Đặt giờ về 00:00:00 để chỉ so sánh ngày
+    today.setHours(0,0,0,0);
+    duKien.setHours(0,0,0,0);
+
+    let tienPhat = 0;
+    let lyDo = '';
+    let soNgayQuaHan = 0;
+
+    // Nếu ngày trả thực tế (hôm nay) lớn hơn ngày hẹn trả
+    if (today > duKien) {
+      const diffTime = Math.abs(today - duKien);
+      soNgayQuaHan = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+      
+      const PHI_PHAT_MOI_NGAY = 5000; // Cấu hình: 5k / 1 ngày
+      tienPhat = soNgayQuaHan * PHI_PHAT_MOI_NGAY;
+      lyDo = `Quá hạn ${soNgayQuaHan} ngày`;
+    }
+
+    // 3. Cập nhật thông tin phiếu mượn
+    loan.ngayTraThucTe = Date.now();
+    loan.status = 'returned';
+    loan.phatTien = tienPhat; // Model của bạn dùng 'phatTien'
+    loan.lyDoPhat = lyDo;      // (Nếu model chưa có trường này thì nó sẽ tự bỏ qua, không lỗi)
+    
+    // Nếu có tiền phạt -> chưa thanh toán (false), nếu không phạt -> coi như xong (true)
+    loan.isFinePaid = tienPhat === 0;
+    // Cập nhật luôn trạng thái thanh toán chung nếu cần
+    if (tienPhat === 0 && loan.isPaid) {
+        // Giữ nguyên logic cũ
+    } else if (tienPhat > 0) {
+        loan.isPaid = false; // Có phát sinh phí mới nên set lại chưa thanh toán hết
+    }
+
+    // 4. Cộng lại số lượng sách vào kho (Stock)
+    if (loan.bookId) {
+      const book = await Book.findById(loan.bookId._id);
+      if (book) {
+        book.stock = (book.stock || 0) + 1;
+        await book.save();
+      }
+    }
+
+    await loan.save();
+
+    // 5. Trả về kết quả cho Frontend (Frontend cần cục 'phat' này để hiển thị)
+    res.status(200).json({ 
+      message: 'Book returned successfully.', 
+      loan: loan,
+      phat: {
+        coPhat: tienPhat > 0,
+        soTien: tienPhat,
+        soNgay: soNgayQuaHan
+      }
+    });
+
+  } catch (error) {
     next(error);
   }
 };
@@ -77,7 +146,7 @@ const cancelLoan = async (req, res, next) => {
     }
 };
 
-// @desc    Get all loans (for Admin/Staff) or user's loans (for Reader)
+// @desc    Get all loans
 // @route   GET /api/loans
 // @access  Private/Reader, Staff, Admin
 const getLoans = async (req, res, next) => {
@@ -88,11 +157,9 @@ const getLoans = async (req, res, next) => {
 
     if (status) query.status = status;
 
-    // Nếu là admin/staff, có thể lọc theo userId khác
-    // Nếu là reader, chỉ xem được loans của mình
     if (req.user.role === 'reader') {
       query.userId = req.user._id;
-    } else if (userId) { // Admin/Staff có thể lọc theo userId cụ thể
+    } else if (userId) {
       query.userId = userId;
     }
 
@@ -120,7 +187,6 @@ const getLoan = async (req, res, next) => {
       return res.status(404).json({ message: 'Loan not found.' });
     }
 
-    // Chỉ cho phép user xem loan của mình, hoặc admin/staff xem bất kỳ
     if (req.user._id.toString() !== loan.userId._id.toString() && !['admin', 'staff'].includes(req.user.role)) {
       return res.status(403).json({ message: 'Not authorized to view this loan.' });
     }
@@ -135,11 +201,11 @@ const getLoan = async (req, res, next) => {
 };
 
 // @desc    Get loans for calendar view
-// @route   GET /api/loans/calendar?year=...&month=...
+// @route   GET /api/loans/calendar
 // @access  Private/Reader, Staff, Admin
 const getLoansForCalendar = async (req, res, next) => {
     try {
-        const { year, month, userId } = req.query; // userId có thể được cung cấp bởi admin/staff
+        const { year, month, userId } = req.query;
 
         if (!year || !month) {
             return res.status(400).json({ message: 'Year and month are required for calendar view.' });
@@ -147,8 +213,8 @@ const getLoansForCalendar = async (req, res, next) => {
 
         let queryUserId = null;
         if (req.user.role === 'reader') {
-            queryUserId = req.user._id; // Reader chỉ xem của mình
-        } else if (userId) { // Admin/Staff có thể xem của user khác
+            queryUserId = req.user._id;
+        } else if (userId) {
             queryUserId = userId;
         }
 
@@ -167,6 +233,7 @@ const getStats = async (req, res, next) => {
     next(error);
   }
 };
+
 const deleteLoan = async (req, res, next) => {
   try {
     await loanService.deleteLoan(req.params.id);
@@ -175,7 +242,6 @@ const deleteLoan = async (req, res, next) => {
     next(error);
   }
 };
-
 
 module.exports = {
   requestLoan,
