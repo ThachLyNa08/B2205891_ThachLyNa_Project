@@ -109,103 +109,165 @@
        </v-row>
     </section>
 
-    <v-dialog v-model="dialog" max-width="500" persistent>
-      <v-card class="rounded-xl pa-4">
+    <v-dialog v-model="dialog" max-width="600" persistent transition="dialog-bottom-transition">
+      <v-card class="rounded-xl overflow-hidden">
         
-        <div v-if="currentStep === 1">
-          <v-card-title class="text-h5 font-weight-bold text-center">Rental Details</v-card-title>
-          <v-card-text>
-            <div class="text-center mb-4 text-medium-emphasis">
-              Select a return date to calculate the fee.
+        <div class="dialog-header bg-primary d-flex align-center px-6 py-4">
+           <v-icon color="white" start class="mr-3">mdi-book-clock-outline</v-icon>
+           <div class="text-h6 font-weight-bold text-white">
+              {{ currentStep === 1 ? 'Xác nhận mượn sách' : 'Thanh toán & Hoàn tất' }}
+           </div>
+           <v-spacer></v-spacer>
+           <v-btn icon="mdi-close" variant="text" color="white" density="compact" @click="dialog = false"></v-btn>
+        </div>
+
+        <v-card-text class="pa-0 bg-grey-lighten-5">
+          <div v-if="currentStep === 1" class="pa-6">
+            
+            <div class="d-flex gap-4 mb-6 align-start">
+               <v-img 
+                  :src="book.coverUrl" 
+                  width="80" 
+                  height="120" 
+                  cover 
+                  class="rounded-lg elevation-3 flex-grow-0"
+               ></v-img>
+               <div>
+                  <div class="text-h6 font-weight-bold text-primary mb-1 line-clamp-2">{{ book.tenSach }}</div>
+                  <div class="text-body-2 text-medium-emphasis mb-1">{{ book.tacGia.join(', ') }}</div>
+                  <v-chip size="x-small" color="success" variant="flat" class="font-weight-bold">
+                     <v-icon start size="small">mdi-check-circle</v-icon> Sẵn sàng
+                  </v-chip>
+               </div>
             </div>
 
-            <v-text-field
-              v-model="returnDate"
-              label="Return Date"
-              type="date"
-              variant="outlined"
-              :min="minDate"
-              @change="calculateRent"
-              prepend-inner-icon="mdi-calendar"
-              color="secondary"
-            ></v-text-field>
+            <v-divider class="mb-6 border-dashed"></v-divider>
 
-            <v-card variant="tonal" color="secondary" class="pa-4 mt-2 rounded-lg">
-              <div class="d-flex justify-space-between mb-2">
-                <span>Price per Day:</span>
-                <strong>{{ formatCurrency(book.pricePerDay || 2000) }}</strong>
-              </div>
-              <div class="d-flex justify-space-between mb-2">
-                <span>Duration:</span>
-                <strong>{{ duration }} days</strong>
-              </div>
-              <v-divider class="my-2"></v-divider>
-              <div class="d-flex justify-space-between text-h6 font-weight-bold">
-                <span>Total Cost:</span>
-                <span>{{ formatCurrency(estimatedCost) }}</span>
-              </div>
+            <div class="mb-6">
+               <label class="text-subtitle-2 font-weight-bold text-grey-darken-2 mb-2 d-block">Ngày trả dự kiến</label>
+               <v-text-field
+                  v-model="returnDate"
+                  type="date"
+                  variant="outlined"
+                  density="comfortable"
+                  bg-color="white"
+                  color="primary"
+                  :min="minDate"
+                  @change="calculateRent"
+                  prepend-inner-icon="mdi-calendar-range"
+                  hide-details
+                  class="rounded-lg"
+               ></v-text-field>
+               <div class="text-caption text-grey mt-2 ml-1">
+                  <v-icon size="small" start>mdi-information-outline</v-icon>
+                  Phí thuê được tính theo số ngày bạn giữ sách.
+               </div>
+            </div>
+
+            <v-card variant="outlined" color="grey-lighten-2" class="bg-white rounded-lg pa-4 bill-card">
+               <div class="d-flex justify-space-between mb-2 text-body-2">
+                  <span class="text-grey-darken-1">Đơn giá thuê/ngày</span>
+                  <span class="font-weight-medium">{{ formatCurrency(book.pricePerDay || 2000) }}</span>
+               </div>
+               <div class="d-flex justify-space-between mb-3 text-body-2">
+                  <span class="text-grey-darken-1">Thời gian thuê</span>
+                  <span class="font-weight-medium">{{ duration }} ngày</span>
+               </div>
+               
+               <v-divider class="border-dashed my-3"></v-divider>
+               
+               <div class="d-flex justify-space-between align-center">
+                  <span class="text-subtitle-1 font-weight-bold text-grey-darken-3">Tổng cộng</span>
+                  <span class="text-h5 font-weight-bold text-primary">{{ formatCurrency(estimatedCost) }}</span>
+               </div>
             </v-card>
-          </v-card-text>
-          <v-card-actions class="justify-center pb-4">
-             <v-btn variant="text" @click="dialog = false">Cancel</v-btn>
-             <v-btn 
-               color="primary" 
-               variant="flat" 
-               size="large" 
-               class="px-6"
-               @click="confirmLoan"
-               :loading="loanLoading"
-               :disabled="!returnDate"
-             >
-               Confirm & Borrow
-             </v-btn>
-          </v-card-actions>
-        </div>
 
-        <div v-else-if="currentStep === 2" class="py-4">
-          <div class="text-center mb-4">
-             <v-icon color="success" size="50">mdi-check-circle</v-icon>
-             <h3 class="text-h6 font-weight-bold text-success">Loan Created!</h3>
           </div>
 
-          <div class="px-4">
-              <v-text-field 
-                label="Billing Name" 
-                v-model="billingName" 
-                density="compact" 
-                variant="outlined" 
-                prepend-inner-icon="mdi-account"
-                class="mb-2"
-              ></v-text-field>
-              
-              <v-text-field 
-                label="Phone Number" 
-                v-model="billingPhone" 
-                density="compact" 
-                variant="outlined" 
-                prepend-inner-icon="mdi-phone"
-                class="mb-2"
-              ></v-text-field>
+          <div v-else-if="currentStep === 2" class="pa-6 text-center">
+             <div class="mb-6">
+                <v-avatar color="success-lighten-4" size="80" class="mb-4">
+                   <v-icon color="success" size="40">mdi-check-decagram</v-icon>
+                </v-avatar>
+                <h3 class="text-h5 font-weight-bold text-grey-darken-3">Tạo phiếu thành công!</h3>
+                <p class="text-body-2 text-grey">Vui lòng hoàn tất thanh toán để nhận sách.</p>
+             </div>
 
-              <div class="text-subtitle-2 font-weight-bold mb-1">Payment Method</div>
-              <v-radio-group v-model="paymentMethod" color="primary" inline density="compact">
-                <v-radio value="e-wallet" label="E-Wallet"></v-radio>
-                <v-radio value="credit_card" label="Credit Card"></v-radio>
-              </v-radio-group>
-              
-              <v-card variant="outlined" class="pa-3 mb-4 bg-grey-lighten-5 text-center">
-                <div class="text-caption text-uppercase">Amount to Pay</div>
-                <div class="text-h5 font-weight-bold text-primary">{{ formatCurrency(createdLoan?.rentCost || estimatedCost) }}</div>
-              </v-card>
+             <div class="text-left">
+                <v-text-field 
+                  v-model="billingName" 
+                  label="Tên người thanh toán" 
+                  variant="outlined" density="compact" bg-color="white" class="mb-3 rounded-lg"
+                  prepend-inner-icon="mdi-account"
+                ></v-text-field>
+                <v-text-field 
+                  v-model="billingPhone" 
+                  label="Số điện thoại" 
+                  variant="outlined" density="compact" bg-color="white" class="mb-4 rounded-lg"
+                  prepend-inner-icon="mdi-phone"
+                ></v-text-field>
 
-              <v-btn block color="success" size="large" @click="processPayment" :loading="paymentLoading" class="mb-2">
-                 Pay Now
-              </v-btn>
-              <v-btn block variant="text" color="secondary" @click="finishProcess">
-                 Pay Later
-              </v-btn>
+                <div class="text-subtitle-2 font-weight-bold mb-2">Phương thức thanh toán</div>
+                <v-radio-group v-model="paymentMethod" color="primary" hide-details class="payment-methods mb-6">
+                   <v-card variant="outlined" class="mb-2 pa-2 rounded-lg" :class="{'border-primary bg-blue-lighten-5': paymentMethod === 'e-wallet'}" @click="paymentMethod = 'e-wallet'">
+                      <div class="d-flex align-center">
+                         <v-radio value="e-wallet" class="flex-grow-0 mr-2"></v-radio>
+                         <v-icon start color="purple">mdi-wallet</v-icon> 
+                         <span class="font-weight-medium">Ví điện tử (Momo/ZaloPay)</span>
+                      </div>
+                   </v-card>
+                   <v-card variant="outlined" class="pa-2 rounded-lg" :class="{'border-primary bg-blue-lighten-5': paymentMethod === 'credit_card'}" @click="paymentMethod = 'credit_card'">
+                      <div class="d-flex align-center">
+                         <v-radio value="credit_card" class="flex-grow-0 mr-2"></v-radio>
+                         <v-icon start color="blue-darken-2">mdi-credit-card</v-icon> 
+                         <span class="font-weight-medium">Thẻ tín dụng / Ghi nợ</span>
+                      </div>
+                   </v-card>
+                </v-radio-group>
+             </div>
           </div>
-        </div>
+        </v-card-text>
+
+        <v-card-actions class="pa-4 bg-white border-t">
+           <div v-if="currentStep === 1" class="d-flex w-100 gap-3">
+              <v-btn 
+                 variant="outlined" 
+                 color="grey-darken-1" 
+                 height="48" 
+                 class="flex-grow-1 rounded-lg font-weight-bold text-capitalize"
+                 @click="dialog = false"
+              >
+                 Hủy bỏ
+              </v-btn>
+              <v-btn 
+                 color="primary" 
+                 variant="flat" 
+                 height="48" 
+                 class="flex-grow-1 rounded-lg font-weight-bold text-capitalize shadow-lg"
+                 @click="confirmLoan"
+                 :loading="loanLoading"
+                 :disabled="!returnDate"
+              >
+                 Xác nhận mượn
+                 <v-icon end>mdi-arrow-right</v-icon>
+              </v-btn>
+           </div>
+
+           <div v-else class="d-flex w-100 gap-3 flex-column">
+              <v-btn 
+                 block 
+                 color="success" 
+                 size="large" 
+                 variant="flat"
+                 class="rounded-lg font-weight-bold shadow-lg"
+                 @click="processPayment" 
+                 :loading="paymentLoading"
+                 prepend-icon="mdi-lock"
+              >
+                 Thanh toán {{ formatCurrency(createdLoan?.rentCost || estimatedCost) }}
+              </v-btn>
+           </div>
+        </v-card-actions>
 
       </v-card>
     </v-dialog>
@@ -488,5 +550,42 @@ watch(() => route.params.id, async (newId) => {
 }
 .book-card {
   border: 1px solid rgba(0,0,0,0.05);
+}
+/* Style cho Dialog mới */
+.dialog-header {
+  background: linear-gradient(135deg, #1565C0, #0D47A1); /* Gradient xanh đậm sang trọng */
+}
+
+.border-dashed {
+  border-style: dashed !important;
+  border-color: rgba(0,0,0,0.12) !important;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.bill-card {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+}
+
+.shadow-lg {
+  box-shadow: 0 4px 12px rgba(21, 101, 192, 0.3);
+}
+
+/* Hiệu ứng khi chọn phương thức thanh toán */
+.payment-methods .v-card {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.payment-methods .v-card:hover {
+  background-color: #F5F5F5;
+}
+.border-primary {
+  border-color: rgb(var(--v-theme-primary)) !important;
+  border-width: 2px !important;
 }
 </style>

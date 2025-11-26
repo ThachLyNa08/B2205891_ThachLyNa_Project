@@ -127,9 +127,94 @@
       </router-view>
     </v-main>
 
-    <v-footer app color="#0D47A1" class="text-center d-flex flex-column py-4 text-white">
-      <div class="text-body-2 font-weight-light opacity-80">
-        &copy; {{ new Date().getFullYear() }} — <strong>Library Nexus</strong>.
+<v-footer class="pa-0 d-flex flex-column">
+      
+      <div class="footer-universe w-100 position-relative">
+        
+        <div class="footer-overlay"></div>
+
+        <div class="footer-content position-relative">
+          <div class="py-12">
+            <v-container class="mx-auto px-4" style="max-width: 1200px;">
+              <v-row>
+                
+                <v-col cols="12" md="4" class="mb-6">
+                  <div class="glass-panel pa-6 rounded-xl">
+                    <div class="d-flex align-center mb-4">
+                      <v-icon size="40" color="cyan-accent-3" class="mr-3 glow-icon">mdi-book-open-page-variant-outline</v-icon>
+                      <div>
+                        <h3 class="text-h6 font-weight-bold text-white tracking-wider">LIBRARY NEXUS</h3>
+                        <div class="text-caption text-cyan-lighten-3">Universe of Knowledge</div>
+                      </div>
+                    </div>
+                    <p class="text-body-2 text-grey-lighten-3 mb-4" style="line-height: 1.8;">
+                      Khám phá vũ trụ tri thức vô tận. Nơi hội tụ những cuốn sách hay nhất, kết nối cộng đồng đam mê đọc sách.
+                    </p>
+                    <div class="d-flex gap-3">
+                      <v-btn icon variant="tonal" color="cyan-accent-3" class="social-btn"><v-icon>mdi-facebook</v-icon></v-btn>
+                      <v-btn icon variant="tonal" color="cyan-accent-3" class="social-btn"><v-icon>mdi-instagram</v-icon></v-btn>
+                      <v-btn icon variant="tonal" color="cyan-accent-3" class="social-btn"><v-icon>mdi-youtube</v-icon></v-btn>
+                    </div>
+                  </div>
+                </v-col>
+
+                <v-col cols="6" md="2" class="pl-md-8">
+                  <h4 class="text-subtitle-1 font-weight-bold text-cyan-accent-2 mb-4 text-uppercase glow-text">Khám phá</h4>
+                  <div class="d-flex flex-column gap-3">
+                    <router-link to="/home" class="star-link">Trang chủ</router-link>
+                    <router-link to="/books" class="star-link">Kho sách Galaxy</router-link>
+                    <router-link to="/reviews" class="star-link">Góc Review</router-link>
+                    <router-link to="/events" class="star-link">Sự kiện</router-link>
+                  </div>
+                </v-col>
+
+                <v-col cols="6" md="2">
+                  <h4 class="text-subtitle-1 font-weight-bold text-cyan-accent-2 mb-4 text-uppercase glow-text">Phi hành gia</h4>
+                  <div class="d-flex flex-column gap-3">
+                    <router-link to="/profile" class="star-link">Hồ sơ cá nhân</router-link>
+                    <router-link to="/my-loans" class="star-link">Lịch sử mượn</router-link>
+                    <router-link to="/favorites" class="star-link">Tủ sách yêu thích</router-link>
+                    <router-link to="/help" class="star-link">Trạm hỗ trợ</router-link>
+                  </div>
+                </v-col>
+
+                <v-col cols="12" md="4">
+                  <h4 class="text-subtitle-1 font-weight-bold text-cyan-accent-2 mb-4 text-uppercase glow-text">Trạm liên lạc</h4>
+                  <div class="contact-item mb-3 d-flex align-start">
+                    <v-icon color="cyan-lighten-3" size="small" class="mt-1 mr-3">mdi-map-marker-star</v-icon>
+                    <span class="text-grey-lighten-3">Khu II, Đ. 3/2, Xuân Khánh, Ninh Kiều, Cần Thơ</span>
+                  </div>
+                  <div class="contact-item mb-3 d-flex align-center">
+                    <v-icon color="cyan-lighten-3" size="small" class="mr-3">mdi-rocket-launch</v-icon>
+                    <span class="text-grey-lighten-3 text-h6 font-weight-bold">+84 123 456 789</span>
+                  </div>
+                  <div class="mt-6">
+                    <div class="text-caption text-cyan-lighten-4 mb-2">Đăng ký nhận tin:</div>
+                    <div class="d-flex align-center glass-input rounded-pill pa-1">
+                       <input type="text" placeholder="Email..." class="flex-grow-1 px-4 text-white" style="outline: none; background: transparent; min-width: 0;">
+                       <v-btn color="cyan-accent-3" class="rounded-pill text-blue-grey-darken-4 font-weight-bold" elevation="5" size="small">Gửi</v-btn>
+                    </div>
+                  </div>
+                </v-col>
+
+              </v-row>
+            </v-container>
+          </div>
+
+          <v-divider class="border-opacity-25 border-cyan"></v-divider>
+          <div class="bg-black-transparent py-4 w-100">
+             <v-container class="py-0 mx-auto" style="max-width: 1200px;">
+                <div class="text-caption text-grey d-flex flex-column flex-sm-row justify-space-between align-center">
+                  <span>&copy; {{ new Date().getFullYear() }} <strong>Library Nexus</strong>. Designed for the stars.</span>
+                  <div class="mt-2 mt-sm-0">
+                     <a href="#" class="text-grey text-decoration-none mr-3 hover-glow">Privacy</a>
+                     <a href="#" class="text-grey text-decoration-none hover-glow">Terms</a>
+                  </div>
+                </div>
+             </v-container>
+          </div>
+        </div>
+
       </div>
     </v-footer>
 
@@ -182,9 +267,106 @@ watch(() => route.path, () => {
 </script>
 
 <style scoped>
+.footer-link {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 0.875rem; /* text-body-2 */
+  transition: color 0.2s ease, padding-left 0.2s ease;
+}
+
+.footer-link:hover {
+  color: #ffffff;
+  padding-left: 5px; /* Hiệu ứng trượt nhẹ khi hover */
+}
+
+.hover-white:hover {
+  color: #ffffff !important;
+  text-decoration: underline !important;
+}
+
+.footer-social {
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 50%;
+}
+.footer-social:hover {
+  background-color: rgba(255,255,255,0.1);
+  border-color: #ffffff;
+}
+.gap-2 { gap: 8px; }
 .fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
-.gap-2 { gap: 8px; }
 .gap-3 { gap: 12px; }
 .cursor-pointer { cursor: pointer; }
+.glow-text {
+  text-shadow: 0 0 10px rgba(100, 255, 218, 0.4);
+  letter-spacing: 1px;
+}
+
+.glow-icon {
+  filter: drop-shadow(0 0 5px rgba(100, 255, 218, 0.6));
+}
+
+.star-link {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  position: relative;
+  padding-left: 0;
+}
+
+.star-link:hover {
+  color: #64ffda; 
+  padding-left: 10px; 
+  text-shadow: 0 0 8px rgba(100, 255, 218, 0.5);
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.05); 
+  backdrop-filter: blur(10px); 
+  border: 1px solid rgba(255, 255, 255, 0.1); 
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.social-btn {
+  border-radius: 50%;
+  border: 1px solid rgba(100, 255, 218, 0.3);
+}
+.social-btn:hover {
+  background: rgba(100, 255, 218, 0.1);
+  border-color: #64ffda;
+  transform: translateY(-3px); 
+}
+
+.glass-input {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(100, 255, 218, 0.2);
+}
+.glass-input input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+.footer-universe {
+  background-image: url('https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?q=80&w=2013&auto=format&fit=crop');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.footer-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* Gradient làm tối nền */
+  background: linear-gradient(to top, rgba(5, 11, 20, 1) 0%, rgba(10, 25, 47, 0.9) 50%, rgba(13, 71, 161, 0.6) 100%);
+  z-index: 1; /* Nằm trên ảnh nền */
+}
+
+.footer-content {
+  z-index: 2; /* Nằm trên lớp phủ */
+}
+.tracking-wider { letter-spacing: 0.05em; }
+.bg-black-transparent { background-color: rgba(0,0,0,0.6); }
+.gap-3 { gap: 12px; }
 </style>
