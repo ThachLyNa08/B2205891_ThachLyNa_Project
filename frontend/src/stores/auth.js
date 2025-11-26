@@ -3,7 +3,6 @@ import api from '../services/api.service';
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    // Giữ nguyên logic lấy từ sessionStorage của bạn
     user: JSON.parse(sessionStorage.getItem('user')) || null,
     token: sessionStorage.getItem('token') || null,
     isAuthenticated: !!sessionStorage.getItem('token'),
@@ -16,14 +15,14 @@ export const useAuthStore = defineStore('auth', {
     isReader: (state) => state.user?.role === 'reader',
   },
   actions: {
-    // --- GIỮ NGUYÊN CÁC HÀM CŨ: register, login, logout, fetchUser ---
+    //CÁC HÀM: register, login, logout, fetchUser 
     async register(userData) {
       this.loading = true;
       this.error = null;
       try {
         const response = await api.post('/auth/register', userData);
         sessionStorage.setItem('token', response.data.token);
-        sessionStorage.setItem('user', JSON.stringify(response.data.user)); // Backend giờ đã trả về có avatar
+        sessionStorage.setItem('user', JSON.stringify(response.data.user)); 
 
         this.token = response.data.token;
         this.user = response.data.user;

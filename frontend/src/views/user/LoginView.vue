@@ -17,28 +17,13 @@
         </div>
 
         <v-form @submit.prevent="handleLogin">
-          <v-text-field
-            v-model="emailOrUsername"
-            label="Email or Username"
-            prepend-inner-icon="mdi-account"
-            variant="outlined"
-            color="primary"
-            class="mb-2"
-            required
-          ></v-text-field>
-          
-          <v-text-field
-            v-model="password"
-            label="Password"
-            prepend-inner-icon="mdi-lock"
-            variant="outlined"
-            color="primary"
-            :type="showPass ? 'text' : 'password'"
-            :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
-            @click:append-inner="showPass = !showPass"
-            class="mb-2"
-            required
-          ></v-text-field>
+          <v-text-field v-model="emailOrUsername" label="Email or Username" prepend-inner-icon="mdi-account"
+            variant="outlined" color="primary" class="mb-2" required></v-text-field>
+
+          <v-text-field v-model="password" label="Password" prepend-inner-icon="mdi-lock" variant="outlined"
+            color="primary" :type="showPass ? 'text' : 'password'"
+            :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'" @click:append-inner="showPass = !showPass"
+            class="mb-2" required></v-text-field>
 
           <div class="d-flex justify-end mb-6">
             <a href="#" class="text-decoration-none text-body-2 text-primary">Forgot Password?</a>
@@ -48,19 +33,24 @@
             {{ authStore.error }}
           </v-alert>
 
-          <v-btn 
-            type="submit" 
-            color="primary" 
-            block 
-            size="large" 
-            :loading="authStore.loading"
-            class="mb-6 text-capitalize font-weight-bold"
-          >
+          <v-btn type="submit" color="primary" block size="large" :loading="authStore.loading"
+            class="mb-6 text-capitalize font-weight-bold">
             Login
+          </v-btn>
+          <!-- Thêm vào dưới nút Login bình thường -->
+          <div class="d-flex align-center my-4">
+            <v-divider class="flex-grow-1"></v-divider>
+            <span class="mx-2 text-caption text-grey">OR</span>
+            <v-divider class="flex-grow-1"></v-divider>
+          </div>
+
+          <v-btn block variant="outlined" color="red" class="mb-3 text-capitalize" prepend-icon="mdi-google"
+            href="http://localhost:3000/api/auth/google">
+            Continue with Google
           </v-btn>
 
           <div class="text-center text-body-2">
-            Don't have an account? 
+            Don't have an account?
             <router-link to="/register" class="text-primary font-weight-bold text-decoration-none">
               Create Account
             </router-link>
@@ -87,10 +77,10 @@ const handleLogin = async () => {
   try {
     await authStore.login({ emailOrUsername: emailOrUsername.value, password: password.value });
     if (['admin', 'staff'].includes(authStore.user?.role)) {
-        // QUAN TRỌNG: Chuyển sang 'admin-dashboard'
-        router.push({ name: 'admin-dashboard' }); 
+      // QUAN TRỌNG: Chuyển sang 'admin-dashboard'
+      router.push({ name: 'admin-dashboard' });
     } else {
-        router.push({ name: 'home' });
+      router.push({ name: 'home' });
     }
   } catch (error) {
     console.error('Login error:', error);
@@ -100,28 +90,36 @@ const handleLogin = async () => {
 
 <style scoped>
 .h-screen {
-  height: 100vh; /* Full chiều cao màn hình */
+  height: 100vh;
+  /* Full chiều cao màn hình */
   width: 100vw;
 }
 
 .auth-image {
-  width: 50%; /* Chiếm 50% chiều rộng */
+  width: 50%;
+  /* Chiếm 50% chiều rộng */
   background: url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=2940&auto=format&fit=crop') center/cover no-repeat;
   position: relative;
 }
 
 .auth-form {
-  width: 50%; /* Chiếm 50% chiều rộng */
+  width: 50%;
+  /* Chiếm 50% chiều rộng */
 }
 
 .image-overlay {
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.2));
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.2));
 }
 
 /* Responsive: Trên mobile form chiếm 100% */
 @media (max-width: 960px) {
-  .auth-form { width: 100%; }
+  .auth-form {
+    width: 100%;
+  }
 }
 </style>

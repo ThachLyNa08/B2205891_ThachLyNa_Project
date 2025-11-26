@@ -53,7 +53,7 @@ api.interceptors.response.use(
         sessionStorage.removeItem('user');  // Xóa luôn thông tin user cho sạch
         
         // 2. SỬA: Đường dẫn login đúng là /auth/login (theo router của bạn)
-        window.location.href = '/auth/login'; 
+        window.location.href = '/login'; 
         return Promise.reject(refreshError);
       }
     }

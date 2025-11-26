@@ -16,6 +16,7 @@ import LoginView from "@/views/user/LoginView.vue";
 import RegisterView from "@/views/user/RegisterView.vue";
 import FavoritesView from "@/views/user/FavoritesView.vue";
 import ReadingView from "@/views/user/ReadingView.vue";
+import AuthCallback from '@/views/AuthCallback.vue';
 
 // 3. VIEWS (ADMIN)
 import AdminDashboardView from "@/views/admin/AdminDashboardView.vue";
@@ -107,6 +108,11 @@ const router = createRouter({
       path: "/:pathMatch(.*)*",
       component: () => import("@/NotFoundView.vue"), // Import trang thông báo lỗi 404
     },
+    {
+    path: '/oauth-callback',
+    name: 'oauth-callback',
+    component: AuthCallback
+},
   ],
 });
 

@@ -5,6 +5,7 @@ const cookieParser = require('cookie-parser');
 const helmet = require('helmet'); // Bảo mật HTTP headers
 const morgan = require('morgan'); // Log request để debug
 const path = require('path');
+const passport = require('passport');
 
 // Import Routes
 const authRoutes = require('./routes/authRoutes');
@@ -36,7 +37,7 @@ if (process.env.NODE_ENV === 'development') {
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true })); // Để đọc form data
-
+app.use(passport.initialize());
 // 4. CORS Configuration
 const allowedOrigins = [
   'http://localhost:5173', // Frontend Vue (Vite)

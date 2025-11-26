@@ -1,40 +1,68 @@
-
 const jwt = require('jsonwebtoken');
-const User = require('../models/user'); 
-
-const JWT_SECRET = process.env.JWT_SECRET;
+const User = require('../models/user');
 
 const protect = async (req, res, next) => {
   let token;
 
-  // Kiểm tra header Authorization
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+  // 1. Kiểm tra xem có token trong header không
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
     try {
-      token = req.headers.authorization.split(' ')[1]; // Lấy token từ 'Bearer TOKEN'
+      // Lấy token
+      token = req.headers.authorization.split(' ')[1];
 
-      const decoded = jwt.verify(token, JWT_SECRET); // Giải mã token
+      // Giải mã token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      // --- QUAN TRỌNG: TÌM USER ---
+      // Lưu ý: decoded.id hay decoded.userId phụ thuộc vào file authController lúc bạn sign token.
+      // Mình dùng (decoded.id || decoded.userId) để bắt cả 2 trường hợp cho chắc ăn.
+      const user = await User.findById(decoded.id || decoded.userId).select('-password');
+
+      // --- SỬA LỖI NULL TẠI ĐÂY ---
+      // Nếu token hợp lệ nhưng User không còn trong DB (đã bị xóa)
+      if (!user) {
+        return res.status(401).json({ message: 'Not authorized, user not found' });
+      }
+
+      // Gán user vào request
+      req.user = user;
       
-      // Tìm user theo ID và gán vào req.user (không bao gồm password)
-      req.user = await User.findById(decoded.userId).select('-password');
-      req.user.role = decoded.role; // Đảm bảo role được gán vào req.user
+      // Không cần gán req.user.role = decoded.role nữa vì trong biến 'user' lấy từ DB đã có role rồi.
+      // Điều này an toàn hơn (tránh trường hợp token cũ role admin nhưng DB đã hạ xuống user).
 
-      next(); // Chuyển sang middleware/controller tiếp theo
+      next();
     } catch (error) {
-      console.error('Error in authentication middleware:', error);
-      return res.status(401).json({ message: 'Not authorized, token failed.' });
+      console.error('Auth Middleware Error:', error.message);
+      
+      // Phân loại lỗi để Frontend dễ xử lý (hết hạn vs sai token)
+      if (error.name === 'TokenExpiredError') {
+        return res.status(401).json({ message: 'Token expired' });
+      }
+      
+      return res.status(401).json({ message: 'Not authorized, token failed' });
     }
   }
 
   if (!token) {
-    return res.status(401).json({ message: 'Not authorized, no token.' });
+    return res.status(401).json({ message: 'Not authorized, no token' });
   }
 };
 
-// Middleware để kiểm tra quyền (role-based access control)
-const authorize = (...roles) => { // roles là mảng các vai trò được phép (e.g., 'admin', 'staff')
+// Middleware kiểm tra quyền (Admin, Staff...)
+const authorize = (...roles) => {
   return (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({ message: `User role ${req.user.role} is not authorized to access this route.` });
+    // Kiểm tra kỹ req.user để tránh lỗi crash
+    if (!req.user) {
+        return res.status(401).json({ message: 'Not authorized' });
+    }
+
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ 
+        message: `User role ${req.user.role} is not authorized to access this route` 
+      });
     }
     next();
   };

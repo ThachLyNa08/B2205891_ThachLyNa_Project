@@ -121,7 +121,7 @@ const handleRegister = async () => {
     });
     authStore.logout();
     alert("Đăng ký thành công! Vui lòng đăng nhập.");
-    router.push('/auth/login');
+    router.push('/login');
   } catch (error) {
     console.error('Registration error:', error);
   }

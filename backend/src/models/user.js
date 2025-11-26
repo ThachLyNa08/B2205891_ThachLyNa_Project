@@ -57,7 +57,17 @@ const userSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
-  }
+  },
+  password: {
+    type: String,
+    required: function() { return !this.googleId; } // Chỉ bắt buộc nếu không đăng nhập bằng Google
+},
+googleId: {
+    type: String,
+    unique: true,
+    sparse: true // Cho phép null mà không báo lỗi unique
+},
+avatar: { type: String }
 });
 
 // Cập nhật updatedAt mỗi khi save
