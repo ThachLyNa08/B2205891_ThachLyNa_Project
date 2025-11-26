@@ -162,9 +162,9 @@
         </v-footer>
 
       </div>
-      <ChatWidget />
+      
     </v-main>
-
+    <ChatWidget />
   </v-app>
 </template>
 
@@ -172,7 +172,7 @@
 import { ref } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { useRouter } from 'vue-router';
-import ChatWidget from '@/components/ChatWidget.vue';
+import ChatWidget from '@/components/ChatWidget.vue'; 
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -190,9 +190,9 @@ const logout = async () => {
 .h-screen {
   height: 100vh;
 }
-.overflow-hidden {
-  overflow: hidden;
-}
+/* .overflow-hidden {
+  /*overflow: hidden;
+} */
 
 /* 2. Thiết lập vùng cuộn chính (v-main) */
 .scrollable-main {

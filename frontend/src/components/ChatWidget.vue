@@ -63,7 +63,7 @@
                 <div v-if="msg.isLoading">
                    <v-progress-circular indeterminate size="16" width="2" color="grey"></v-progress-circular>
                 </div>
-                <div v-else>{{ msg.text }}</div>
+                <div v-else class="message-content" v-html="formatMessage(msg.text)"></div>
              </div>
           </div>
         </div>
@@ -76,7 +76,7 @@
             variant="outlined"
             density="compact"
             hide-details
-            rounded="pill"
+rounded="pill"
             bg-color="grey-lighten-5"
             @keyup.enter="sendMessage"
             :disabled="loading"
@@ -164,19 +164,61 @@ const sendMessage = async () => {
 watch(isOpen, (val) => {
     if (val) scrollToBottom();
 });
+// Thêm hàm này vào trong script setup
+const formatMessage = (text) => {
+  if (!text) return '';
+  
+  // Regex để tìm pattern [Tên Link](/đường-dẫn) và chuyển thành thẻ <a href>
+  // Ví dụ: [Xem ngay](/books/123) -> <a href="/books/123">Xem ngay</a>
+  
+  // Lưu ý: Chúng ta dùng router-link giả bằng cách bắt sự kiện click sau, 
+  // hoặc dùng thẻ a thường. Ở đây dùng thẻ a đơn giản.
+  
+  let formatted = text.replace(/\n/g, '<br>'); // Xuống dòng
+  
+// Convert Markdown link [Text](Url) to HTML Link
+  formatted = formatted.replace(
+    /\[([^\]]+)\]\(([^)]+)\)/g, 
+    '<a href="$2" class="chat-link" target="_self">$1</a>'
+  );
+  
+  // Làm đậm các từ khóa trong dấu **text**
+  formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  
+  return formatted;
+};
 </script>
 
 <style scoped>
+/* KHUNG BAO NGOÀI (Tấm kính vô hình) */
 .chat-widget-container {
   position: fixed;
   bottom: 24px;
   right: 24px;
-  z-index: 9999;
+  z-index: 9999; /* Luôn nổi trên cùng */
+  
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  
+  /* --- DÒNG QUAN TRỌNG NHẤT: ĐỂ BẤM XUYÊN QUA --- */
+  /* Nó bảo trình duyệt: "Đừng bắt sự kiện chuột ở khung này, cho nó đi xuyên qua" */
+  /*pointer-events: none; 
+  
+  /* Đảm bảo nó không chiếm hết màn hình nếu không cần thiết */
+  width: auto;
+  height: auto;
 }
 
+/* CÁC THÀNH PHẦN CON (Nút tròn + Cửa sổ chat) */
+.chat-fab, 
+.chat-window {
+  /* --- DÒNG QUAN TRỌNG NHÌ: ĐỂ BẮT LẠI SỰ KIỆN --- */
+  /* Nó bảo: "Riêng nút và cửa sổ thì phải bấm được nhé" */
+  pointer-events: auto; 
+}
+
+/* --- CÁC CSS TRANG TRÍ (GIỮ NGUYÊN) --- */
 .chat-fab {
   box-shadow: 0 4px 20px rgba(33, 150, 243, 0.4);
   transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -186,7 +228,9 @@ watch(isOpen, (val) => {
 .chat-window {
   box-shadow: 0 10px 40px rgba(0,0,0,0.2) !important;
   border: 1px solid rgba(0,0,0,0.05);
-  overflow: hidden;
+  /*overflow: hidden;*/
+  width: 380px;
+  max-width: 90vw;
 }
 
 .chat-messages {
@@ -210,12 +254,20 @@ watch(isOpen, (val) => {
   line-height: 1.4;
   word-wrap: break-word;
 }
-
 .message-wrapper.ai .message-bubble { border-top-left-radius: 4px; }
 .message-wrapper.user .message-bubble { border-bottom-right-radius: 4px; }
 
-/* Custom Scrollbar */
 .chat-messages::-webkit-scrollbar { width: 6px; }
 .chat-messages::-webkit-scrollbar-track { background: transparent; }
 .chat-messages::-webkit-scrollbar-thumb { background: #E0E0E0; border-radius: 3px; }
+
+/* Link style */
+:deep(.chat-link) {
+  color: #1976D2;
+  text-decoration: underline;
+  font-weight: bold;
+  cursor: pointer;
+}
+:deep(.chat-link:hover) { color: #0D47A1; }
+.message-content { white-space: pre-wrap; }
 </style>

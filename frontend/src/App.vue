@@ -149,5 +149,5 @@ const visibleNavItems = computed(() => {
 <script setup>
 import { RouterView } from 'vue-router';
 // Import ChatWidget vào đây để dùng chung cho toàn app
-import ChatWidget from '@/components/ChatWidget.vue'; 
+//import ChatWidget from '@/components/ChatWidget.vue'; 
 </script>

@@ -66,7 +66,7 @@
     <!-- ============================================= -->
     <!-- 2. QUICK ACTIONS: MENU NỔI -->
     <!-- ============================================= -->
-    <v-container class="mt-n16 position-relative z-index-10">
+    <v-container class="mt-n16 position-relative" style="z-index: 100;">
       <v-row justify="center">
         <v-col cols="12" md="10">
           <div class="d-flex flex-wrap justify-center gap-6">

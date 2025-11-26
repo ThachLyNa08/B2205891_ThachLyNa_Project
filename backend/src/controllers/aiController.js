@@ -1,38 +1,71 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const Book = require("../models/book"); // Import Model Sách
 
 // Khởi tạo Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const chatWithAI = async (req, res) => {
   try {
-    const { message, history } = req.body; // history để AI nhớ ngữ cảnh
+    const { message, history } = req.body;
 
     if (!message) {
       return res.status(400).json({ message: "Message is required" });
     }
 
-    // Chọn model
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    // --- BƯỚC 1: TÌM SÁCH TRONG DB LIÊN QUAN ĐẾN CÂU HỎI ---
+    // Tạo từ khóa tìm kiếm đơn giản từ tin nhắn người dùng
+    // (Lấy các sách có tên hoặc tác giả chứa từ khóa trong tin nhắn)
+    // Ví dụ: User hỏi "Có sách Harry Potter không?", ta tìm chữ "Harry Potter"
+    
+    // Lấy tối đa 10 cuốn sách ngẫu nhiên hoặc khớp từ khóa để làm ngữ cảnh
+    // Ở đây mình dùng RegExp đơn giản để tìm sách có tên khớp với nội dung chat
+    const searchRegex = new RegExp(message.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    
+    let foundBooks = await Book.find({
+        $or: [
+            { tenSach: { $regex: searchRegex } },
+            { tacGia: { $in: [searchRegex] } },
+            { 'categories.tenTheLoai': { $regex: searchRegex } }
+        ]
+    }).limit(5).select('tenSach tacGia stock _id');
 
-    // Cấu hình vai trò cho AI (System Prompt)
-    const systemPrompt = `
-      Bạn là 'Nexus AI', một trợ lý ảo thông minh của thư viện 'Library Nexus'.
-      Nhiệm vụ của bạn là:
-      1. Giúp người dùng tìm sách, gợi ý sách hay.
-      2. Giải đáp thắc mắc về quy trình mượn trả sách.
-      3. Luôn trả lời ngắn gọn, thân thiện, lịch sự bằng tiếng Việt.
-      4. Nếu người dùng hỏi ngoài lề (như code, chính trị...), hãy khéo léo từ chối và quay lại chủ đề sách.
-    `;
+    // Nếu không tìm thấy sách nào khớp (ví dụ user chào hỏi), 
+    // ta lấy đại 5 cuốn sách mới nhất để AI có dữ liệu giới thiệu
+    if (foundBooks.length === 0) {
+        foundBooks = await Book.find().sort({ createdAt: -1 }).limit(5).select('tenSach tacGia stock _id');
+    }
 
-    // Tạo phiên chat (Chat Session)
-    const chat = model.startChat({
-      history: history || [], // Lịch sử chat trước đó (nếu có)
-      generationConfig: {
-        maxOutputTokens: 500,
-      },
+    // --- BƯỚC 2: TẠO CONTEXT (NGỮ CẢNH) CHO AI ---
+    let bookContext = "Dưới đây là danh sách các sách hiện có trong thư viện:\n";
+    foundBooks.forEach(book => {
+        const status = book.stock > 0 ? "Còn sách" : "Hết hàng";
+        bookContext += `- Tên: "${book.tenSach}", Tác giả: ${book.tacGia}, ID: ${book._id}, Trạng thái: ${status}\n`;
     });
 
-    // Gửi tin nhắn kèm system prompt (mẹo nhỏ để nhắc role)
+    // --- BƯỚC 3: CẤU HÌNH SYSTEM PROMPT ---
+    const systemPrompt = `
+      Bạn là 'Nexus AI', thủ thư ảo của thư viện 'Library Nexus'.
+      
+      DỮ LIỆU SÁCH CỦA THƯ VIỆN:
+      ${bookContext}
+
+      NHIỆM VỤ CỦA BẠN:
+      1. Trả lời câu hỏi của người dùng dựa trên danh sách sách ở trên.
+      2. Nếu người dùng hỏi về sách có trong danh sách, hãy giới thiệu nó và cung cấp đường dẫn mượn sách theo định dạng: [Mượn ngay](/books/ID_SÁCH).
+      3. Ví dụ: "Cuốn Harry Potter rất hay. Bạn có thể xem tại đây: [Xem sách](/books/12345)".
+      4. Nếu sách hết hàng, hãy báo cho họ biết.
+      5. Nếu không có sách nào phù hợp trong danh sách trên, hãy xin lỗi và gợi ý họ tìm kiếm trên thanh Catalog.
+      6. Trả lời ngắn gọn, thân thiện bằng tiếng Việt.
+    `;
+
+    // --- BƯỚC 4: GỌI GEMINI ---
+    // Dùng model mới nhất để tránh lỗi 404
+    const model = genAI.getGenerativeModel({ model: "models/gemini-2.5-flash" });
+
+    const chat = model.startChat({
+      history: history || [],
+    });
+
     const result = await chat.sendMessage(`${systemPrompt}\nUser: ${message}`);
     const response = await result.response;
     const text = response.text();
