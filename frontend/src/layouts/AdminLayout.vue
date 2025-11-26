@@ -91,6 +91,11 @@ const menuItems = ref([
     icon: 'mdi-credit-card-clock-outline', 
     to: '/admin-portal/payments' 
   },
+  { 
+    title: 'Review Management', 
+    icon: 'mdi-star-circle-outline', // Icon ngôi sao
+    to: '/admin-portal/reviews' 
+  },
 ]);
 
 const logout = async () => {

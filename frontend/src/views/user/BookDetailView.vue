@@ -205,6 +205,62 @@
 
       </v-card>
     </v-dialog>
+    <!-- PHẦN ĐÁNH GIÁ -->
+    <v-card class="mt-6 rounded-xl elevation-1">
+      <v-card-title class="font-weight-bold">Đánh giá & Bình luận</v-card-title>
+      <v-card-text>
+        <!-- Form viết đánh giá (Chỉ hiện khi đăng nhập) -->
+        <div v-if="authStore.isAuthenticated" class="mb-6 pa-4 bg-grey-lighten-5 rounded-lg">
+           <div class="text-subtitle-2 mb-2">Viết đánh giá của bạn</div>
+           <v-rating v-model="newReview.rating" color="amber" density="compact" hover size="small"></v-rating>
+           <v-textarea 
+              v-model="newReview.comment" 
+              placeholder="Chia sẻ cảm nghĩ của bạn về cuốn sách này..." 
+              variant="outlined" 
+              bg-color="white" 
+              rows="2" 
+              auto-grow 
+              class="mt-2"
+           ></v-textarea>
+           <div class="d-flex justify-end mt-2">
+              <v-btn color="primary" @click="submitReview" :loading="submitting" :disabled="!newReview.rating || !newReview.comment">
+                 Gửi đánh giá
+              </v-btn>
+           </div>
+        </div>
+        <div v-else class="text-center py-4 mb-4">
+           <v-btn variant="text" color="primary" to="/login">Đăng nhập để viết đánh giá</v-btn>
+        </div>
+
+        <v-divider class="mb-4"></v-divider>
+
+        <!-- Danh sách đánh giá -->
+        <div v-if="reviews.length > 0">
+           <div v-for="review in reviews" :key="review._id" class="d-flex mb-4">
+              <v-avatar color="grey-lighten-3" class="mr-3">
+                 <span class="text-primary font-weight-bold">{{ review.userId?.username?.charAt(0).toUpperCase() }}</span>
+              </v-avatar>
+              <div class="flex-grow-1">
+                 <div class="d-flex align-center">
+                    <span class="font-weight-bold mr-2">{{ review.userId?.username }}</span>
+                    <v-rating :model-value="review.rating" color="amber" density="compact" size="x-small" readonly></v-rating>
+                    <span class="text-caption text-grey ml-2">{{ formatDate(review.createdAt) }}</span>
+                 </div>
+                 <div class="text-body-2 mt-1">{{ review.comment }}</div>
+                 
+                 <!-- Nút xóa (chỉ hiện nếu là chính chủ) -->
+                 <v-btn 
+                    v-if="authStore.user?._id === review.userId?._id" 
+                    variant="text" size="x-small" color="error" 
+                    class="px-0 mt-1"
+                    @click="deleteReview(review._id)"
+                 >Xóa</v-btn>
+              </div>
+           </div>
+        </div>
+        <div v-else class="text-center text-grey py-4">Chưa có đánh giá nào. Hãy là người đầu tiên!</div>
+        </v-card-text>
+    </v-card>
 
   </v-container>
 </template>
@@ -214,6 +270,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '@/services/api.service';
 import { useAuthStore } from '@/stores/auth';
+import { reactive } from 'vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -227,6 +284,11 @@ const createdLoan = ref(null);
 
 const loanLoading = ref(false);
 const paymentLoading = ref(false);
+
+// STATE CHO REVIEW
+const reviews = ref([]);
+const newReview = reactive({ rating: 0, comment: '' });
+const submitting = ref(false);
 
 // Rental Logic
 const returnDate = ref('');
@@ -348,6 +410,53 @@ const finishProcess = () => {
 };
 
 const formatCurrency = (val) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+
+// FETCH REVIEWS
+const fetchReviews = async () => {
+  try {
+    // Giả sử route.params.id là ID sách
+    const res = await api.get(`/reviews/book/${route.params.id}`);
+    reviews.value = res.data;
+  } catch (e) { console.error(e); }
+};
+
+// SUBMIT REVIEW
+const submitReview = async () => {
+  submitting.value = true;
+  try {
+    await api.post('/reviews', {
+       bookId: route.params.id,
+       rating: newReview.rating,
+       comment: newReview.comment
+    });
+    // Reset form & reload list
+    newReview.rating = 0;
+    newReview.comment = '';
+    await fetchReviews();
+    alert('Cảm ơn bạn đã đánh giá!');
+  } catch (e) {
+    alert(e.response?.data?.message || 'Lỗi gửi đánh giá');
+  } finally {
+    submitting.value = false;
+  }
+};
+
+// DELETE REVIEW
+const deleteReview = async (id) => {
+  if(!confirm('Xóa đánh giá này?')) return;
+  try {
+     await api.delete(`/reviews/${id}`);
+     await fetchReviews();
+  } catch(e) { alert('Lỗi xóa'); }
+};
+
+// Helper Format Date
+const formatDate = (d) => new Date(d).toLocaleDateString('vi-VN');
+
+onMounted(async () => {
+    await fetchBookDetail(); // Hàm cũ của bạn
+    await fetchReviews();    // Hàm mới thêm
+});
 
 onMounted(() => fetchBook(route.params.id));
 watch(() => route.params.id, (newId) => { if(newId) fetchBook(newId) });

@@ -1,6 +1,5 @@
 <template>
   <v-app>
-
     <!-- 1. NAVIGATION DRAWER -->
     <v-navigation-drawer
       v-model="drawer"
@@ -164,7 +163,7 @@ const unreadCount = ref(0);
 const logout = async () => {
   await authStore.logout();
   drawer.value = false;
-  router.push('/login');
+  router.push('/home');
 };
 
 const fetchUnreadCount = async () => {

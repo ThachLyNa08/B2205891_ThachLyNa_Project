@@ -96,10 +96,10 @@
     <v-container class="mt-12 mb-6">
       <div class="d-flex justify-space-between align-end mb-6 border-b pb-2" style="border-color: #e0e0e0;">
         <div>
-          <h2 class="text-h4 font-serif text-primary mb-1 font-weight-bold">🔥 Trending Now</h2>
+          <h2 class="text-h4 font-serif text-primary mb-1 font-weight-bold">TOP THỊNH HÀNH</h2>
           <div class="text-subtitle-1 text-grey-darken-1">Most borrowed books this week</div>
         </div>
-        <v-btn color="primary" variant="text" append-icon="mdi-arrow-right" to="/books" class="font-weight-bold">See All</v-btn>
+        <v-btn color="primary" variant="text" append-icon="mdi-arrow-right" to="/books" class="font-weight-bold">Xem tất cả</v-btn>
       </div>
 
       <!-- Loading Skeleton -->

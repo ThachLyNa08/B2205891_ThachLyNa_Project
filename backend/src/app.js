@@ -69,6 +69,7 @@ app.get('/', (req, res) => {
   res.send('Welcome to the Library Nexus API!');
 });
 app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/reviews', require('./routes/reviewRoutes'));
 // Cấu hình Static Folder cho ảnh
 // Giả định cấu trúc thư mục là: backend/src/app.js và backend/uploads
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));

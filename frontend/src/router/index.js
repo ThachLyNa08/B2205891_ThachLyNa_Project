@@ -25,6 +25,7 @@ import BookManagement from "@/components/admin/BookManagement.vue";
 import UserManagement from "@/components/admin/UserManagement.vue";
 import LoanManagement from "@/components/admin/LoanManagement.vue";
 import PaymentHistory from "@/components/admin/PaymentHistory.vue";
+import ReviewManagement from '@/components/admin/ReviewManagement.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -97,15 +98,12 @@ const router = createRouter({
       component: AdminLayout,
       meta: { requiresAuth: true, requiresRole: "admin" },
       children: [
-        {
-          path: "dashboard",
-          name: "admin-dashboard",
-          component: AdminDashboardView,
-        },
+        { path: "dashboard",name: "admin-dashboard",component: AdminDashboardView,},
         { path: "books", name: "admin-books", component: BookManagement },
         { path: "users", name: "admin-users", component: UserManagement },
         { path: "loans", name: "admin-loans", component: LoanManagement },
         { path: "payments", name: "admin-payments", component: PaymentHistory },
+        { path: 'reviews', name: 'admin-reviews', component: ReviewManagement }
       ],
     },
 
