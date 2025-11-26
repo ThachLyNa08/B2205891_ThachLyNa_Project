@@ -520,7 +520,7 @@ const deleteBook = async () => {
         showSnack('Deleted successfully', 'success');
         deleteDialog.value = false;
         loadBooks();
-    } catch (e) { showSnack('Delete failed', 'error'); }
+    } catch (e) { showSnack('Sách đang được mượn không thể xóa', 'error'); }
 };
 
 const showImagePreview = (url) => { if(url) { previewImageUrl.value = url; imageDialog.value = true; } };

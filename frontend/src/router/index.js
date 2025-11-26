@@ -14,8 +14,6 @@ import UserProfileView from "@/views/user/UserProfileView.vue";
 import MyLoansView from "@/views/user/MyLoansView.vue";
 import LoginView from "@/views/user/LoginView.vue";
 import RegisterView from "@/views/user/RegisterView.vue";
-import FavoritesView from "@/views/user/FavoritesView.vue";
-import ReadingView from "@/views/user/ReadingView.vue";
 import AuthCallback from "@/views/AuthCallback.vue";
 
 // 3. VIEWS (ADMIN)
@@ -56,18 +54,6 @@ const router = createRouter({
           path: "/my-loans",
           name: "my-loans",
           component: MyLoansView,
-          meta: { requiresAuth: true },
-        },
-        {
-          path: "/favorites",
-          name: "favorites",
-          component: FavoritesView,
-          meta: { requiresAuth: true },
-        },
-        {
-          path: "/reading",
-          name: "reading",
-          component: ReadingView,
           meta: { requiresAuth: true },
         },
         {

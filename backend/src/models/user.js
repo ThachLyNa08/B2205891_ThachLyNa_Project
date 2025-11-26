@@ -61,20 +61,29 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: function() { return !this.googleId; } // Chỉ bắt buộc nếu không đăng nhập bằng Google
-},
-googleId: {
-    type: String,
-    unique: true,
-    sparse: true // Cho phép null mà không báo lỗi unique
-},
-avatar: { type: String }
-});
+  },
+  googleId: {
+      type: String,
+      unique: true,
+      sparse: true // Cho phép null mà không báo lỗi unique
+  },
+  favorites: [{ 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: 'Book' 
+  }],
+
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  avatar: { type: String }
+}); 
 
 // Cập nhật updatedAt mỗi khi save
 userSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
   next();
-});
+}); 
 
 const User = mongoose.model('User', userSchema);
 

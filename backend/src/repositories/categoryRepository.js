@@ -1,8 +1,8 @@
-
 const Category = require('../models/Category');
 
-const getCategories = async () => {
-  return await Category.find();
+// [QUAN TRỌNG] Thêm tham số filter để Service có thể tìm theo tên
+const getCategories = async (filter = {}) => {
+  return await Category.find(filter);
 };
 
 const getCategoryById = async (id) => {

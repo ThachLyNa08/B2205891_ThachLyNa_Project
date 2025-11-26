@@ -170,6 +170,29 @@ const uploadCover = async (req, res, next) => {
     next(error);
   }
 };
+const getFavorites = async (req, res, next) => {
+    try {
+        // req.user lấy từ middleware protect
+        const favorites = await userService.getFavorites(req.user._id);
+        res.status(200).json(favorites);
+    } catch (error) { next(error); }
+};
+
+const addFavorite = async (req, res, next) => {
+    try {
+        const { bookId } = req.body;
+        const favorites = await userService.addFavorite(req.user._id, bookId);
+        res.status(200).json({ message: 'Added to favorites', favorites });
+    } catch (error) { next(error); }
+};
+
+const removeFavorite = async (req, res, next) => {
+    try {
+        const { bookId } = req.params;
+        const favorites = await userService.removeFavorite(req.user._id, bookId);
+        res.status(200).json({ message: 'Removed from favorites', favorites });
+    } catch (error) { next(error); }
+};
 
 module.exports = {
   getUsers,
@@ -179,5 +202,8 @@ module.exports = {
   deleteUser,
   updatePassword,
   uploadAvatar,
-  uploadCover
+  uploadCover,
+  getFavorites,
+  addFavorite,
+  removeFavorite
 };

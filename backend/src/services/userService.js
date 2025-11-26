@@ -90,7 +90,36 @@ const updatePassword = async (userId, newPassword) => {
     }
     return { message: 'Password updated successfully.' };
 };
+const addFavorite = async (userId, bookId) => {
+    const user = await User.findByIdAndUpdate(
+        userId, 
+        { $addToSet: { favorites: bookId } }, // $addToSet giúp không bị trùng lặp
+        { new: true }
+    ).populate('favorites');
+    return user.favorites;
+};
 
+// 2. Xóa sách khỏi yêu thích
+const removeFavorite = async (userId, bookId) => {
+    const user = await User.findByIdAndUpdate(
+        userId, 
+        { $pull: { favorites: bookId } }, 
+        { new: true }
+    ).populate('favorites');
+    return user.favorites;
+};
+
+// 3. Lấy danh sách yêu thích
+const getFavorites = async (userId) => {
+    const user = await User.findById(userId).populate({
+        path: 'favorites',
+        populate: [
+            { path: 'categories', select: 'tenTheLoai' }, // Lấy tên thể loại để lọc
+            { path: 'maNXB', select: 'tenNXB' }           // Lấy tên NXB để hiển thị
+        ]
+    });
+    return user ? user.favorites : [];
+};
 
 module.exports = {
   getAllUsers,
@@ -98,5 +127,8 @@ module.exports = {
   createUser, 
   updateUser,
   deleteUser,
-  updatePassword
+  updatePassword,
+  addFavorite,
+  removeFavorite,
+  getFavorites
 };

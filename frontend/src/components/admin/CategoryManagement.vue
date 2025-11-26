@@ -218,7 +218,7 @@ const deleteItemConfirm = async () => {
     snackbar.value = { show: true, message: 'Deleted successfully', color: 'success' };
     closeDelete();
   } catch (error) {
-    snackbar.value = { show: true, message: 'Delete failed', color: 'error' };
+    snackbar.value = { show: true, message: 'Không thể xóa!!! Thể loại này đang có sách được mượn.', color: 'error' };
     closeDelete();
   }
 };
