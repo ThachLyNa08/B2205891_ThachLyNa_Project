@@ -7,6 +7,7 @@ const morgan = require('morgan'); // Log request để debug
 const path = require('path');
 const passport = require('passport');
 
+
 // Import Routes
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -24,6 +25,7 @@ const app = express();
 // 1. Bảo mật Headers
 // QUAN TRỌNG: Cần cấu hình crossOriginResourcePolicy: false 
 // để Frontend (port 5173) có thể load được ảnh từ Backend (port 5000/uploads)
+
 app.use(helmet({
   crossOriginResourcePolicy: false,
 }));
@@ -66,7 +68,7 @@ app.use(cors({
 app.get('/', (req, res) => {
   res.send('Welcome to the Library Nexus API!');
 });
-
+app.use('/api/notifications', require('./routes/notificationRoutes'));
 // Cấu hình Static Folder cho ảnh
 // Giả định cấu trúc thư mục là: backend/src/app.js và backend/uploads
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));

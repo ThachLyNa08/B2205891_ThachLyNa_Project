@@ -2,6 +2,7 @@
 require('dotenv').config(); // Load environment variables from .env file
 const app = require('./src/app');
 const mongoose = require('mongoose');
+const setupCronJobs = require('./src/cron/cronJobs');
 
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.DB_URI;
@@ -19,3 +20,4 @@ mongoose.connect(MONGO_URI)
     console.error('MongoDB connection error:', err);
     process.exit(1); // Exit process if DB connection fails
   });
+  setupCronJobs();
