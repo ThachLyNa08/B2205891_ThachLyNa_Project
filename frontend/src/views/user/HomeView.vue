@@ -1,8 +1,5 @@
 <template>
   <div class="home-wrapper">
-    <!-- ============================================= -->
-    <!-- 1. HERO SECTION: KỆ SÁCH HUYỀN THOẠI -->
-    <!-- ============================================= -->
     <section class="hero-section position-relative">
       <v-img
         src="https://images.unsplash.com/photo-1481627834876-b7833e8f5570?q=80&w=2228&auto=format&fit=crop"
@@ -11,7 +8,6 @@
       >
         <div class="hero-overlay fill-height d-flex flex-column align-center justify-center text-center px-4">
           
-          <!-- Tiêu đề & Slogan -->
           <div class="animate-fade-up">
             <h1 class="text-h3 text-md-h2 font-serif text-white mb-2 font-weight-bold text-uppercase ls-2 text-shadow">
               Library Nexus
@@ -21,20 +17,34 @@
             </p>
           </div>
 
-          <!-- SEARCH BAR: Hiệu ứng Kính mờ (Glassmorphism) -->
           <v-card 
             width="100%" 
             max-width="700" 
             class="glass-search rounded-pill pa-2 d-flex align-center elevation-10 animate-fade-up delay-100"
           >
             <v-icon icon="mdi-magnify" color="white" class="ml-3" size="large"></v-icon>
+            
             <input 
               v-model="searchQuery" 
               type="text" 
               class="search-input ml-3 flex-grow-1 text-white" 
-              placeholder="Search for titles, authors, genres..." 
+              :placeholder="isListening ? 'Đang nghe...' : 'Search for titles, authors, genres...'" 
               @keyup.enter="handleSearch"
             />
+
+            <v-btn
+              icon
+              variant="text"
+              size="small"
+              class="mr-2"
+              :color="isListening ? 'red-accent-2' : 'white'"
+              :class="{ 'listening-pulse': isListening }"
+              @click="startVoiceSearch"
+            >
+              <v-icon>{{ isListening ? 'mdi-microphone-off' : 'mdi-microphone' }}</v-icon>
+              <v-tooltip activator="parent" location="top">Tìm bằng giọng nói</v-tooltip>
+            </v-btn>
+
             <v-btn 
               color="white" 
               icon="mdi-arrow-right" 
@@ -44,7 +54,6 @@
             ></v-btn>
           </v-card>
 
-          <!-- [MỚI] POPULAR TAGS: Từ khóa gợi ý nhanh -->
           <div class="mt-4 animate-fade-up delay-200 d-none d-sm-flex align-center gap-2">
             <span class="text-grey-lighten-2 text-caption font-weight-bold mr-2">Popular:</span>
             <v-chip 
@@ -63,9 +72,6 @@
       </v-img>
     </section>
 
-    <!-- ============================================= -->
-    <!-- 2. QUICK ACTIONS: MENU NỔI -->
-    <!-- ============================================= -->
     <v-container class="mt-n16 position-relative" style="z-index: 100;">
       <v-row justify="center">
         <v-col cols="12" md="10">
@@ -90,9 +96,6 @@
       </v-row>
     </v-container>
 
-    <!-- ============================================= -->
-    <!-- 3. TRENDING BOOKS -->
-    <!-- ============================================= -->
     <v-container class="mt-12 mb-6">
       <div class="d-flex justify-space-between align-end mb-6 border-b pb-2" style="border-color: #e0e0e0;">
         <div>
@@ -102,14 +105,12 @@
         <v-btn color="primary" variant="text" append-icon="mdi-arrow-right" to="/books" class="font-weight-bold">Xem tất cả</v-btn>
       </div>
 
-      <!-- Loading Skeleton -->
       <v-row v-if="loading">
         <v-col cols="6" sm="4" md="3" lg="2" v-for="n in 6" :key="n">
            <v-skeleton-loader type="image, article"></v-skeleton-loader>
         </v-col>
       </v-row>
 
-      <!-- Book List -->
       <v-row dense v-else>
         <v-col cols="6" sm="4" md="3" lg="2" v-for="book in trendingBooks" :key="book._id">
           <v-hover v-slot="{ isHovering, props }">
@@ -132,7 +133,6 @@
                     </div>
                   </template>
                   
-                  <!-- Overlay khi hover -->
                   <v-expand-transition>
                     <div v-if="isHovering" class="d-flex align-center justify-center transition-fast-in-fast-out" style="height: 100%; position: absolute; top: 0; width: 100%; background: rgba(0,0,0,0.4);">
                        <v-btn size="small" variant="elevated" color="white" class="text-primary font-weight-bold rounded-pill">
@@ -157,31 +157,47 @@
       </v-row>
     </v-container>
 
-    <!-- ============================================= -->
-    <!-- [MỚI] 4. STATS BANNER (Dải thống kê) -->
-    <!-- ============================================= -->
-    <div class="stats-parallax py-10 my-8 text-white">
-      <v-container>
-        <v-row justify="center" class="text-center">
-          <v-col cols="4" md="3">
-            <div class="text-h3 font-weight-bold">10k+</div>
-            <div class="text-subtitle-1">Books Available</div>
-          </v-col>
-          <v-col cols="4" md="3">
-            <div class="text-h3 font-weight-bold">500+</div>
-            <div class="text-subtitle-1">Active Readers</div>
-          </v-col>
-          <v-col cols="4" md="3">
-            <div class="text-h3 font-weight-bold">24/7</div>
-            <div class="text-subtitle-1">Online Access</div>
-          </v-col>
-        </v-row>
-      </v-container>
-    </div>
+      <v-container class="my-6 position-relative z-index-10">
+      <v-hover v-slot="{ isHovering, props }">
+        <v-card
+          v-bind="props"
+          class="rounded-lg elevation-4 overflow-hidden cursor-pointer"
+          :elevation="isHovering ? 10 : 4"
+          to="/books" 
+        >
+          <v-img
+            src="https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=2070&auto=format&fit=crop"
+            height="240"
+            cover
+            class="align-center"
+            gradient="to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 60%, rgba(0,0,0,0.1) 100%"
+          >
+            <div class="d-flex flex-column justify-center fill-height px-6 px-md-12">
+              
+              <div class="animate-fade-right">
+                <div class="text-overline text-amber font-weight-bold mb-0">
+                   EVENT OF THE MONTH
+                </div>
+                
+                <h2 class="text-h4 font-serif font-weight-bold text-white mb-2 text-shadow">
+                  Reading Challenge 2025
+                </h2>
+                
+                <p class="text-body-1 text-grey-lighten-3 font-weight-light mb-4 opacity-90" style="max-width: 600px;">
+                  Join 500+ readers. Borrow 5 books to win a Kindle Paperwhite!
+                </p>
+                
+                <div class="d-flex align-center text-white font-weight-bold text-decoration-underline">
+                   Explore Now <v-icon end size="small" class="ml-1">mdi-arrow-right</v-icon>
+                </div>
+              </div>
 
-    <!-- ============================================= -->
-    <!-- 5. RECOMMENDED SECTION -->
-    <!-- ============================================= -->
+            </div>
+          </v-img>
+        </v-card>
+      </v-hover>
+    </v-container>
+    
     <div class="bg-grey-lighten-5 py-8">
       <v-container>
         <div class="d-flex justify-space-between align-end mb-6">
@@ -241,6 +257,7 @@ const searchQuery = ref('');
 const trendingBooks = ref([]);
 const recommendedBooks = ref([]);
 const loading = ref(true);
+const isListening = ref(false); // [MỚI] Trạng thái đang nghe
 
 // [MỚI] Danh sách từ khóa nhanh
 const popularTags = ['Fantasy', 'Science Fiction', 'History', 'Romance', 'Self-help'];
@@ -272,6 +289,74 @@ const handleSearch = () => {
 const searchByTag = (tag) => {
     router.push({ name: 'books', query: { search: tag } });
 }
+
+// [MỚI] HÀM XỬ LÝ GIỌNG NÓI
+const startVoiceSearch = () => {
+  // Kiểm tra trình duyệt hỗ trợ
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  
+  if (!SpeechRecognition) {
+    alert('Trình duyệt của bạn không hỗ trợ tìm kiếm bằng giọng nói. Vui lòng dùng Chrome hoặc Edge.');
+    return;
+  }
+
+  // Nếu đang nghe thì tắt đi
+  if (isListening.value) {
+    isListening.value = false;
+    // Lưu ý: Việc gọi stop() ở đây phụ thuộc vào instance recognition, 
+    // nhưng vì ta tạo mới mỗi lần click nên chỉ cần đổi state để UI cập nhật.
+    // Để tối ưu hơn, có thể lưu instance recognition ra ngoài.
+    window.location.reload(); // Cách đơn giản nhất để stop nếu đang kẹt
+    return;
+  }
+
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'vi-VN'; // Thiết lập tiếng Việt
+  recognition.interimResults = false; // Chỉ lấy kết quả cuối cùng
+  recognition.maxAlternatives = 1;
+
+  recognition.onstart = () => {
+    isListening.value = true;
+  };
+
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    searchQuery.value = transcript; // Điền vào ô search
+    // Tự động tìm sau 1s để người dùng kịp nhìn thấy chữ
+    setTimeout(() => {
+        handleSearch();
+    }, 800);
+  };
+
+  recognition.onspeechend = () => {
+    recognition.stop();
+    isListening.value = false;
+  };
+
+  recognition.onerror = (event) => {
+    console.error('Voice search error:', event.error);
+    isListening.value = false; // Tắt hiệu ứng rung
+
+    // Xử lý các loại lỗi cụ thể
+    switch (event.error) {
+        case 'not-allowed':
+            alert('Bạn đã chặn quyền truy cập Micro. Vui lòng cho phép trong cài đặt trình duyệt.');
+            break;
+        case 'no-speech':
+            alert('Không nghe thấy gì cả. Vui lòng nói to hơn hoặc kiểm tra micro.');
+            break;
+        case 'network':
+            alert('Lỗi kết nối mạng. Cần có internet để nhận dạng giọng nói.');
+            break;
+        default:
+            // Các lỗi khác (audio-capture, bad-grammar, v.v.)
+            // alert('Có lỗi xảy ra: ' + event.error); 
+            break;
+    }
+  };
+
+  recognition.start();
+};
 
 onMounted(async () => {
   loading.value = true;
@@ -333,6 +418,16 @@ onMounted(async () => {
   background: transparent;
 }
 .search-input::placeholder { color: rgba(255, 255, 255, 0.7); }
+
+/* [MỚI] Hiệu ứng Pulse cho Micro */
+.listening-pulse {
+  animation: pulse-red 1.5s infinite;
+}
+@keyframes pulse-red {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); }
+  70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(255, 82, 82, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); }
+}
 
 .glass-chip {
   backdrop-filter: blur(5px);
@@ -397,5 +492,17 @@ onMounted(async () => {
   .hero-section { height: 450px; }
   .text-h3 { font-size: 1.8rem !important; }
   .glass-search { max-width: 90%; }
+}
+.animate-fade-right {
+  animation: fadeRight 1s ease-out forwards;
+  opacity: 0;
+  transform: translateX(-30px);
+}
+
+@keyframes fadeRight {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 </style>

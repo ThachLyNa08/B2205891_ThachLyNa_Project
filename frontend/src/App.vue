@@ -137,37 +137,14 @@ const visibleNavItems = computed(() => {
 </style> -->
 
 <script setup>
-import { computed } from 'vue';
-import { RouterView, useRoute } from 'vue-router';
-
-// --- THÊM DÒNG NÀY ---
-import ChatWidget from '@/components/ChatWidget.vue'; 
-// ---------------------
-
-const route = useRoute();
-
-// Logic ẩn Chatbot ở trang Admin
-const showChatWidget = computed(() => {
-  if (!route.path) return false;
-  return !route.path.startsWith('/admin-portal');
-});
+import { RouterView } from 'vue-router';
+// Xóa import ChatWidget ở đây
 </script>
 
 <template>
-  <v-app>
-    
-    <RouterView />
-
-    <!-- Chatbot nằm ở đây -->
-    <ChatWidget v-if="showChatWidget" />
-    
-  </v-app>
+  <RouterView />
 </template>
 
 <style>
-html, body {
-  margin: 0;
-  padding: 0;
-  /* Đảm bảo không có overflow: hidden ở đây nếu muốn cuộn bình thường */
-}
+html, body { margin: 0; padding: 0; }
 </style>

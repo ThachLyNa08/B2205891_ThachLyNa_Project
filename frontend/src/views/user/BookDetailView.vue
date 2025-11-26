@@ -1,5 +1,9 @@
 <template>
-  <v-container class="py-12" v-if="book">
+  <div v-if="!book" class="d-flex justify-center align-center py-12" style="min-height: 400px;">
+     <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+  </div>
+
+  <v-container class="py-12" v-else>
     <v-card elevation="0" class="bg-transparent overflow-visible">
       <v-row>
         <v-col cols="12" md="4" lg="3">
@@ -205,11 +209,10 @@
 
       </v-card>
     </v-dialog>
-    <!-- PHẦN ĐÁNH GIÁ -->
+    
     <v-card class="mt-6 rounded-xl elevation-1">
       <v-card-title class="font-weight-bold">Đánh giá & Bình luận</v-card-title>
       <v-card-text>
-        <!-- Form viết đánh giá (Chỉ hiện khi đăng nhập) -->
         <div v-if="authStore.isAuthenticated" class="mb-6 pa-4 bg-grey-lighten-5 rounded-lg">
            <div class="text-subtitle-2 mb-2">Viết đánh giá của bạn</div>
            <v-rating v-model="newReview.rating" color="amber" density="compact" hover size="small"></v-rating>
@@ -234,7 +237,6 @@
 
         <v-divider class="mb-4"></v-divider>
 
-        <!-- Danh sách đánh giá -->
         <div v-if="reviews.length > 0">
            <div v-for="review in reviews" :key="review._id" class="d-flex mb-4">
               <v-avatar color="grey-lighten-3" class="mr-3">
@@ -248,7 +250,6 @@
                  </div>
                  <div class="text-body-2 mt-1">{{ review.comment }}</div>
                  
-                 <!-- Nút xóa (chỉ hiện nếu là chính chủ) -->
                  <v-btn 
                     v-if="authStore.user?._id === review.userId?._id" 
                     variant="text" size="x-small" color="error" 
@@ -259,18 +260,17 @@
            </div>
         </div>
         <div v-else class="text-center text-grey py-4">Chưa có đánh giá nào. Hãy là người đầu tiên!</div>
-        </v-card-text>
+      </v-card-text>
     </v-card>
 
   </v-container>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '@/services/api.service';
 import { useAuthStore } from '@/stores/auth';
-import { reactive } from 'vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -279,7 +279,7 @@ const authStore = useAuthStore();
 const book = ref(null);
 const relatedBooks = ref([]);
 const dialog = ref(false);
-const currentStep = ref(1); // 1: Borrow, 2: Payment
+const currentStep = ref(1);
 const createdLoan = ref(null);
 
 const loanLoading = ref(false);
@@ -306,6 +306,7 @@ const minDate = computed(() => {
   return d.toISOString().split('T')[0];
 });
 
+// ✅ HÀM CHÍNH: Fetch Book Detail
 const fetchBook = async (id) => {
   try {
     const res = await api.get(`/books/${id}`);
@@ -316,15 +317,19 @@ const fetchBook = async (id) => {
     returnDate.value = defDate.toISOString().split('T')[0];
     calculateRent();
     fetchRelated();
-  } catch (e) { console.error(e); }
+  } catch (e) { 
+    console.error('Error fetching book:', e); 
+  }
 };
 
 const fetchRelated = async () => {
   try {
-      const res = await api.get('/books?limit=6&page=2');
-      relatedBooks.value = res.data.data;
-  } catch(e) {}
-}
+    const res = await api.get('/books?limit=6&page=2');
+    relatedBooks.value = res.data.data;
+  } catch(e) {
+    console.error('Error fetching related books:', e);
+  }
+};
 
 const calculateRent = () => {
   if (!returnDate.value || !book.value) return;
@@ -338,7 +343,6 @@ const calculateRent = () => {
 const openBorrowDialog = () => {
   if (!authStore.isAuthenticated) return router.push('/auth/login');
   
-  // Reset form thanh toán với thông tin user
   billingName.value = authStore.user?.ten ? `${authStore.user.hoLot || ''} ${authStore.user.ten}`.trim() : authStore.user?.username;
   billingPhone.value = authStore.user?.dienThoai || '';
   paymentMethod.value = 'e-wallet';
@@ -347,7 +351,6 @@ const openBorrowDialog = () => {
   dialog.value = true;
 };
 
-// --- BƯỚC 1: TẠO LOAN ---
 const confirmLoan = async () => {
   loanLoading.value = true;
   try {
@@ -357,7 +360,7 @@ const confirmLoan = async () => {
     });
     
     createdLoan.value = response.data.loan;
-    currentStep.value = 2; // Chuyển sang thanh toán
+    currentStep.value = 2;
 
   } catch (error) {
     alert(error.response?.data?.message || "Error borrowing book");
@@ -366,29 +369,28 @@ const confirmLoan = async () => {
   }
 };
 
-// --- BƯỚC 2: THANH TOÁN ---
 const processPayment = async () => {
   if (!createdLoan.value) return;
   if (!billingName.value || !billingPhone.value) {
-      alert("Please enter billing name and phone number.");
-      return;
+    alert("Please enter billing name and phone number.");
+    return;
   }
 
   paymentLoading.value = true;
 
   try {
     const intentRes = await api.post('/payments/create-intent', {
-        loanId: createdLoan.value._id,
-        amount: createdLoan.value.rentCost || estimatedCost.value,
-        paymentType: 'rent_and_fine' // Hoặc 'rent'
+      loanId: createdLoan.value._id,
+      amount: createdLoan.value.rentCost || estimatedCost.value,
+      paymentType: 'rent_and_fine'
     });
 
     await api.post(`/payments/${intentRes.data.payment._id}/process`, {
-        paymentMethod: paymentMethod.value, // Gửi phương thức thanh toán
-        billingDetails: { // Gửi thông tin người dùng
-            name: billingName.value,
-            phone: billingPhone.value
-        }
+      paymentMethod: paymentMethod.value,
+      billingDetails: {
+        name: billingName.value,
+        phone: billingPhone.value
+      }
     });
 
     alert("Payment Successful! Book is yours.");
@@ -405,8 +407,8 @@ const processPayment = async () => {
 };
 
 const finishProcess = () => {
-    dialog.value = false;
-    router.push('/my-loans');
+  dialog.value = false;
+  router.push('/my-loans');
 };
 
 const formatCurrency = (val) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
@@ -414,10 +416,11 @@ const formatCurrency = (val) => new Intl.NumberFormat('vi-VN', { style: 'currenc
 // FETCH REVIEWS
 const fetchReviews = async () => {
   try {
-    // Giả sử route.params.id là ID sách
     const res = await api.get(`/reviews/book/${route.params.id}`);
     reviews.value = res.data;
-  } catch (e) { console.error(e); }
+  } catch (e) { 
+    console.error('Error fetching reviews:', e); 
+  }
 };
 
 // SUBMIT REVIEW
@@ -425,11 +428,10 @@ const submitReview = async () => {
   submitting.value = true;
   try {
     await api.post('/reviews', {
-       bookId: route.params.id,
-       rating: newReview.rating,
-       comment: newReview.comment
+      bookId: route.params.id,
+      rating: newReview.rating,
+      comment: newReview.comment
     });
-    // Reset form & reload list
     newReview.rating = 0;
     newReview.comment = '';
     await fetchReviews();
@@ -445,21 +447,33 @@ const submitReview = async () => {
 const deleteReview = async (id) => {
   if(!confirm('Xóa đánh giá này?')) return;
   try {
-     await api.delete(`/reviews/${id}`);
-     await fetchReviews();
-  } catch(e) { alert('Lỗi xóa'); }
+    await api.delete(`/reviews/${id}`);
+    await fetchReviews();
+  } catch(e) { 
+    alert('Lỗi xóa'); 
+  }
 };
 
-// Helper Format Date
 const formatDate = (d) => new Date(d).toLocaleDateString('vi-VN');
 
 onMounted(async () => {
-    await fetchBookDetail(); // Hàm cũ của bạn
-    await fetchReviews();    // Hàm mới thêm
+  await fetchBook(route.params.id);
+  await fetchReviews();
 });
 
-onMounted(() => fetchBook(route.params.id));
-watch(() => route.params.id, (newId) => { if(newId) fetchBook(newId) });
+// --- PHẦN QUAN TRỌNG: Watcher để Reset dữ liệu khi ID đổi ---
+watch(() => route.params.id, async (newId) => { 
+  if (newId) {
+    // 1. Reset dữ liệu cũ để UI hiện loading
+    book.value = null;
+    reviews.value = [];
+    relatedBooks.value = [];
+    
+    // 2. Fetch dữ liệu mới
+    await fetchBook(newId);
+    await fetchReviews();
+  }
+});
 </script>
 
 <style scoped>
@@ -473,6 +487,6 @@ watch(() => route.params.id, (newId) => { if(newId) fetchBook(newId) });
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
 }
 .book-card {
-    border: 1px solid rgba(0,0,0,0.05);
+  border: 1px solid rgba(0,0,0,0.05);
 }
 </style>

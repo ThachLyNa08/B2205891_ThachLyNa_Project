@@ -93,15 +93,21 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue'; // [THÊM] watch
+import { useRoute } from 'vue-router';       // [THÊM] useRoute
 import api from '@/services/api.service';
 import debounce from 'lodash.debounce';
+
+const route = useRoute(); // [THÊM] Khởi tạo route để lấy tham số URL
 
 const books = ref([]);
 const categories = ref([]);
 const loading = ref(true);
-const searchQuery = ref('');
-const selectedCategory = ref(null);
+
+// [SỬA] Lấy giá trị ban đầu từ URL nếu có (ví dụ khi search từ Home)
+const searchQuery = ref(route.query.search || ''); 
+const selectedCategory = ref(route.query.category || null);
+
 const filterAuthor = ref('');
 const currentPage = ref(1);
 const pages = ref(1);
@@ -123,7 +129,6 @@ const getCategoryColor = (categoryName) => {
     default: return 'primary'; // Màu mặc định Vuetify
   }
 };
-
 
 const fetchBooks = async () => {
   loading.value = true;
@@ -168,6 +173,20 @@ const debouncedFilter = debounce(() => {
    currentPage.value = 1;
    fetchBooks();
 }, 500);
+
+// [THÊM] Theo dõi sự thay đổi trên URL để cập nhật dữ liệu
+watch(
+  () => route.query,
+  (newQuery) => {
+    // Cập nhật lại các biến filter từ URL mới
+    searchQuery.value = newQuery.search || '';
+    if (newQuery.category) selectedCategory.value = newQuery.category;
+    
+    // Reset trang và gọi lại API
+    currentPage.value = 1;
+    fetchBooks();
+  }
+);
 
 onMounted(() => {
   fetchCategories();

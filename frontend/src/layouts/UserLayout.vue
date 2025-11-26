@@ -1,6 +1,5 @@
 <template>
   <v-app>
-    <!-- 1. NAVIGATION DRAWER -->
     <v-navigation-drawer
       v-model="drawer"
       temporary
@@ -8,7 +7,6 @@
       class="bg-grey-lighten-5"
       width="300"
     >
-      <!-- Header Drawer -->
       <div v-if="authStore.isAuthenticated" class="pa-4 bg-primary text-white">
         <div class="d-flex align-center gap-3 mb-2">
           <v-avatar color="white" size="50" class="elevation-2">
@@ -39,7 +37,6 @@
 
       <v-divider></v-divider>
 
-      <!-- Menu List -->
       <v-list nav density="comfortable" class="mt-2">
         <div class="text-caption text-grey ml-4 mb-1 font-weight-bold mt-2">EXPLORE</div>
         <v-list-item to="/home" prepend-icon="mdi-home-outline" title="Home" rounded="lg" color="primary"></v-list-item>
@@ -60,7 +57,6 @@
       </v-list>
     </v-navigation-drawer>
 
-    <!-- 2. APP BAR -->
     <v-app-bar app color="#1565C0" elevation="2" class="px-2">
       <v-app-bar-nav-icon variant="text" color="white" @click="drawer = !drawer"></v-app-bar-nav-icon>
       <v-toolbar-title class="text-uppercase font-weight-bold text-white cursor-pointer" @click="router.push('/home')">
@@ -80,10 +76,8 @@
           <v-btn variant="flat" color="white" to="/register" class="text-primary font-weight-bold ml-2">Register</v-btn>
         </div>
 
-        <!-- ICON CHUÔNG VÀ AVATAR (ĐÃ ĐĂNG NHẬP) -->
         <div v-else class="d-flex align-center ml-2">
            
-           <!-- NÚT CHUÔNG CÓ SỐ ĐẾM -->
            <v-btn icon class="mr-1 text-white" to="/notifications">
               <v-badge 
                 v-if="unreadCount > 0" 
@@ -125,23 +119,20 @@
       </div>
     </v-app-bar>
 
-    <!-- 3. MAIN CONTENT -->
     <v-main class="bg-grey-lighten-4">
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
-          <component :is="Component" />
+          <component :is="Component" :key="route.fullPath" />
         </transition>
       </router-view>
     </v-main>
 
-    <!-- Footer -->
     <v-footer app color="#0D47A1" class="text-center d-flex flex-column py-4 text-white">
       <div class="text-body-2 font-weight-light opacity-80">
         &copy; {{ new Date().getFullYear() }} — <strong>Library Nexus</strong>.
       </div>
     </v-footer>
 
-    <!-- 4. CHAT WIDGET -->
     <ChatWidget />
 
   </v-app>
