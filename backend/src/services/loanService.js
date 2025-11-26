@@ -5,6 +5,10 @@ const Loan = require('../models/loan'); // <--- ĐÃ THÊM DÒNG QUAN TRỌNG N�
 
 const OVERDUE_FINE_PER_DAY = 10000; 
 
+// [MỚI] Hàm escape regex để tránh lỗi ký tự đặc biệt
+const escapeRegExp = (string) => {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); 
+};
 // 1. YÊU CẦU MƯỢN
 const requestLoan = async (userId, bookId, ngayHenTra) => {
     const book = await Book.findById(bookId);
@@ -114,46 +118,71 @@ const getLoanStats = async () => {
   return { pending, borrowed, overdue, returned };
 };
 
+// [SỬA] Cập nhật logic tìm kiếm trong hàm getLoans
 const getLoans = async (filter, pagination) => {
   const { page, limit } = pagination;
   const skip = (page - 1) * limit;
 
-  // Tạo query tìm kiếm cơ bản
   let query = {};
 
-  // 1. XỬ LÝ FILTER STATUS (QUAN TRỌNG)
+  // 1. XỬ LÝ FILTER STATUS
   if (filter.status) {
     if (filter.status === 'overdue') {
-      // Logic tìm sách quá hạn:
-      // 1. Trạng thái phải là đang mượn ('borrowed')
-      // 2. Ngày hẹn trả phải NHỎ HƠN thời điểm hiện tại
       query.status = 'borrowed';
       query.ngayHenTra = { $lt: new Date() }; 
     } 
     else if (filter.status.includes(',')) {
-      // Logic tìm nhiều trạng thái (ví dụ: "returned,cancelled")
       const statuses = filter.status.split(',');
       query.status = { $in: statuses };
     } 
     else {
-      // Các trạng thái bình thường (pending, borrowed, returned...)
       query.status = filter.status;
     }
   }
 
-  // 2. XỬ LÝ FILTER USER (Nếu có)
+  // 2. XỬ LÝ FILTER USER ID (Nếu có)
   if (filter.userId) {
     query.userId = filter.userId;
   }
 
-  // 3. XỬ LÝ TÌM KIẾM TỪ KHÓA (Nếu có - Search box)
-  // (Phần này tùy code cũ của bạn, nếu chưa có thì bỏ qua hoặc thêm vào sau)
-  
+  // 3. [MỚI] XỬ LÝ TÌM KIẾM TỪ KHÓA
+  if (filter.search) {
+    const safeSearch = escapeRegExp(filter.search);
+    const searchRegex = new RegExp(safeSearch, 'i');
+
+    // A. Tìm các User có tên/email khớp từ khóa
+    const users = await User.find({
+        $or: [
+            { username: { $regex: searchRegex } },
+            { email: { $regex: searchRegex } },
+            { hoLot: { $regex: searchRegex } },
+            { ten: { $regex: searchRegex } }
+        ]
+    }).select('_id');
+    const userIds = users.map(u => u._id);
+
+    // B. Tìm các Book có tên/mã khớp từ khóa
+    const books = await Book.find({
+        $or: [
+            { tenSach: { $regex: searchRegex } },
+            { maSach: { $regex: searchRegex } }
+        ]
+    }).select('_id');
+    const bookIds = books.map(b => b._id);
+
+    // C. Thêm điều kiện vào query chính:
+    // Loan phải thuộc về User tìm thấy HOẶC Book tìm thấy
+    query.$or = [
+        { userId: { $in: userIds } },
+        { bookId: { $in: bookIds } }
+    ];
+  }
+
   // --- THỰC HIỆN TRUY VẤN ---
   const loans = await Loan.find(query)
-    .populate('userId', 'username email hoLot ten') // Lấy thông tin user
-    .populate('bookId', 'tenSach maSach coverUrl')  // Lấy thông tin sách
-    .sort({ createdAt: -1 }) // Mới nhất lên đầu
+    .populate('userId', 'username email hoLot ten') 
+    .populate('bookId', 'tenSach maSach coverUrl')  
+    .sort({ createdAt: -1 }) 
     .skip(skip)
     .limit(limit);
 

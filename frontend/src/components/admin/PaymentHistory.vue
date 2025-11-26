@@ -180,7 +180,7 @@ const loadPayments = debounce(async ({ page, itemsPerPage: perPage } = {}) => {
             page: page || currentPage.value,
             limit: perPage || itemsPerPage.value,
             status: filterStatus.value,
-            // search: search.value, // Backend cần hỗ trợ search nếu muốn dùng
+            search: search.value, // Backend cần hỗ trợ search nếu muốn dùng
         };
         Object.keys(params).forEach(key => !params[key] && delete params[key]);
 

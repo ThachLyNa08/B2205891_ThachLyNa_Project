@@ -1,11 +1,16 @@
 const userService = require('../services/userService');
 
-// @desc    Get all users
+// @desc    Get all users (with search support)
 // @route   GET /api/users
 // @access  Private/Admin
 const getUsers = async (req, res, next) => {
   try {
-    const users = await userService.getAllUsers();
+    // [MỚI] Lấy từ khóa tìm kiếm từ URL
+    const search = req.query.search;
+    
+    // [SỬA] Truyền biến search vào hàm getAllUsers
+    const users = await userService.getAllUsers(search);
+    
     res.status(200).json(users);
   } catch (error) {
     next(error);
@@ -19,6 +24,7 @@ const getUser = async (req, res, next) => {
     try {
         const userIdToFetch = req.params.id === 'me' ? req.user._id : req.params.id;
         const user = await userService.getUserById(userIdToFetch);
+        
         if (!user) {
             return res.status(404).json({ message: 'User not found.' });
         }
@@ -60,6 +66,7 @@ const updateUser = async (req, res, next) => {
     const userId = req.params.id;
     const updateData = req.body;
 
+    // Logic kiểm tra quyền hạn (chỉ admin mới được sửa role, v.v...)
     if (updateData.role && req.user._id.toString() !== userId && !['admin'].includes(req.user.role)) {
         return res.status(403).json({ message: 'Not authorized to change user role.' });
     }
@@ -122,10 +129,6 @@ const updatePassword = async (req, res, next) => {
     }
 };
 
-// ==========================================
-// --- CÁC HÀM MỚI CHO UPLOAD ẢNH ---
-// ==========================================
-
 // @desc    Upload Avatar
 // @route   POST /api/users/:id/avatar
 const uploadAvatar = async (req, res, next) => {
@@ -133,12 +136,8 @@ const uploadAvatar = async (req, res, next) => {
     if (!req.file) {
       return res.status(400).json({ message: 'Vui lòng chọn file ảnh.' });
     }
-
-    // Tạo URL ảnh: http://localhost:5000/uploads/filename.jpg
     const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
     const userId = req.params.id;
-
-    // Cập nhật URL vào DB
     const updatedUser = await userService.updateUser(userId, { avatar: imageUrl });
 
     res.status(200).json({
@@ -158,10 +157,8 @@ const uploadCover = async (req, res, next) => {
     if (!req.file) {
       return res.status(400).json({ message: 'Vui lòng chọn file ảnh.' });
     }
-
     const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
     const userId = req.params.id;
-
     const updatedUser = await userService.updateUser(userId, { coverImage: imageUrl });
 
     res.status(200).json({
@@ -181,6 +178,6 @@ module.exports = {
   updateUser,
   deleteUser,
   updatePassword,
-  uploadAvatar, // <-- Nhớ export hàm này
-  uploadCover   // <-- Nhớ export hàm này
+  uploadAvatar,
+  uploadCover
 };

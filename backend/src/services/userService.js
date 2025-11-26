@@ -2,9 +2,32 @@
 const User = require('../models/user');
 const { hashPassword } = require('../utils/authUtils'); 
 
+const escapeRegExp = (string) => {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); 
+};
 // Lấy tất cả người dùng (chỉ admin)
-const getAllUsers = async () => {
-  return await User.find().select('-password');
+const getAllUsers = async (search) => {
+  let query = {};
+
+  // Nếu có từ khóa tìm kiếm, tạo bộ lọc (filter)
+  if (search) {
+    const safeSearch = escapeRegExp(search);
+    const searchRegex = new RegExp(safeSearch, 'i'); // 'i' nghĩa là không phân biệt hoa thường
+
+    // Tìm kiếm trong: username, email, số điện thoại, họ, tên
+    query = {
+      $or: [
+        { username: { $regex: searchRegex } },
+        { email: { $regex: searchRegex } },
+        { dienThoai: { $regex: searchRegex } },
+        { hoLot: { $regex: searchRegex } },
+        { ten: { $regex: searchRegex } }
+      ]
+    };
+  }
+
+  // Truyền query vào find()
+  return await User.find(query).select('-password');
 };
 
 // Lấy thông tin một người dùng theo ID

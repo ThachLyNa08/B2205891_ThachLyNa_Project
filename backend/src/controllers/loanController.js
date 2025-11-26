@@ -151,11 +151,16 @@ const cancelLoan = async (req, res, next) => {
 // @access  Private/Reader, Staff, Admin
 const getLoans = async (req, res, next) => {
   try {
-    const { page, limit, status, userId } = req.query;
+    // [SỬA] Thêm 'search' vào danh sách destructuring
+    const { page, limit, status, userId, search } = req.query;
+    
     const pagination = { page: parseInt(page) || 1, limit: parseInt(limit) || 10 };
     const query = {};
 
     if (status) query.status = status;
+    
+    // [MỚI] Nếu có search, thêm vào object query để truyền sang service
+    if (search) query.search = search;
 
     if (req.user.role === 'reader') {
       query.userId = req.user._id;

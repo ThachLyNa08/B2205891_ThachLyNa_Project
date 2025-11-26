@@ -126,28 +126,30 @@ onMounted(() => {
 <style scoped>
 .entry-container {
   position: relative;
-  width: 100vw;
-  height: 100vh;
-  /*overflow: hidden;*/
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden; /* [QUAN TRỌNG] Bỏ comment dòng này để cắt phần ảnh thừa do scale */
   background-color: #000;
 }
 
 /* Ảnh nền full màn hình */
 .bg-image {
-  position: absolute;
+  position: fixed; /* [SỬA] Đổi từ absolute sang fixed để hình luôn gim chặt vào màn hình kể cả khi scroll */
   top: 0; left: 0; width: 100%; height: 100%;
   background-image: url('https://images.unsplash.com/photo-1507842217153-eae850688719?q=80&w=2000&auto=format&fit=crop');
   background-size: cover;
   background-position: center;
   filter: blur(2px);
-  transform: scale(1.05); /* Zoom nhẹ để tránh viền trắng khi blur */
+  transform: scale(1.05); 
+  z-index: 0; /* Đảm bảo nằm dưới cùng */
 }
 
 /* Lớp phủ tối */
 .bg-overlay {
-  position: absolute;
+  position: fixed; /* [SỬA] Đổi từ absolute sang fixed */
   top: 0; left: 0; width: 100%; height: 100%;
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(21, 101, 192, 0.8));
+  z-index: 1; /* Nằm đè lên ảnh */
 }
 
 .z-10 { z-index: 10; }

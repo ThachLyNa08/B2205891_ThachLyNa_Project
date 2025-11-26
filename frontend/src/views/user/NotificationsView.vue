@@ -10,7 +10,7 @@
       <v-btn 
         v-if="unreadCount > 0"
         variant="tonal" 
-        color="primary" 
+        color="black" 
         prepend-icon="mdi-check-all"
         size="small"
         class="text-capitalize"

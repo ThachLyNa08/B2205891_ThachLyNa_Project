@@ -52,22 +52,25 @@ const processPayment = async (req, res, next) => {
   }
 };
 
-// @desc    Get all payments (for Admin/Staff) or user's payments (for Reader)
+// @desc    Get all payments
 // @route   GET /api/payments
 // @access  Private/Reader, Staff, Admin
 const getPayments = async (req, res, next) => {
     try {
-        const { page, limit, status, userId } = req.query;
+        // [SỬA] Thêm 'search' vào destructuring
+        const { page, limit, status, userId, search } = req.query;
+        
         const pagination = { page: parseInt(page) || 1, limit: parseInt(limit) || 10 };
         const query = {};
 
         if (status) query.status = status;
+        
+        // [MỚI] Truyền search vào query
+        if (search) query.search = search;
 
-        // Nếu là admin/staff, có thể lọc theo userId khác
-        // Nếu là reader, chỉ xem được payments của mình
         if (req.user.role === 'reader') {
             query.userId = req.user._id;
-        } else if (userId) { // Admin/Staff có thể lọc theo userId cụ thể
+        } else if (userId) { 
             query.userId = userId;
         }
 
