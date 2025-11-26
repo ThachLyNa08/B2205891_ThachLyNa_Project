@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bookController = require('../controllers/bookController');
 const { protect, authorize } = require('../middleware/authMiddleware');
-const upload = require('../middleware/upload');
+const upload = require('../middleware/upload'); 
 
 // Group 1: /api/books
 router.route('/')

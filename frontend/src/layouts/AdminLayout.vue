@@ -82,6 +82,16 @@ const menuItems = ref([
     to: '/admin-portal/books' 
   },
   { 
+    title: 'Category Manager', 
+    icon: 'mdi-shape-outline', // Icon hình khối
+    to: '/admin-portal/categories' 
+  },
+  { 
+    title: 'Publisher Manager', 
+    icon: 'mdi-domain', // Icon tòa nhà
+    to: '/admin-portal/publishers' 
+  },
+  { 
     title: 'User Management', 
     icon: 'mdi-account-group-outline', 
     to: '/admin-portal/users' 

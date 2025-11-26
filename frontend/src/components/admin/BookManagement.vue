@@ -1,6 +1,6 @@
 <template>
   <div class="book-management-wrapper h-100">
-    <!-- TABS NAVIGATION -->
+    
     <v-tabs v-model="currentTab" color="primary" align-tabs="start" class="mb-4 border-b border-opacity-12">
       <v-tab value="all" class="text-capitalize font-weight-bold">
         <v-icon start>mdi-book-multiple</v-icon> All Books
@@ -8,26 +8,23 @@
       <v-tab value="by-category" class="text-capitalize font-weight-bold">
         <v-icon start>mdi-shape-outline</v-icon> By Category
       </v-tab>
-      <v-tab value="categories" class="text-capitalize font-weight-bold">
-        <v-icon start>mdi-tag-multiple</v-icon> Categories
+      <v-tab value="by-publisher" class="text-capitalize font-weight-bold">
+        <v-icon start>mdi-office-building-outline</v-icon> By Publisher
       </v-tab>
-      <v-tab value="publishers" class="text-capitalize font-weight-bold">
-        <v-icon start>mdi-domain</v-icon> Publishers
+      <v-tab value="by-author" class="text-capitalize font-weight-bold">
+        <v-icon start>mdi-account-group-outline</v-icon> By Author
       </v-tab>
     </v-tabs>
 
     <v-window v-model="currentTab" class="h-100">
       
-      <!-- TAB 1: ALL BOOKS (GRID VIEW) -->
       <v-window-item value="all" class="h-100">
         <v-card class="pa-4 rounded-lg fill-height d-flex flex-column" color="#1e293b" elevation="0">
-          
-          <!-- Toolbar -->
           <div class="d-flex justify-space-between align-center mb-4 flex-wrap gap-2">
             <div class="d-flex align-center" style="min-width: 300px; flex-grow: 1; max-width: 500px;">
                <v-text-field
                 v-model="search"
-                placeholder="Search books..."
+                placeholder="Search title, ISBN..."
                 prepend-inner-icon="mdi-magnify"
                 variant="outlined"
                 density="compact"
@@ -40,7 +37,6 @@
             <v-btn color="success" @click="openCreateDialog" prepend-icon="mdi-plus" height="40">Add Book</v-btn>
           </div>
 
-          <!-- Book Grid -->
           <div class="flex-grow-1 overflow-y-auto pr-2 custom-scrollbar">
              <v-row v-if="loading">
                 <v-col cols="6" sm="4" md="3" lg="2" v-for="n in 12" :key="n">
@@ -58,14 +54,12 @@
                      :elevation="isHovering ? 8 : 0"
                      :class="{'border-primary': isHovering}"
                    >
-                     <!-- Ảnh bìa -->
                      <div class="book-cover-wrapper position-relative">
                        <v-img 
                          :src="book.coverUrl || 'https://placehold.co/300x450?text=No+Cover'" 
                          aspect-ratio="2/3" 
                          cover
                        >
-                          <!-- Overlay Actions -->
                           <v-expand-transition>
                             <div v-if="isHovering" class="d-flex align-center justify-center fill-height action-overlay">
                                <v-btn icon="mdi-pencil" size="small" color="white" variant="flat" class="mr-2" @click="editBook(book)"></v-btn>
@@ -73,25 +67,16 @@
                             </div>
                           </v-expand-transition>
                        </v-img>
-                       <!-- Badge tồn kho -->
                        <div class="stock-badge text-caption font-weight-bold px-2 py-0 rounded" :class="book.availableCopies > 0 ? 'bg-success' : 'bg-error'">
                           {{ book.availableCopies }} left
                        </div>
                      </div>
-                     
-                     <!-- Thông tin -->
                      <div class="pa-3 flex-grow-1 d-flex flex-column">
-                       <div class="text-subtitle-2 font-weight-bold text-white text-truncate mb-1" :title="book.tenSach">
-                         {{ book.tenSach }}
-                       </div>
-                       <div class="text-caption text-grey text-truncate mb-2">
-                         {{ book.tacGia?.join(', ') || 'Unknown' }}
-                       </div>
+                       <div class="text-subtitle-2 font-weight-bold text-white text-truncate mb-1" :title="book.tenSach">{{ book.tenSach }}</div>
+                       <div class="text-caption text-grey text-truncate mb-2">{{ book.tacGia?.join(', ') || 'Unknown' }}</div>
                        <div class="mt-auto d-flex justify-space-between align-center">
                          <span class="text-primary font-weight-bold text-caption">{{ formatCurrency(book.donGia) }}</span>
-                         <v-chip size="x-small" variant="outlined" color="grey" v-if="book.maNXB">
-                            {{ book.maNXB.tenNXB }}
-                         </v-chip>
+                         <v-chip size="x-small" variant="outlined" color="grey" v-if="book.maNXB">{{ book.maNXB?.tenNXB }}</v-chip>
                        </div>
                      </div>
                    </v-card>
@@ -99,118 +84,125 @@
                </v-col>
              </v-row>
           </div>
-
-          <!-- Pagination -->
           <div class="d-flex justify-center pt-4 border-t border-opacity-12 mt-2">
-             <v-pagination
-                v-model="currentPage"
-                :length="Math.ceil(totalBooks / itemsPerPage)"
-                :total-visible="5"
-                density="compact"
-                color="primary"
-                @update:model-value="loadBooks"
-             ></v-pagination>
+             <v-pagination v-model="currentPage" :length="Math.ceil(totalBooks / itemsPerPage)" :total-visible="5" density="compact" color="primary" @update:model-value="loadBooks"></v-pagination>
           </div>
-
         </v-card>
       </v-window-item>
 
-      <!-- TAB 2: FILTER BY CATEGORY -->
       <v-window-item value="by-category" class="h-100">
         <v-row class="h-100 ma-0">
-          <!-- Sidebar Categories -->
-          <v-col cols="12" md="3" class="border-r border-opacity-12 pa-0 h-100 overflow-y-auto custom-scrollbar">
-            <v-list bg-color="transparent" density="compact" nav class="pa-2">
-              <v-list-subheader class="text-uppercase text-caption text-grey mb-2">Categories</v-list-subheader>
-              
-              <!-- FIX: Đổi active-color thành color -->
-              <v-list-item 
-                  value="all_cat" 
-                  color="primary" 
-                  :active="!selectedCategoryFilter" 
-                  @click="filterByCategory(null)" 
-                  rounded="lg" 
-                  class="mb-1 text-white"
-              >
-                <template v-slot:prepend><v-icon size="small">mdi-apps</v-icon></template>
-                <v-list-item-title>All Categories</v-list-item-title>
-              </v-list-item>
-
-              <v-divider class="my-2 border-opacity-12"></v-divider>
-              
-              <v-list-item 
-                  v-for="cat in categories" 
-                  :key="cat._id" 
-                  :value="cat.tenTheLoai" 
-                  color="primary"
-                  :active="selectedCategoryFilter === cat.tenTheLoai" 
-                  @click="filterByCategory(cat.tenTheLoai)" 
-                  rounded="lg" 
-                  class="mb-1 text-white"
-              >
-                 <template v-slot:prepend><v-icon size="small" :color="getCategoryColor(cat.tenTheLoai)">mdi-circle-medium</v-icon></template>
-                 <v-list-item-title>{{ cat.tenTheLoai }}</v-list-item-title>
-              </v-list-item>
-            </v-list>
-          </v-col>
-
-          <!-- Book List (Table View for this tab) -->
-          <v-col cols="12" md="9" class="pa-4 h-100 d-flex flex-column">
-            <div class="d-flex justify-space-between align-center mb-4">
-               <h3 class="text-h6 text-white d-flex align-center">
-                  <v-icon start :color="getCategoryColor(selectedCategoryFilter)">mdi-bookshelf</v-icon>
-                  {{ selectedCategoryFilter || 'All Books' }}
-               </h3>
-               <v-chip size="small" color="primary" variant="flat">{{ totalBooks }} books found</v-chip>
+          <v-col cols="12" md="3" class="border-r border-opacity-12 pa-4 h-100 bg-slate-900">
+            <div class="font-weight-bold text-white mb-4 d-flex align-center">
+                <v-icon start color="primary">mdi-shape-outline</v-icon> FILTER CATEGORY
             </div>
             
-            <v-data-table-server
-              :headers="headers"
-              :items="books"
-              :items-length="totalBooks"
-              :loading="loading"
-              v-model:items-per-page="itemsPerPage"
-              v-model:page="currentPage"
-              @update:options="loadBooks"
-              class="bg-transparent text-white custom-table flex-grow-1"
-              density="compact"
-              hover
+            <v-autocomplete
+                v-model="selectedFilter.category"
+                :items="categories"
+                item-title="tenTheLoai"
+                item-value="tenTheLoai"
+                label="Select Category"
+                placeholder="Type to search..."
+                variant="outlined"
+                density="comfortable"
+                bg-color="rgba(255,255,255,0.05)"
+                clearable
+                hide-details
+                class="rounded-lg"
+                @update:model-value="applyFilter('category', $event)"
             >
-              <template v-slot:item.coverUrl="{ item }">
-                <v-avatar size="36" rounded="sm" class="my-1 cursor-pointer border">
-                  <v-img :src="item.coverUrl || 'https://placehold.co/100x150'" @click="showImagePreview(item.coverUrl)" cover />
-                </v-avatar>
-              </template>
-              <template v-slot:item.categories="{ item }">
-                <div class="d-flex gap-1 flex-wrap">
-                    <v-chip v-for="cat in item.categories" :key="cat._id" size="x-small" label :color="getCategoryColor(cat.tenTheLoai)" class="font-weight-bold">
-                        {{ cat.tenTheLoai }}
-                    </v-chip>
-                </div>
-              </template>
-              <template v-slot:item.actions="{ item }">
-                <div class="d-flex justify-end">
-                    <v-btn icon="mdi-pencil" size="x-small" color="primary" variant="text" @click="editBook(item)"></v-btn>
-                    <v-btn icon="mdi-delete" size="x-small" color="error" variant="text" @click="confirmDeleteBook(item)"></v-btn>
-                </div>
-              </template>
-            </v-data-table-server>
+                <template v-slot:item="{ props, item }">
+                    <v-list-item v-bind="props" :title="item.raw.tenTheLoai">
+                        <template v-slot:prepend>
+                             <v-icon size="small" :color="getCategoryColor(item.raw.tenTheLoai)" class="mr-2">mdi-circle-medium</v-icon>
+                        </template>
+                    </v-list-item>
+                </template>
+            </v-autocomplete>
+
+            <v-alert v-if="selectedFilter.category" type="info" variant="tonal" class="mt-4 text-caption" density="compact">
+                Showing books in <strong>{{ selectedFilter.category }}</strong>
+            </v-alert>
+          </v-col>
+          
+          <v-col cols="12" md="9" class="pa-4 h-100 d-flex flex-column">
+             <BookTable :books="books" :loading="loading" :total="totalBooks" title="Books by Category" icon="mdi-bookshelf" v-model:page="currentPage" v-model:limit="itemsPerPage" @refresh="loadBooks" @edit="editBook" @delete="confirmDeleteBook" />
           </v-col>
         </v-row>
       </v-window-item>
 
-      <v-window-item value="categories"> <CategoryManagement /> </v-window-item>
-      <v-window-item value="publishers"> <PublisherManagement /> </v-window-item>
+      <v-window-item value="by-publisher" class="h-100">
+        <v-row class="h-100 ma-0">
+          <v-col cols="12" md="3" class="border-r border-opacity-12 pa-4 h-100 bg-slate-900">
+            <div class="font-weight-bold text-white mb-4 d-flex align-center">
+                <v-icon start color="primary">mdi-office-building-outline</v-icon> FILTER PUBLISHER
+            </div>
+            
+            <v-autocomplete
+                v-model="selectedFilter.publisher"
+                :items="publishers"
+                item-title="tenNXB"
+                item-value="_id"
+                label="Select Publisher"
+                placeholder="Find publisher..."
+                variant="outlined"
+                density="comfortable"
+                bg-color="rgba(255,255,255,0.05)"
+                clearable
+                hide-details
+                class="rounded-lg"
+                @update:model-value="applyFilter('publisher', $event)"
+            ></v-autocomplete>
+
+            <v-alert v-if="selectedFilter.publisher" type="info" variant="tonal" class="mt-4 text-caption" density="compact">
+                Filtering by selected publisher
+            </v-alert>
+          </v-col>
+          
+          <v-col cols="12" md="9" class="pa-4 h-100 d-flex flex-column">
+             <BookTable :books="books" :loading="loading" :total="totalBooks" title="Books by Publisher" icon="mdi-office-building" v-model:page="currentPage" v-model:limit="itemsPerPage" @refresh="loadBooks" @edit="editBook" @delete="confirmDeleteBook" />
+          </v-col>
+        </v-row>
+      </v-window-item>
+
+      <v-window-item value="by-author" class="h-100">
+        <v-row class="h-100 ma-0">
+          <v-col cols="12" md="3" class="border-r border-opacity-12 pa-4 h-100 bg-slate-900">
+            <div class="font-weight-bold text-white mb-4 d-flex align-center">
+                <v-icon start color="primary">mdi-account-group-outline</v-icon> FILTER AUTHOR
+            </div>
+            
+            <v-autocomplete
+                v-model="selectedFilter.author"
+                :items="extractedAuthors"
+                label="Select Author"
+                placeholder="Type name..."
+                variant="outlined"
+                density="comfortable"
+                bg-color="rgba(255,255,255,0.05)"
+                clearable
+                hide-details
+                class="rounded-lg"
+                @update:model-value="applyFilter('author', $event)"
+            ></v-autocomplete>
+
+             <v-alert v-if="selectedFilter.author" type="info" variant="tonal" class="mt-4 text-caption" density="compact">
+                Books by <strong>{{ selectedFilter.author }}</strong>
+            </v-alert>
+          </v-col>
+
+          <v-col cols="12" md="9" class="pa-4 h-100 d-flex flex-column">
+             <BookTable :books="books" :loading="loading" :total="totalBooks" title="Books by Author" icon="mdi-account-edit" v-model:page="currentPage" v-model:limit="itemsPerPage" @refresh="loadBooks" @edit="editBook" @delete="confirmDeleteBook" />
+          </v-col>
+        </v-row>
+      </v-window-item>
     </v-window>
 
-    <!-- ============================================ -->
-    <!-- CREATE / EDIT DIALOG (Đã Fix Upload) -->
-    <!-- ============================================ -->
     <v-dialog v-model="dialog" max-width="900px" persistent>
       <v-card color="#1e293b" class="text-white rounded-xl">
         <v-card-title class="bg-primary text-white d-flex align-center px-6 py-4">
-            <v-icon start>{{ editedIndex === -1 ? 'mdi-book-plus' : 'mdi-book-edit' }}</v-icon> 
-            {{ formTitle }}
+            <v-icon start>{{ editedIndex === -1 ? 'mdi-book-plus' : 'mdi-book-edit' }}</v-icon> {{ formTitle }}
             <v-spacer></v-spacer>
             <v-btn icon="mdi-close" variant="text" size="small" @click="dialog = false"></v-btn>
         </v-card-title>
@@ -219,111 +211,52 @@
           <v-form ref="bookForm" @submit.prevent="saveBook">
             <v-row>
               <v-col cols="12" md="8">
-                <v-text-field 
-                    v-model="editedItem.tenSach" 
-                    label="Book Title" 
-                    variant="outlined" density="comfortable" bg-color="rgba(255,255,255,0.05)"
-                    :rules="[v => !!v || 'Required']" 
-                />
-                
+                <v-text-field v-model="editedItem.tenSach" label="Book Title" variant="outlined" density="comfortable" bg-color="rgba(255,255,255,0.05)" :rules="[v => !!v || 'Required']" />
                 <v-row dense>
                     <v-col cols="6">
-                        <v-text-field 
-                            v-model="editedItem.tacGia[0]" 
-                            label="Author" 
-                            variant="outlined" density="compact" bg-color="rgba(255,255,255,0.05)"
-                            :rules="[v => !!v || 'Required']" 
-                        />
+                        <v-combobox v-model="editedItem.tacGia" label="Authors" multiple chips closable-chips variant="outlined" density="compact" bg-color="rgba(255,255,255,0.05)" hint="Press Enter to add multiple" persistent-hint></v-combobox>
                     </v-col>
                     <v-col cols="6">
-                        <v-text-field 
-                            v-model="editedItem.isbn" 
-                            label="ISBN" 
-                            variant="outlined" density="compact" bg-color="rgba(255,255,255,0.05)"
-                        />
+                        <v-text-field v-model="editedItem.isbn" label="ISBN" variant="outlined" density="compact" bg-color="rgba(255,255,255,0.05)" />
                     </v-col>
                 </v-row>
-
                 <v-row dense>
                     <v-col cols="6">
-                        <v-select 
-                            v-model="editedItem.maNXB" 
-                            :items="publishers" 
-                            item-title="tenNXB" 
-                            item-value="_id" 
-                            label="Publisher" 
-                            variant="outlined" density="compact" bg-color="rgba(255,255,255,0.05)"
-                            :rules="[v => !!v || 'Required']" 
-                        />
+                        <v-select v-model="editedItem.maNXB" :items="publishers" item-title="tenNXB" item-value="_id" label="Publisher" variant="outlined" density="compact" bg-color="rgba(255,255,255,0.05)" :rules="[v => !!v || 'Required']" />
                     </v-col>
                     <v-col cols="6">
-                        <v-text-field 
-                            v-model="editedItem.namXuatBan" 
-                            label="Year" type="number" 
-                            variant="outlined" density="compact" bg-color="rgba(255,255,255,0.05)"
-                        />
+                        <v-text-field v-model="editedItem.namXuatBan" label="Year" type="number" variant="outlined" density="compact" bg-color="rgba(255,255,255,0.05)" />
                     </v-col>
                 </v-row>
-
-                <v-autocomplete
-                    v-model="editedItem.categories"
-                    :items="categories"
-                    item-title="tenTheLoai"
-                    item-value="_id"
-                    label="Categories"
-                    multiple chips closable-chips
-                    variant="outlined" bg-color="rgba(255,255,255,0.05)"
-                    :rules="[v => v && v.length > 0 || 'Select at least one']"
-                ></v-autocomplete>
-
-                <v-textarea 
-                    v-model="editedItem.moTa" 
-                    label="Description" 
-                    variant="outlined" bg-color="rgba(255,255,255,0.05)"
-                    rows="3" auto-grow
-                />
+                <v-autocomplete v-model="editedItem.categories" :items="categories" item-title="tenTheLoai" item-value="_id" label="Categories" multiple chips closable-chips variant="outlined" bg-color="rgba(255,255,255,0.05)" :rules="[v => v && v.length > 0 || 'Select at least one']"></v-autocomplete>
+                <v-textarea v-model="editedItem.moTa" label="Description" variant="outlined" bg-color="rgba(255,255,255,0.05)" rows="3" auto-grow />
               </v-col>
-
               <v-col cols="12" md="4">
                 <v-card variant="outlined" class="pa-3 text-center border-dashed mb-4" color="grey">
                     <div class="text-caption mb-2 text-white">Cover Image</div>
-                    <v-img 
-                      :src="previewUploadUrl || editedItem.coverUrl || 'https://placehold.co/150x220?text=Preview'" 
-                      height="200" contain 
-                      class="bg-grey-darken-4 rounded mb-3"
-                    />
-                    <!-- FIX: Sử dụng v-model="fileInput" (mảng file) -->
-                    <v-file-input
-                        v-model="fileInput"
-                        label="Change Cover"
-                        variant="filled" density="compact"
-                        prepend-icon="" prepend-inner-icon="mdi-camera"
-                        accept="image/*"
-                        class="mb-0" hide-details
-                        @update:modelValue="handleFileChange"
-                    ></v-file-input>
+                    <v-img :src="previewUploadUrl || editedItem.coverUrl || 'https://placehold.co/150x220?text=Preview'" height="200" contain class="bg-grey-darken-4 rounded mb-3" />
+                    <v-file-input 
+    v-model="fileInput" 
+    label="Change Cover" 
+    variant="filled" 
+    density="compact" 
+    prepend-icon="" 
+    prepend-inner-icon="mdi-camera" 
+    accept="image/*" 
+    class="mb-0" 
+    hide-details 
+    @update:modelValue="handleFileChange" 
+></v-file-input>
                 </v-card>
-
                 <v-card color="rgba(255,255,255,0.05)" class="pa-3 rounded-lg" elevation="0">
                     <div class="text-subtitle-2 font-weight-bold mb-2 text-white">Inventory</div>
-                    <v-text-field 
-                        v-model="editedItem.donGia" 
-                        label="Price" type="number" 
-                        variant="outlined" density="compact" prefix="₫"
-                        hide-details class="mb-3"
-                    />
-                    <v-text-field 
-                        v-model="editedItem.soQuyen" 
-                        label="Total Stock" type="number" 
-                        variant="outlined" density="compact" prepend-inner-icon="mdi-counter"
-                        hide-details
-                    />
+                    <v-text-field v-model="editedItem.donGia" label="Price" type="number" variant="outlined" density="compact" prefix="₫" hide-details class="mb-3" />
+                    <v-text-field v-model="editedItem.soQuyen" label="Total Stock" type="number" variant="outlined" density="compact" prepend-inner-icon="mdi-counter" hide-details />
                 </v-card>
               </v-col>
             </v-row>
           </v-form>
         </v-card-text>
-        
         <v-card-actions class="px-6 pb-6 pt-0">
           <v-spacer></v-spacer>
           <v-btn color="grey-lighten-1" variant="text" @click="dialog = false">Cancel</v-btn>
@@ -349,25 +282,82 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, defineComponent, h } from 'vue';
 import api from '@/services/api.service';
 import debounce from 'lodash.debounce';
-import CategoryManagement from './CategoryManagement.vue';
-import PublisherManagement from './PublisherManagement.vue';
+import { VDataTableServer, VBtn, VChip, VIcon, VAvatar, VImg } from 'vuetify/components';
 
+// --- [FIX 1] DEFINE HELPER FUNCTION HERE SO IT'S AVAILABLE IN TEMPLATE ---
+const getCategoryColor = (catName) => {
+    if (!catName) return 'grey';
+    const colors = ['#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#2196F3', '#03A9F4', '#009688', '#4CAF50', '#8BC34A', '#FFEB3B'];
+    let hash = 0; for (let i = 0; i < catName.length; i++) hash = catName.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
+};
+
+// --- IN-FILE COMPONENT: BookTable (Reusable) ---
+const BookTable = defineComponent({
+  props: ['books', 'loading', 'total', 'title', 'icon', 'page', 'limit'],
+  emits: ['update:page', 'update:limit', 'refresh', 'edit', 'delete'],
+  setup(props, { emit }) {
+    const headers = [
+      { title: 'Cover', key: 'coverUrl', sortable: false, width: '50px' },
+      { title: 'Title', key: 'tenSach', width: '30%' },
+      { title: 'Publisher', key: 'maNXB' },
+      { title: 'Categories', key: 'categories' },
+      { title: 'Stock', key: 'availableCopies', align: 'center' },
+      { title: 'Actions', key: 'actions', sortable: false, align: 'end' },
+    ];
+    
+    return () => h('div', { class: 'd-flex flex-column h-100' }, [
+      h('div', { class: 'd-flex justify-space-between align-center mb-4' }, [
+         h('h3', { class: 'text-h6 text-white d-flex align-center' }, [
+            h(VIcon, { start: true, color: 'primary' }, () => props.icon),
+            props.title
+         ]),
+         h(VChip, { size: 'small', color: 'primary', variant: 'flat' }, () => `${props.total} books`)
+      ]),
+      h(VDataTableServer, {
+        headers, items: props.books, itemsLength: props.total, loading: props.loading,
+        itemsPerPage: props.limit, page: props.page,
+        'onUpdate:itemsPerPage': (v) => emit('update:limit', v),
+        'onUpdate:page': (v) => emit('update:page', v),
+        'onUpdate:options': () => emit('refresh'),
+        class: 'bg-transparent text-white custom-table flex-grow-1', density: 'compact', hover: true
+      }, {
+        'item.coverUrl': ({ item }) => h(VAvatar, { size: 36, rounded: 'sm', class: 'my-1 border' }, () => h(VImg, { src: item.coverUrl || 'https://placehold.co/100x150', cover: true })),
+        'item.maNXB': ({ item }) => item.maNXB?.tenNXB || 'Unknown',
+        'item.categories': ({ item }) => h('div', { class: 'd-flex gap-1 flex-wrap' }, item.categories.map(c => h(VChip, { size: 'x-small', label: true, color: getCategoryColor(c.tenTheLoai) }, () => c.tenTheLoai))),
+        'item.actions': ({ item }) => h('div', { class: 'd-flex justify-end' }, [
+            h(VBtn, { icon: 'mdi-pencil', size: 'x-small', color: 'primary', variant: 'text', onClick: () => emit('edit', item) }),
+            h(VBtn, { icon: 'mdi-delete', size: 'x-small', color: 'error', variant: 'text', onClick: () => emit('delete', item) })
+        ])
+      })
+    ]);
+  }
+});
+
+// --- MAIN COMPONENT LOGIC ---
 const currentTab = ref('all');
 const books = ref([]);
 const categories = ref([]);
 const publishers = ref([]);
+const extractedAuthors = ref([]); 
 const loading = ref(true);
 const totalBooks = ref(0);
 const itemsPerPage = ref(12);
 const currentPage = ref(1);
 const search = ref('');
-const selectedCategoryFilter = ref(null);
 
-// File Upload State
-const fileInput = ref([]); // Vuetify file input model is array
+// Bộ lọc
+const selectedFilter = ref({
+    category: null,
+    publisher: null,
+    author: null
+});
+
+// File Upload
+const fileInput = ref([]);
 const selectedFile = ref(null);
 const previewUploadUrl = ref(null);
 
@@ -378,48 +368,32 @@ const previewImageUrl = ref('');
 const snackbar = ref({ show: false, message: '', color: '' });
 
 const editedIndex = ref(-1);
-// Initialize tacGia as array with empty string to bind to v-model
-const editedItem = ref({ tacGia: [''], categories: [] });
+const editedItem = ref({ tacGia: [], categories: [] });
 const defaultItem = {
     tenSach: '', moTa: '', donGia: 0, soQuyen: 1, namXuatBan: new Date().getFullYear(),
-    maNXB: null, tacGia: [''], categories: [], isbn: '', coverUrl: '',
+    maNXB: null, tacGia: [], categories: [], isbn: '', coverUrl: '',
 };
 const bookToDelete = ref(null);
 const bookForm = ref(null);
 
-const headers = [
-    { title: 'Cover', key: 'coverUrl', sortable: false, width: '50px' },
-    { title: 'Title', key: 'tenSach', width: '30%' },
-    { title: 'Publisher', key: 'maNXB' },
-    { title: 'Categories', key: 'categories' },
-    { title: 'Stock', key: 'availableCopies', align: 'center' },
-    { title: 'Price', key: 'donGia', align: 'end' },
-    { title: 'Actions', key: 'actions', sortable: false, align: 'end' },
-];
-
 const formTitle = computed(() => (editedIndex.value === -1 ? 'Add New Book' : 'Edit Book'));
 const formatCurrency = (val) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
 
-const getCategoryColor = (catName) => {
-    if (!catName) return 'grey';
-    const colors = ['#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#2196F3', '#03A9F4', '#009688', '#4CAF50', '#8BC34A', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722'];
-    let hash = 0;
-    for (let i = 0; i < catName.length; i++) hash = catName.charCodeAt(i) + ((hash << 5) - hash);
-    return colors[Math.abs(hash) % colors.length];
-};
-
-// --- FIX: XỬ LÝ FILE CHUẨN CHO VUETIFY 3 ---
+// --- METHODS ---
 const handleFileChange = (files) => {
-    // files là mảng các file do v-model trả về
-    if (files && files.length > 0) {
-        const file = files[0];
+    // Vuetify 3 trả về mảng các file, ta lấy file đầu tiên
+    const file = Array.isArray(files) ? files[0] : files;
+
+    if (file) {
         selectedFile.value = file;
-        // Tạo preview URL
-        if (previewUploadUrl.value) URL.revokeObjectURL(previewUploadUrl.value);
+        // Xóa URL cũ để tránh rò rỉ bộ nhớ
+        if (previewUploadUrl.value) {
+            URL.revokeObjectURL(previewUploadUrl.value);
+        }
+        // Tạo URL tạm thời để hiển thị preview
         previewUploadUrl.value = URL.createObjectURL(file);
     } else {
         selectedFile.value = null;
-        if (previewUploadUrl.value) URL.revokeObjectURL(previewUploadUrl.value);
         previewUploadUrl.value = null;
     }
 };
@@ -431,39 +405,52 @@ const loadBooks = debounce(async () => {
             page: currentPage.value,
             limit: itemsPerPage.value,
             search: search.value,
-            category: selectedCategoryFilter.value,
+            category: currentTab.value === 'by-category' ? selectedFilter.value.category : null,
+            publisher: currentTab.value === 'by-publisher' ? selectedFilter.value.publisher : null,
+            author: currentTab.value === 'by-author' ? selectedFilter.value.author : null,
         };
+        Object.keys(params).forEach(k => params[k] == null && delete params[k]);
+
         const response = await api.get('/books', { params });
         books.value = response.data.data;
         totalBooks.value = response.data.total;
-    } catch (error) { 
-        showSnack('Failed to load books', 'error');
-    } 
+    } catch (error) { showSnack('Failed to load books', 'error'); } 
     finally { loading.value = false; }
 }, 300);
 
+const applyFilter = (type, val) => {
+    selectedFilter.value[type] = val;
+    currentPage.value = 1;
+    loadBooks();
+};
+
 const fetchMetadata = async () => {
     try {
-        const [catRes, pubRes] = await Promise.all([
+        const [catRes, pubRes, allBooksRes] = await Promise.all([
             api.get('/categories'),
-            api.get('/publishers')
+            api.get('/publishers'),
+            api.get('/books?limit=2000') 
         ]);
         categories.value = Array.isArray(catRes.data) ? catRes.data : (catRes.data.data || []);
         publishers.value = Array.isArray(pubRes.data) ? pubRes.data : (pubRes.data.data || []);
+        
+        const allBooks = allBooksRes.data.data || [];
+        const authorSet = new Set();
+        allBooks.forEach(b => {
+            if (Array.isArray(b.tacGia)) b.tacGia.forEach(a => a && authorSet.add(a.trim()));
+            else if (typeof b.tacGia === 'string') authorSet.add(b.tacGia);
+        });
+        extractedAuthors.value = Array.from(authorSet).sort();
     } catch (e) { console.error(e); }
 };
 
 const debouncedLoad = debounce(() => { currentPage.value = 1; loadBooks(); }, 500);
-const filterByCategory = (catName) => { selectedCategoryFilter.value = catName; currentPage.value = 1; loadBooks(); };
 
 const openCreateDialog = async () => {
     await fetchMetadata();
     editedItem.value = JSON.parse(JSON.stringify(defaultItem));
-    fileInput.value = []; // Reset file input
-    selectedFile.value = null;
-    previewUploadUrl.value = null;
-    editedIndex.value = -1;
-    dialog.value = true;
+    fileInput.value = []; selectedFile.value = null; previewUploadUrl.value = null;
+    editedIndex.value = -1; dialog.value = true;
 };
 
 const editBook = async (item) => {
@@ -475,12 +462,10 @@ const editBook = async (item) => {
         ...copy,
         maNXB: copy.maNXB?._id || copy.maNXB,
         categories: copy.categories.map(c => c._id || c),
-        tacGia: copy.tacGia?.length ? copy.tacGia : ['']
+        tacGia: Array.isArray(copy.tacGia) ? copy.tacGia : (copy.tacGia ? [copy.tacGia] : [])
     };
     
-    fileInput.value = []; // Reset file input
-    selectedFile.value = null;
-    previewUploadUrl.value = null;
+    fileInput.value = []; selectedFile.value = null; previewUploadUrl.value = null;
     dialog.value = true;
 };
 
@@ -492,8 +477,6 @@ const saveBook = async () => {
     try {
         const formData = new FormData();
         formData.append('tenSach', editedItem.value.tenSach);
-        
-        // Các trường optional
         if(editedItem.value.maNXB) formData.append('maNXB', editedItem.value.maNXB);
         formData.append('donGia', editedItem.value.donGia || 0);
         formData.append('soQuyen', editedItem.value.soQuyen || 0);
@@ -501,7 +484,6 @@ const saveBook = async () => {
         if(editedItem.value.namXuatBan) formData.append('namXuatBan', editedItem.value.namXuatBan);
         if(editedItem.value.moTa) formData.append('moTa', editedItem.value.moTa);
 
-        // Array Fields (JSON.stringify)
         const validAuthors = editedItem.value.tacGia.filter(a => a && a.trim());
         formData.append('tacGia', JSON.stringify(validAuthors));
         
@@ -509,7 +491,6 @@ const saveBook = async () => {
              formData.append('categories', JSON.stringify(editedItem.value.categories));
         }
 
-        // File Upload
         if (selectedFile.value) {
             formData.append('coverImage', selectedFile.value);
         }
@@ -523,6 +504,7 @@ const saveBook = async () => {
         }
         
         dialog.value = false;
+        fetchMetadata(); 
         loadBooks();
     } catch (e) {
         showSnack(e.response?.data?.message || "Error saving book", 'error');
@@ -544,7 +526,11 @@ const deleteBook = async () => {
 const showImagePreview = (url) => { if(url) { previewImageUrl.value = url; imageDialog.value = true; } };
 const showSnack = (msg, color) => { snackbar.value = { show: true, message: msg, color }; };
 
-watch(currentTab, () => { search.value = ''; selectedCategoryFilter.value = null; currentPage.value = 1; loadBooks(); });
+watch(currentTab, () => { 
+    search.value = ''; 
+    currentPage.value = 1; 
+    loadBooks(); 
+});
 onMounted(() => { fetchMetadata(); loadBooks(); });
 </script>
 
@@ -554,6 +540,7 @@ onMounted(() => { fetchMetadata(); loadBooks(); });
 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
 .max-h-80vh { max-height: 80vh; }
+.bg-slate-900 { background-color: #0f172a; }
 
 /* Card Styles */
 .book-card { border: 1px solid rgba(255,255,255,0.05); }
