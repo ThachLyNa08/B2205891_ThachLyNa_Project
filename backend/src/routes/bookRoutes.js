@@ -1,20 +1,34 @@
-
 const express = require('express');
+const router = express.Router();
 const bookController = require('../controllers/bookController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const upload = require('../middleware/upload');
 
-const router = express.Router();
-
+// Group 1: /api/books
 router.route('/')
-  .get(bookController.getBooks) // Public access for listing books
-  .post(protect, authorize('admin', 'staff'), bookController.createBook); // Admin/Staff to create books
+  .get(bookController.getBooks) // Public: Xem danh sách
+  .post(
+    protect, 
+    authorize('admin', 'staff'), 
+    upload.single('coverImage'), // <--- Đặt middleware upload vào đây
+    bookController.createBook
+  );
 
+// Group 2: /api/books/:id
 router.route('/:id')
-  .get(bookController.getBook) // Public access for single book detail
-  .put(protect, authorize('admin', 'staff'), bookController.updateBook) // Admin/Staff to update books
-  .delete(protect, authorize('admin'), bookController.deleteBook); // Admin to delete books
+  .get(bookController.getBook) // Public: Xem chi tiết
+  .put(
+    protect, 
+    authorize('admin', 'staff'), 
+    upload.single('coverImage'), // <--- Đặt middleware upload vào đây
+    bookController.updateBook
+  )
+  .delete(
+    protect, 
+    authorize('admin'), 
+    bookController.deleteBook
+  );
 
-router.post('/', protect, authorize('admin', 'staff'), upload.single('coverImage'), bookController.createBook);
-router.put('/:id', protect, authorize('admin', 'staff'), upload.single('coverImage'), bookController.updateBook);
+// --- XÓA CÁC DÒNG KHAI BÁO TRÙNG LẶP Ở CUỐI FILE ĐI ---
+
 module.exports = router;

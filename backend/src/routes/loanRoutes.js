@@ -79,7 +79,7 @@ router.delete(
   authorize('admin'),
   loanController.deleteLoan
 );
-
+router.put('/:id/pay-fine', protect, loanController.payFine);
 
 /* --------------------------------------------------------
  * 4. RESOURCE ROUTE /loans/:id
@@ -92,6 +92,8 @@ router.get(
   authorize('admin', 'staff', 'reader'),
   loanController.getLoan
 );
+
+
 
 
 module.exports = router;

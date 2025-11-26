@@ -1,10 +1,50 @@
-
 const bookService = require('../services/bookService');
 
-// @desc    Get all books with filters, search, and pagination
-// @route   GET /api/books?category=...&author=...&year=...&search=...&page=...&limit=...
-// @access  Public
+// ==================================================
+// 1. HÀM HELPER: Xử lý dữ liệu từ FormData (QUAN TRỌNG)
+// ==================================================
+const parseBookData = (req) => {
+  // Copy dữ liệu từ body (text fields)
+  const data = { ...req.body };
+  
+  // A. XỬ LÝ ẢNH UPLOAD
+  if (req.file) {
+    // Lấy giao thức (http) và tên miền (localhost:5000)
+    const url = `${req.protocol}://${req.get('host')}`;
+    
+    // Tạo đường dẫn đầy đủ để Frontend hiển thị được
+    // Ví dụ: http://localhost:5000/uploads/1715...png
+    data.coverUrl = `${url}/uploads/${req.file.filename}`;
+  }
 
+  // B. XỬ LÝ MẢNG JSON (Vì FormData gửi mảng dưới dạng chuỗi)
+  // Ví dụ: gửi "['Kinh dị', 'Hài']" -> Phải parse thành mảng thật
+  const arrayFields = ['categories', 'tacGia'];
+  
+  arrayFields.forEach(field => {
+    if (data[field]) {
+      try {
+        // Nếu là chuỗi thì parse, nếu đã là mảng thì giữ nguyên
+        if (typeof data[field] === 'string') {
+           data[field] = JSON.parse(data[field]);
+        }
+      } catch (e) {
+        // Nếu lỗi parse (ví dụ gửi 1 ID trần), bọc nó vào mảng
+        console.log(`Warning parsing ${field}:`, e.message);
+        data[field] = [data[field]];
+      }
+    }
+  });
+  
+  return data;
+};
+
+// ==================================================
+// 2. CÁC HÀM CONTROLLER CHÍNH
+// ==================================================
+
+// @desc    Get all books
+// @route   GET /api/books
 const getBooks = async (req, res, next) => {
   try {
     const filters = {
@@ -32,7 +72,6 @@ const getBooks = async (req, res, next) => {
 
 // @desc    Get book by ID
 // @route   GET /api/books/:id
-// @access  Public
 const getBook = async (req, res, next) => {
   try {
     const book = await bookService.getBookById(req.params.id);
@@ -44,53 +83,39 @@ const getBook = async (req, res, next) => {
     next(error);
   }
 };
-const parseBookData = (req) => {
-  const data = { ...req.body };
-  
-  // Nếu có file ảnh mới -> tạo URL
-  if (req.file) {
-    const protocol = req.protocol;
-    const host = req.get('host');
-    // Tạo đường dẫn đầy đủ: http://localhost:3000/uploads/filename.jpg
-    data.coverUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
-  }
 
-  // Vì gửi qua FormData, các mảng/object bị chuyển thành chuỗi JSON, cần parse lại
-  if (typeof data.categories === 'string') {
-      try { data.categories = JSON.parse(data.categories); } catch(e) { data.categories = [data.categories]; }
-  }
-  if (typeof data.tacGia === 'string') {
-      try { data.tacGia = JSON.parse(data.tacGia); } catch(e) { data.tacGia = [data.tacGia]; }
-  }
-  
-  return data;
-};
 // @desc    Create a new book
 // @route   POST /api/books
-// @access  Private/Staff, Admin
 const createBook = async (req, res, next) => {
   try {
-    const bookData = parseBookData(req); // Xử lý dữ liệu
+    // Gọi helper để xử lý ảnh và dữ liệu json
+    const bookData = parseBookData(req); 
+    
     const newBook = await bookService.createBook(bookData);
     res.status(201).json({ message: 'Book created successfully.', book: newBook });
   } catch (error) {
+    console.error("Create Book Error:", error);
     next(error);
   }
 };
 
+// @desc    Update book
+// @route   PUT /api/books/:id
 const updateBook = async (req, res, next) => {
   try {
-    const bookData = parseBookData(req); // Xử lý dữ liệu
+    // Gọi helper để xử lý ảnh và dữ liệu json
+    const bookData = parseBookData(req); 
+    
     const updatedBook = await bookService.updateBook(req.params.id, bookData);
     res.status(200).json({ message: 'Book updated successfully.', book: updatedBook });
   } catch (error) {
+    console.error("Update Book Error:", error);
     next(error);
   }
 };
 
 // @desc    Delete a book
 // @route   DELETE /api/books/:id
-// @access  Private/Admin
 const deleteBook = async (req, res, next) => {
   try {
     const result = await bookService.deleteBook(req.params.id);
@@ -102,8 +127,6 @@ const deleteBook = async (req, res, next) => {
     next(error);
   }
 };
-
-// TODO: Thêm route upload ảnh bìa (cần middleware xử lý file upload)
 
 module.exports = {
   getBooks,

@@ -1,5 +1,5 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const Book = require("../models/book"); // Import Model Sách
+const Book = require("../models/book.js"); // Import Model Sách
 
 // Khởi tạo Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);

@@ -42,9 +42,9 @@
     <v-row v-else-if="books.length > 0">
       <v-col cols="12" sm="6" md="3" v-for="book in books" :key="book._id">
         <v-card class="book-card" :to="`/books/${book._id}`" elevation="2">
-          <v-img :src="book.coverUrl || 'https://via.placeholder.com/200x250?text=No+Cover'" height="250px" cover>
+          <v-img :src="book.coverUrl || 'https://placehold.co/200x250?text=No+Cover'" height="250px" cover>
              <template v-slot:error>
-                <v-img src="https://via.placeholder.com/200x250?text=No+Cover" cover class="fill-height"></v-img>
+                <v-img src="https://placehold.co/200x250?text=No+Cover" cover class="fill-height"></v-img>
              </template>
           </v-img>
           

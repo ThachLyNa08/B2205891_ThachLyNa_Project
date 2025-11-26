@@ -1,4 +1,3 @@
-
 const publisherRepository = require('../repositories/publisherRepository');
 
 const getPublishers = async () => {
@@ -8,35 +7,29 @@ const getPublishers = async () => {
 const getPublisherById = async (id) => {
   const publisher = await publisherRepository.getPublisherById(id);
   if (!publisher) {
-    throw new Error('Publisher not found.');
+    throw new Error('Publisher not found');
   }
   return publisher;
 };
 
-const createPublisher = async (publisherData) => {
-  const existingPublisher = await publisherRepository.getPublishers({ tenNXB: publisherData.tenNXB });
-  if (existingPublisher && existingPublisher.length > 0) {
-      throw new Error('Publisher name already exists.');
-  }
-  const publisher = await publisherRepository.createPublisher(publisherData);
-  return publisher;
+const createPublisher = async (data) => {
+  return await publisherRepository.createPublisher(data);
 };
 
-const updatePublisher = async (id, updateData) => {
-  const publisher = await publisherRepository.updatePublisher(id, updateData);
-  if (!publisher) {
-    throw new Error('Publisher not found.');
+const updatePublisher = async (id, data) => {
+  const updatedPublisher = await publisherRepository.updatePublisher(id, data);
+  if (!updatedPublisher) {
+    throw new Error('Publisher not found');
   }
-  return publisher;
+  return updatedPublisher;
 };
 
 const deletePublisher = async (id) => {
-  // TODO: Kiểm tra xem có sách nào thuộc NXB này không trước khi xóa
-  const result = await publisherRepository.deletePublisher(id);
-  if (!result) {
-    throw new Error('Publisher not found.');
+  const deletedPublisher = await publisherRepository.deletePublisher(id);
+  if (!deletedPublisher) {
+    throw new Error('Publisher not found');
   }
-  return result;
+  return { message: 'Publisher deleted successfully' };
 };
 
 module.exports = {

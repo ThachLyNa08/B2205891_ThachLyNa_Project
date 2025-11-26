@@ -81,6 +81,9 @@ app.use('/api/loans', loanRoutes);
 app.use('/api/payments', paymentRoutes); // Đã xóa số 2 thừa ở đây
 app.use('/api/ai', aiRoutes);
 
+app.use(helmet({
+  crossOriginResourcePolicy: false, 
+}));
 // --- ERROR HANDLING ---
 
 // 404 Not Found Handler

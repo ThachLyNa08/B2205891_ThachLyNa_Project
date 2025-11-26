@@ -5,7 +5,7 @@
         <v-col cols="12" md="4" lg="3">
           <v-card elevation="12" class="rounded-lg overflow-hidden book-cover-card mx-auto">
             <v-img 
-              :src="book.coverUrl || 'https://via.placeholder.com/300x450'" 
+              :src="book.coverUrl || 'https://placehold.co/300x450'" 
               aspect-ratio="2/3" 
               cover
             >

@@ -242,6 +242,53 @@ const deleteLoan = async (req, res, next) => {
     next(error);
   }
 };
+// @desc    Pay fine for a loan
+// @route   PUT /api/loans/:id/pay-fine
+// @access  Private/Reader
+const payFine = async (req, res, next) => {
+  try {
+    const loanId = req.params.id;
+    const userId = req.user._id;
+
+    // Tìm phiếu mượn
+    const loan = await Loan.findById(loanId);
+
+    if (!loan) {
+      return res.status(404).json({ message: 'Loan not found.' });
+    }
+
+    // Kiểm tra quyền (chính chủ mới được trả)
+    if (loan.userId.toString() !== userId.toString()) {
+      return res.status(403).json({ message: 'Unauthorized action.' });
+    }
+
+    // Kiểm tra xem có phạt không
+    if (loan.phatTien <= 0) {
+        return res.status(400).json({ message: 'No fine to pay for this loan.' });
+    }
+
+    // Kiểm tra đã trả chưa
+    if (loan.isFinePaid) {
+        return res.status(400).json({ message: 'Fine already paid.' });
+    }
+
+    // Cập nhật trạng thái thanh toán
+    loan.isFinePaid = true;
+    
+    // (Optional) Nếu bạn có logic isPaid chung cho cả tiền thuê và tiền phạt:
+    // Kiểm tra nếu tiền thuê (rentCost) cũng đã trả hoặc = 0 thì set isPaid = true
+    // Ở đây mình giả định logic đơn giản:
+    if (loan.rentCost === 0 || loan.isPaid) { 
+        loan.isPaid = true; // Đánh dấu hoàn tất toàn bộ
+    }
+
+    await loan.save();
+
+    res.status(200).json({ message: 'Payment successful!', loan });
+  } catch (error) {
+    next(error);
+  }
+};
 
 module.exports = {
   requestLoan,
@@ -252,5 +299,6 @@ module.exports = {
   getLoan,
   getLoansForCalendar,
   getStats,
-  deleteLoan
+  deleteLoan,
+  payFine
 };

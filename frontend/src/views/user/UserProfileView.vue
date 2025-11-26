@@ -1,202 +1,295 @@
 <template>
-  <div class="profile-wrapper bg-grey-lighten-4 fill-height pa-md-6 pa-2">
-    <!-- LOADING -->
-    <v-container v-if="loading" class="fill-height justify-center">
-      <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
-    </v-container>
+  <div class="profile-page-wrapper fill-height bg-grey-lighten-5 pa-md-4 pa-0">
+    
+    <!-- LOADING OVERLAY -->
+    <v-overlay :model-value="loading" class="align-center justify-center">
+      <v-progress-circular indeterminate color="white" size="64"></v-progress-circular>
+    </v-overlay>
 
-    <v-container v-else-if="userProfile" class="max-width-1000">
-      <v-card class="rounded-xl overflow-visible elevation-4 border-opacity-10" color="white">
+    <v-container v-if="userProfile" class="max-width-1100 pa-0 pa-md-4">
+      
+      <!-- 1. PROFILE HEADER CARD -->
+      <v-card class="rounded-xl overflow-visible elevation-6 mb-6 border-0">
         
-        <!-- 1. HERO COVER & HEADER -->
-        <div class="position-relative">
+        <!-- COVER IMAGE AREA -->
+        <div class="position-relative group">
+            <!-- Input ẩn -->
             <input type="file" ref="coverInput" class="d-none" accept="image/*" @change="handleCoverUpload" />
             <input type="file" ref="avatarInput" class="d-none" accept="image/*" @change="handleAvatarUpload" />
 
             <v-img
-              :src="userProfile.coverImage || 'https://images.unsplash.com/photo-1507842217153-eae850688719?q=80&w=2000&auto=format&fit=crop'"
-              height="280"
+              :src="userProfile.coverImage || 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?q=80&w=2400&auto=format&fit=crop'"
+              height="320"
               cover
-              class="rounded-t-xl align-end group-hover-parent"
-              gradient="to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.7)"
+              class="rounded-t-xl align-end"
+              gradient="to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%"
             >
+              <!-- Nút đổi ảnh bìa (Hiện khi hover) -->
               <v-btn 
                 position="absolute" 
                 top="20" right="20" 
-                color="white" variant="flat" size="small" 
+                color="white" variant="elevated" size="small" 
                 prepend-icon="mdi-camera"
-                class="elevation-2"
+                class="opacity-0 group-hover:opacity-100 transition-opacity"
                 :loading="uploadingCover"
                 @click="$refs.coverInput.click()"
               >
-                 Edit Cover
+                 Change Cover
               </v-btn>
 
-              <div class="d-flex flex-column flex-md-row align-center align-md-end px-6 pb-6 gap-4">
-                 <div class="profile-avatar-wrapper mt-n12 position-relative">
-                    <v-avatar size="150" color="white" class="elevation-6 border-white">
+              <!-- USER INFO ON COVER (Mobile Layout) -->
+              <div class="d-md-none px-4 pb-4 text-white">
+                 <h1 class="text-h5 font-weight-bold">{{ userProfile.hoLot }} {{ userProfile.ten }}</h1>
+                 <div class="text-caption opacity-80">@{{ userProfile.username }}</div>
+              </div>
+            </v-img>
+
+            <!-- AVATAR & DESKTOP INFO -->
+            <div class="profile-bar d-flex flex-column flex-md-row align-center align-md-end px-6 mt-n16 position-relative z-index-10">
+                 
+                 <!-- AVATAR -->
+                 <div class="position-relative">
+                    <v-avatar size="160" class="profile-avatar elevation-10 bg-white pa-1">
                        <v-img 
-                          :src="userProfile.avatar || `https://ui-avatars.com/api/?name=${userProfile.username}&background=random`" 
-                          alt="Avatar"
+                          :src="userProfile.avatar || `https://ui-avatars.com/api/?name=${userProfile.username}&background=0D8ABC&color=fff`" 
                           cover
+                          class="rounded-circle bg-grey-lighten-3"
                        ></v-img>
                     </v-avatar>
                     <v-btn 
-                        icon="mdi-camera" size="small" color="primary" 
-                        class="avatar-edit-btn elevation-3"
+                        icon="mdi-camera-plus" 
+                        size="small" 
+                        color="primary" 
+                        class="avatar-edit-btn elevation-4"
                         :loading="uploadingAvatar"
                         @click="$refs.avatarInput.click()"
                     ></v-btn>
                  </div>
 
-                 <div class="text-center text-md-left text-white mb-2 flex-grow-1">
-                    <h1 class="text-h4 font-weight-bold text-shadow">{{ userProfile.hoLot }} {{ userProfile.ten }}</h1>
-                    <div class="text-subtitle-1 opacity-90 d-flex align-center justify-center justify-md-start">
-                       <v-icon size="small" class="mr-1">mdi-at</v-icon>{{ userProfile.username }}
-                       <span class="mx-2">•</span>
-                       <v-chip size="small" color="white/20" variant="outlined" class="font-weight-bold text-white">
-                          {{ userProfile.role === 'admin' ? 'Administrator' : 'Library Member' }}
+                 <!-- INFO TEXT (Desktop) -->
+                 <div class="d-none d-md-block mb-4 ml-6 text-shadow-dark">
+                    <h1 class="text-h4 font-weight-bold text-black mb-1">{{ userProfile.hoLot }} {{ userProfile.ten }}</h1>
+                    <div class="d-flex align-center text-white opacity-90">
+                       <v-chip size="small" color="blue" variant="outlined" class="mr-2 font-weight-bold text-uppercase">
+                          {{ userProfile.role }}
                        </v-chip>
+                       <span class="text-subtitle-1">@{{ userProfile.username }}</span>
                     </div>
                  </div>
-              </div>
-            </v-img>
+
+                 <v-spacer></v-spacer>
+
+                 <!-- QUICK STATS -->
+                 <div class="d-flex gap-4 mb-4 mt-4 mt-md-0">
+                    <v-card width="100" class="text-center py-2 rounded-lg" elevation="2">
+                       <div class="text-h6 font-weight-bold text-primary">{{ userLoans.length }}</div>
+                       <div class="text-caption text-grey">Loans</div>
+                    </v-card>
+                    <v-card width="100" class="text-center py-2 rounded-lg" elevation="2">
+                       <div class="text-h6 font-weight-bold text-success">{{ formatCurrencyCompact(totalPaid) }}</div>
+                       <div class="text-caption text-grey">Paid</div>
+                    </v-card>
+                 </div>
+            </div>
         </div>
 
-        <!-- 2. TABS NAVIGATION -->
-        <div class="px-4 mt-2">
-           <v-tabs v-model="activeTab" color="primary" align-tabs="start" class="border-b">
-              <v-tab value="info" class="text-capitalize font-weight-bold"><v-icon start>mdi-account-details</v-icon> Info</v-tab>
-              <v-tab value="loans" class="text-capitalize font-weight-bold"><v-icon start>mdi-book-open-variant</v-icon> Loans</v-tab>
-              <v-tab value="billing" class="text-capitalize font-weight-bold"><v-icon start>mdi-receipt-text</v-icon> Billing</v-tab>
-              <v-tab value="security" class="text-capitalize font-weight-bold"><v-icon start>mdi-shield-lock</v-icon> Security</v-tab>
+        <!-- NAVIGATION TABS -->
+        <div class="mt-2 px-2">
+           <v-tabs v-model="activeTab" color="primary" align-tabs="start" class="border-b ml-md-16 pl-md-16">
+              <v-tab value="info" class="text-capitalize font-weight-bold letter-spacing-1 px-6">Personal Info</v-tab>
+              <v-tab value="loans" class="text-capitalize font-weight-bold letter-spacing-1 px-6">My Loans</v-tab>
+              <v-tab value="billing" class="text-capitalize font-weight-bold letter-spacing-1 px-6">Billing</v-tab>
+              <v-tab value="security" class="text-capitalize font-weight-bold letter-spacing-1 px-6 text-red-lighten-1">Security</v-tab>
            </v-tabs>
         </div>
+      </v-card>
 
-        <!-- 3. TABS CONTENT -->
-        <v-card-text class="pa-6 bg-grey-lighten-5 rounded-b-xl">
-          <v-window v-model="activeTab">
+      <!-- 2. MAIN CONTENT SECTION -->
+      <v-row>
+         <!-- LEFT COLUMN: MENU OR WIDGETS (Optional - Hidden on small screens) -->
+         <v-col cols="12" md="4" class="d-none d-md-block">
+            <v-card class="rounded-xl pa-4 mb-4 elevation-2" title="Contact Info">
+               <v-list density="compact">
+                  <v-list-item prepend-icon="mdi-email-outline">
+                     <v-list-item-title class="text-body-2">{{ userProfile.email }}</v-list-item-title>
+                     <v-list-item-subtitle>Email</v-list-item-subtitle>
+                  </v-list-item>
+                  <v-divider class="my-2"></v-divider>
+                  <v-list-item prepend-icon="mdi-phone-outline">
+                     <v-list-item-title class="text-body-2">{{ userProfile.dienThoai || 'N/A' }}</v-list-item-title>
+                     <v-list-item-subtitle>Phone</v-list-item-subtitle>
+                  </v-list-item>
+                  <v-divider class="my-2"></v-divider>
+                  <v-list-item prepend-icon="mdi-map-marker-outline">
+                     <v-list-item-title class="text-body-2">{{ userProfile.diaChi || 'N/A' }}</v-list-item-title>
+                     <v-list-item-subtitle>Address</v-list-item-subtitle>
+                  </v-list-item>
+               </v-list>
+            </v-card>
             
-            <!-- TAB 1: INFO -->
-            <v-window-item value="info">
-               <v-row justify="center">
-                  <v-col cols="12" md="10">
-                     <!-- FORM CHÍNH: LỖI CỦA BẠN NẰM Ở ĐÂY NẾU THIẾU HÀM updateUserProfile -->
+            <v-card class="rounded-xl pa-4 bg-gradient-primary text-white elevation-4">
+               <div class="text-h6 font-weight-bold mb-2">Upgrade to Pro?</div>
+               <p class="text-caption mb-4 opacity-90">Unlock unlimited book loans and priority support.</p>
+               <v-btn block color="white" variant="outlined" class="text-capitalize">Learn More</v-btn>
+            </v-card>
+         </v-col>
+
+         <!-- RIGHT COLUMN: TAB CONTENT -->
+         <v-col cols="12" md="8">
+            <v-window v-model="activeTab">
+               
+               <!-- TAB INFO -->
+               <v-window-item value="info">
+                  <v-card class="rounded-xl pa-6 elevation-2">
+                     <div class="d-flex justify-space-between align-center mb-6">
+                        <h3 class="text-h6 font-weight-bold text-grey-darken-3">Edit Profile</h3>
+                        <v-btn 
+                           color="primary" 
+                           variant="flat" 
+                           prepend-icon="mdi-content-save" 
+                           class="text-capitalize"
+                           :loading="updateLoading"
+                           @click="$refs.profileFormButton.click()"
+                        >Save</v-btn>
+                     </div>
+
                      <v-form ref="profileForm" @submit.prevent="updateUserProfile">
-                        <div class="text-overline text-grey-darken-1 mb-4 font-weight-bold">Basic Information</div>
                         <v-row>
                            <v-col cols="12" md="6">
-                              <v-text-field v-model="userProfile.hoLot" label="Họ Lót" variant="outlined" bg-color="white" density="comfortable"></v-text-field>
+                              <v-text-field v-model="userProfile.hoLot" label="First Name" variant="outlined" color="primary" density="comfortable"></v-text-field>
                            </v-col>
                            <v-col cols="12" md="6">
-                              <v-text-field v-model="userProfile.ten" label="Tên" variant="outlined" bg-color="white" density="comfortable"></v-text-field>
+                              <v-text-field v-model="userProfile.ten" label="Last Name" variant="outlined" color="primary" density="comfortable"></v-text-field>
                            </v-col>
                            <v-col cols="12" md="6">
-                              <v-text-field v-model="userProfile.username" label="Username" variant="outlined" bg-color="grey-lighten-4" density="comfortable" readonly></v-text-field>
+                              <v-text-field v-model="userProfile.dienThoai" label="Phone Number" variant="outlined" color="primary" density="comfortable" prepend-inner-icon="mdi-phone"></v-text-field>
                            </v-col>
                            <v-col cols="12" md="6">
-                              <v-text-field v-model="userProfile.email" label="Email" variant="outlined" bg-color="grey-lighten-4" density="comfortable" readonly></v-text-field>
+                               <v-select v-model="userProfile.gioiTinh" :items="['M', 'F', 'Other']" label="Gender" variant="outlined" color="primary" density="comfortable"></v-select>
+                           </v-col>
+                           <v-col cols="12">
+                              <v-text-field v-model="userProfile.diaChi" label="Address" variant="outlined" color="primary" density="comfortable" prepend-inner-icon="mdi-map-marker"></v-text-field>
                            </v-col>
                            <v-col cols="12" md="6">
-                              <v-text-field v-model="userProfile.dienThoai" label="Số điện thoại" variant="outlined" bg-color="white" density="comfortable"></v-text-field>
-                           </v-col>
-                           <v-col cols="12" md="6">
-                              <v-text-field v-model="userProfile.diaChi" label="Địa chỉ" variant="outlined" bg-color="white" density="comfortable"></v-text-field>
-                           </v-col>
-                           <v-col cols="12" md="6">
-                               <v-select v-model="userProfile.gioiTinh" :items="['M', 'F', 'Other']" label="Giới tính" variant="outlined" bg-color="white" density="comfortable"></v-select>
-                           </v-col>
-                           <v-col cols="12" md="6">
-                               <v-text-field v-model="userProfile.ngaySinh" label="Ngày sinh" type="date" variant="outlined" bg-color="white" density="comfortable"></v-text-field>
+                               <v-text-field v-model="userProfile.ngaySinh" label="Birthday" type="date" variant="outlined" color="primary" density="comfortable"></v-text-field>
                            </v-col>
                         </v-row>
-
-                        <v-alert v-if="profileUpdateSuccess" type="success" variant="tonal" class="mt-4">{{ profileUpdateSuccess }}</v-alert>
-                        <v-alert v-if="profileUpdateError" type="error" variant="tonal" class="mt-4">{{ profileUpdateError }}</v-alert>
-
-                        <div class="d-flex justify-end mt-6">
-                           <v-btn type="submit" color="primary" size="large" :loading="updateLoading" class="px-8 font-weight-bold rounded-pill">
-                              Save Changes
-                           </v-btn>
-                        </div>
+                        <!-- Hidden submit button to trigger form submit -->
+                        <button ref="profileFormButton" type="submit" class="d-none"></button>
                      </v-form>
-                  </v-col>
-               </v-row>
-            </v-window-item>
+                  </v-card>
+               </v-window-item>
 
-            <!-- TAB 2: LOANS -->
-            <v-window-item value="loans">
-               <div v-if="userLoans.length > 0">
-                  <v-row dense>
-                     <v-col cols="12" v-for="loan in userLoans" :key="loan._id">
-                        <v-card variant="flat" class="border rounded-lg mb-2 bg-white">
-                           <div class="d-flex align-center pa-3">
-                              <v-avatar color="primary-lighten-5" size="56" class="rounded mr-4">
-                                 <v-icon color="primary" size="30">mdi-book-open-page-variant</v-icon>
-                              </v-avatar>
-                              <div class="flex-grow-1">
-                                 <div class="d-flex justify-space-between align-start">
-                                    <h3 class="text-subtitle-1 font-weight-bold text-primary mb-1">
-                                       {{ loan.bookId?.tenSach || 'Unknown Book' }}
-                                    </h3>
-                                    <v-chip :color="getLoanStatusColor(loan.status)" size="small" label class="font-weight-bold text-uppercase">
-                                       {{ loan.status }}
-                                    </v-chip>
+               <!-- TAB LOANS -->
+               <v-window-item value="loans">
+                  <div v-if="userLoans.length > 0">
+                     <v-card v-for="loan in userLoans" :key="loan._id" class="mb-3 rounded-xl border elevation-1 hover-elevate">
+                        <div class="d-flex pa-3">
+                           <v-img 
+                              :src="loan.bookId?.coverUrl || 'https://via.placeholder.com/100'" 
+                              width="80" height="120" cover 
+                              class="rounded-lg bg-grey-lighten-3 mr-4"
+                           ></v-img>
+                           <div class="flex-grow-1 py-1">
+                              <div class="d-flex justify-space-between">
+                                 <div class="text-subtitle-1 font-weight-bold text-primary text-truncate" style="max-width: 200px;">
+                                    {{ loan.bookId?.tenSach || 'Unknown Book' }}
                                  </div>
-                                 <div class="text-caption text-grey-darken-1">
+                                 <v-chip :color="getLoanStatusColor(loan.status)" size="x-small" label class="font-weight-bold text-uppercase">
+                                    {{ loan.status }}
+                                 </v-chip>
+                              </div>
+                              <div class="text-caption text-grey mb-2">Borrowed: {{ formatDate(loan.ngayMuon) }}</div>
+                              
+                              <div class="d-flex align-center gap-2 mt-2">
+                                 <v-chip size="small" variant="outlined" color="grey-darken-2" prepend-icon="mdi-calendar-clock">
                                     Due: {{ formatDate(loan.ngayHenTra) }}
-                                    <span v-if="loan.phatTien > 0" class="text-error font-weight-bold ml-2">Fine: {{ formatCurrency(loan.phatTien) }}</span>
-                                 </div>
+                                 </v-chip>
+                                 <v-chip v-if="loan.phatTien > 0" size="small" color="error" variant="flat">
+                                    Fine: {{ formatCurrency(loan.phatTien) }}
+                                 </v-chip>
                               </div>
                            </div>
-                        </v-card>
-                     </v-col>
-                  </v-row>
-               </div>
-               <div v-else class="text-center py-10 text-grey">No active loans.</div>
-            </v-window-item>
+                        </div>
+                     </v-card>
+                     <v-btn block variant="tonal" color="primary" class="mt-2" to="/my-loans">View All Loans</v-btn>
+                  </div>
+                  <v-sheet v-else class="rounded-xl pa-8 text-center border border-dashed bg-transparent">
+                     <v-icon size="60" color="grey-lighten-2">mdi-bookshelf</v-icon>
+                     <div class="text-body-1 text-grey mt-2">No active loans found.</div>
+                     <v-btn color="primary" variant="flat" class="mt-4 rounded-pill" to="/books">Borrow Books</v-btn>
+                  </v-sheet>
+               </v-window-item>
 
-            <!-- TAB 3: BILLING -->
-            <v-window-item value="billing">
-               <v-card variant="flat" class="border">
-                  <v-data-table
-                     :headers="paymentHeaders"
-                     :items="paymentHistory"
-                     :loading="loadingPayments"
-                     class="bg-white"
-                  >
-                     <template v-slot:item.amount="{ item }">
-                        <span class="font-weight-bold">{{ formatCurrency(item.amount) }}</span>
-                     </template>
-                     <template v-slot:item.date="{ item }">
-                        {{ formatDate(item.date) }}
-                     </template>
-                  </v-data-table>
-               </v-card>
-            </v-window-item>
+               <!-- TAB BILLING -->
+               <v-window-item value="billing">
+                  <v-card class="rounded-xl elevation-2 overflow-hidden">
+                     <v-data-table
+                        :headers="paymentHeaders"
+                        :items="paymentHistory"
+                        :loading="loadingPayments"
+                        class="text-body-2"
+                     >
+                        <template v-slot:item.amount="{ item }">
+                           <span class="font-weight-bold" :class="item.type === 'fine' ? 'text-red' : 'text-grey-darken-3'">
+                              {{ formatCurrency(item.amount) }}
+                           </span>
+                        </template>
+                        <template v-slot:item.status="{ item }">
+                           <v-icon v-if="item.status === 'completed'" color="success" size="small">mdi-check-circle</v-icon>
+                           <span class="ml-2">{{ item.status }}</span>
+                        </template>
+                        <template v-slot:item.date="{ item }">{{ formatDate(item.date) }}</template>
+                     </v-data-table>
+                  </v-card>
+               </v-window-item>
 
-            <!-- TAB 4: SECURITY -->
-            <v-window-item value="security">
-               <v-row justify="center">
-                  <v-col cols="12" md="8">
+               <!-- TAB SECURITY -->
+               <v-window-item value="security">
+                  <v-card class="rounded-xl pa-6 elevation-2 border-red-top">
+                     <div class="d-flex align-center mb-6">
+                        <v-avatar color="red-lighten-5" size="48" class="mr-4">
+                           <v-icon color="red" size="24">mdi-lock-alert</v-icon>
+                        </v-avatar>
+                        <div>
+                           <div class="text-h6 font-weight-bold">Change Password</div>
+                           <div class="text-caption text-grey">Secure your account with a strong password.</div>
+                        </div>
+                     </div>
+
                      <v-form ref="passwordForm" @submit.prevent="updatePassword">
-                        <v-text-field v-model="newPassword" label="New Password" type="password" variant="outlined" color="primary"></v-text-field>
-                        <v-text-field v-model="confirmNewPassword" label="Confirm New Password" type="password" variant="outlined" color="primary"></v-text-field>
+                        <v-text-field 
+                           v-model="newPassword" 
+                           label="New Password" 
+                           prepend-inner-icon="mdi-lock-outline" 
+                           type="password" 
+                           variant="outlined" 
+                           color="primary"
+                        ></v-text-field>
                         
-                        <v-alert v-if="passwordSuccess" type="success" variant="tonal" class="mt-4">{{ passwordSuccess }}</v-alert>
-                        <v-alert v-if="passwordError" type="error" variant="tonal" class="mt-4">{{ passwordError }}</v-alert>
+                        <v-text-field 
+                           v-model="confirmNewPassword" 
+                           label="Confirm Password" 
+                           prepend-inner-icon="mdi-lock-check-outline" 
+                           type="password" 
+                           variant="outlined" 
+                           color="primary"
+                        ></v-text-field>
 
-                        <v-btn type="submit" color="warning" block size="large" :loading="passwordLoading" class="mt-6 font-weight-bold">Update Password</v-btn>
+                        <v-btn type="submit" color="red" block size="large" :loading="passwordLoading" class="mt-4 font-weight-bold text-white rounded-lg">
+                           Update Password
+                        </v-btn>
                      </v-form>
-                  </v-col>
-               </v-row>
-            </v-window-item>
+                  </v-card>
+               </v-window-item>
 
-          </v-window>
-        </v-card-text>
-      </v-card>
+            </v-window>
+         </v-col>
+      </v-row>
+
     </v-container>
     
+    <!-- SNACKBAR -->
     <v-snackbar v-model="snackbar.show" :color="snackbar.color" location="top right">
         {{ snackbar.message }}
         <template v-slot:actions><v-btn variant="text" @click="snackbar.show = false">Close</v-btn></template>
@@ -222,34 +315,23 @@ const uploadingCover = ref(false);
 const avatarInput = ref(null);
 const coverInput = ref(null);
 
-// Form update states
+// Form & Password
 const updateLoading = ref(false);
-const profileUpdateError = ref(null);
-const profileUpdateSuccess = ref(null);
-
-// Password states
 const passwordLoading = ref(false);
-const passwordError = ref(null);
-const passwordSuccess = ref(null);
 const newPassword = ref('');
 const confirmNewPassword = ref('');
 
-// Payment states
+// Payment
 const loadingPayments = ref(false);
 const paymentHistory = ref([]);
 const paymentHeaders = [
     { title: 'Date', key: 'date' },
     { title: 'Description', key: 'description' },
-    { title: 'Type', key: 'type' },
-    { title: 'Amount', key: 'amount' },
-    { title: 'Status', key: 'status' },
+    { title: 'Amount', key: 'amount', align: 'end' },
+    { title: 'Status', key: 'status', align: 'center' },
 ];
 
-const totalPaid = computed(() => {
-    return paymentHistory.value
-        .filter(p => p.status === 'completed')
-        .reduce((sum, p) => sum + p.amount, 0);
-});
+const totalPaid = computed(() => paymentHistory.value.reduce((sum, p) => sum + p.amount, 0));
 
 // --- API CALLS ---
 
@@ -261,123 +343,87 @@ const fetchUserProfile = async () => {
         if (userProfile.value.ngaySinh) {
             userProfile.value.ngaySinh = new Date(userProfile.value.ngaySinh).toISOString().split('T')[0];
         }
-    } catch (error) {
-        console.error(error);
-    } finally {
-        loading.value = false;
-    }
+    } catch (e) { console.error(e); } 
+    finally { loading.value = false; }
 };
 
 const fetchUserLoans = async () => {
     try {
-        const response = await api.get(`/loans?userId=${authStore.user._id}&limit=5`);
+        const response = await api.get(`/loans?userId=${authStore.user._id}&limit=3`);
         userLoans.value = response.data.data;
-    } catch (error) {
-        console.error('Error fetching user loans:', error);
-    }
+    } catch (e) {}
 };
 
-// --- ĐÂY LÀ HÀM BỊ THIẾU TRONG CODE CŨ CỦA BẠN ---
 const updateUserProfile = async () => {
     updateLoading.value = true;
-    profileUpdateError.value = null;
-    profileUpdateSuccess.value = null;
     try {
         const payload = { ...userProfile.value };
-        delete payload.username;
-        delete payload.email;
-        delete payload.password;
-        delete payload.role;
-        delete payload._id;
-        delete payload.createdAt;
-        delete payload.updatedAt;
+        // Clean payload
+        ['username', 'email', 'password', 'role', '_id', 'createdAt', 'updatedAt'].forEach(k => delete payload[k]);
 
         const response = await api.put(`/users/${authStore.user._id}`, payload);
-        profileUpdateSuccess.value = response.data.message;
-        authStore.user = { ...authStore.user, ...payload };
-    } catch (error) {
-        profileUpdateError.value = error.response?.data?.message || 'Failed to update profile.';
+        authStore.updateUser(payload); // Update store
+        showSnack(response.data.message, 'success');
+    } catch (e) {
+        showSnack(e.response?.data?.message || 'Update failed', 'error');
     } finally {
         updateLoading.value = false;
     }
 };
 
-// Hàm đổi mật khẩu
 const updatePassword = async () => {
+    if (newPassword.value !== confirmNewPassword.value) return showSnack('Passwords do not match', 'error');
+    if (newPassword.value.length < 6) return showSnack('Password too short', 'error');
+
     passwordLoading.value = true;
-    passwordError.value = null;
-    passwordSuccess.value = null;
-
-    if (newPassword.value !== confirmNewPassword.value) {
-        passwordError.value = 'New passwords do not match.';
-        passwordLoading.value = false;
-        return;
-    }
-    if (newPassword.value.length < 6) {
-        passwordError.value = 'New password must be at least 6 characters.';
-        passwordLoading.value = false;
-        return;
-    }
-
     try {
-        const response = await api.put(`/users/${authStore.user._id}/password`, { newPassword: newPassword.value });
-        passwordSuccess.value = response.data.message;
-        newPassword.value = '';
-        confirmNewPassword.value = '';
-    } catch (error) {
-        passwordError.value = error.response?.data?.message || 'Failed to update password.';
+        await api.put(`/users/${authStore.user._id}/password`, { newPassword: newPassword.value });
+        showSnack('Password updated successfully', 'success');
+        newPassword.value = ''; confirmNewPassword.value = '';
+    } catch (e) {
+        showSnack(e.response?.data?.message || 'Failed', 'error');
     } finally {
         passwordLoading.value = false;
     }
 };
 
-// Upload Avatar
+// --- FIX: UPDATE STORE SAU KHI UPLOAD ---
 const handleAvatarUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
-
     uploadingAvatar.value = true;
     const formData = new FormData();
     formData.append('avatar', file);
 
     try {
-        
-        const res = await api.post(`/users/${authStore.user._id}/avatar`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const res = await api.post(`/users/${authStore.user._id}/avatar`, formData, { headers: {'Content-Type': 'multipart/form-data'} });
         userProfile.value.avatar = res.data.avatar;
-        authStore.updateUser({ avatar: res.data.avatar }); 
-        snackbar.value = { show: true, message: 'Avatar updated!', color: 'success' };
-    } catch (error) {
-        snackbar.value = { show: true, message: 'Failed to upload', color: 'error' };
-    } finally {
-        uploadingAvatar.value = false;
-    }
+        authStore.updateUser({ avatar: res.data.avatar }); // Cập nhật store
+        showSnack('Avatar updated!', 'success');
+    } catch (e) { showSnack('Upload failed', 'error'); } 
+    finally { uploadingAvatar.value = false; }
 };
 
-// Upload Cover
 const handleCoverUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
-
     uploadingCover.value = true;
     const formData = new FormData();
     formData.append('cover', file);
 
     try {
-        const res = await api.post(`/users/${authStore.user._id}/cover`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const res = await api.post(`/users/${authStore.user._id}/cover`, formData, { headers: {'Content-Type': 'multipart/form-data'} });
         userProfile.value.coverImage = res.data.coverImage;
-        snackbar.value = { show: true, message: 'Cover updated!', color: 'success' };
-    } catch (error) {
-        snackbar.value = { show: true, message: 'Failed to upload', color: 'error' };
-    } finally {
-        uploadingCover.value = false;
-    }
+        
+        // --- FIX QUAN TRỌNG: CẬP NHẬT COVER VÀO STORE ---
+        authStore.updateUser({ coverImage: res.data.coverImage }); 
+        // -------------------------------------------------
+        
+        showSnack('Cover updated!', 'success');
+    } catch (e) { showSnack('Upload failed', 'error'); } 
+    finally { uploadingCover.value = false; }
 };
 
-// Payment history giả lập
 const fetchPaymentHistory = async () => {
     loadingPayments.value = true;
     setTimeout(() => {
@@ -389,9 +435,10 @@ const fetchPaymentHistory = async () => {
     }, 500);
 };
 
-// Helpers
+const showSnack = (msg, color) => { snackbar.value = { show: true, message: msg, color }; };
 const formatDate = (d) => d ? new Date(d).toLocaleDateString('vi-VN') : 'N/A';
 const formatCurrency = (v) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v || 0);
+const formatCurrencyCompact = (v) => new Intl.NumberFormat('en', { notation: "compact" }).format(v || 0);
 const getLoanStatusColor = (s) => ({'borrowed':'info','returned':'success','overdue':'error','pending':'warning'}[s] || 'grey');
 
 onMounted(() => {
@@ -402,10 +449,26 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.profile-wrapper { font-family: 'Roboto', sans-serif; }
-.max-width-1000 { max-width: 1000px; margin: 0 auto; }
-.border-white { border: 4px solid white !important; }
-.text-shadow { text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-.profile-avatar-wrapper { position: relative; }
-.avatar-edit-btn { position: absolute; bottom: 5px; right: 5px; border: 2px solid white; }
+.profile-page-wrapper { font-family: 'Inter', sans-serif; }
+.max-width-1100 { max-width: 1100px; margin: 0 auto; }
+.gap-4 { gap: 16px; }
+.z-index-10 { z-index: 10; }
+.text-shadow-dark { text-shadow: 0 2px 10px rgba(0,0,0,0.6); }
+
+/* Avatar Styles */
+.profile-avatar { border: 4px solid white; }
+.avatar-edit-btn { position: absolute; bottom: 5px; right: 5px; border: 2px solid white; z-index: 20; }
+
+/* Cover Hover Effect */
+.group:hover .opacity-0 { opacity: 1 !important; }
+.transition-opacity { transition: opacity 0.3s ease; }
+
+/* Gradient Backgrounds */
+.bg-gradient-primary { background: linear-gradient(135deg, #1976D2, #64B5F6); }
+.border-red-top { border-top: 4px solid #EF5350 !important; }
+
+.hover-elevate { transition: transform 0.2s; }
+.hover-elevate:hover { transform: translateY(-3px); box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important; border-color: #1976D2 !important; }
+
+.letter-spacing-1 { letter-spacing: 0.5px; }
 </style>

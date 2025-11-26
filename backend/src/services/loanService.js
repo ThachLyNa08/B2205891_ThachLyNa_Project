@@ -96,44 +96,71 @@ const cancelLoan = async (loanId, userId) => {
 
 // --- HÀM THỐNG KÊ (Fix lỗi Loan is not defined) ---
 const getLoanStats = async () => {
-    const now = new Date();
-    
-    // Đếm số liệu
-    const total = await Loan.countDocuments();
-    const borrowed = await Loan.countDocuments({ status: 'borrowed' });
-    const overdue = await Loan.countDocuments({
+  // Đếm số lượng theo từng trạng thái
+  const pending = await Loan.countDocuments({ status: 'pending' });
+  const borrowed = await Loan.countDocuments({ status: 'borrowed' });
+  
+  // Đếm sách quá hạn (status là borrowed VÀ ngày trả < hôm nay)
+  // HOẶC nếu bạn có status riêng là 'overdue' thì đếm theo status đó
+  const overdue = await Loan.countDocuments({ 
       $or: [
           { status: 'overdue' },
-          { status: 'borrowed', ngayHenTra: { $lt: now } }
+          { status: 'borrowed', ngayHenTra: { $lt: new Date() } }
       ]
-    });
-  
-    // Tính biểu đồ 7 ngày
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  
-    const chartDataRaw = await Loan.aggregate([
-      { $match: { createdAt: { $gte: sevenDaysAgo } } },
-      { $group: {
-          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-          count: { $sum: 1 }
-      }},
-      { $sort: { _id: 1 } }
-    ]);
-  
-    const chartData = [];
-    for (let i = 6; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const dateStr = d.toISOString().split('T')[0];
-        const found = chartDataRaw.find(item => item._id === dateStr);
-        chartData.push(found ? found.count : 0);
-    }
-  
-    return { total, borrowed, overdue, chartData };
+  });
+
+  const returned = await Loan.countDocuments({ status: 'returned' });
+
+  return { pending, borrowed, overdue, returned };
 };
 
-const getLoans = async (query, pagination) => loanRepository.getLoans(query, pagination);
+const getLoans = async (filter, pagination) => {
+  const { page, limit } = pagination;
+  const skip = (page - 1) * limit;
+
+  // Tạo query tìm kiếm cơ bản
+  let query = {};
+
+  // 1. XỬ LÝ FILTER STATUS (QUAN TRỌNG)
+  if (filter.status) {
+    if (filter.status === 'overdue') {
+      // Logic tìm sách quá hạn:
+      // 1. Trạng thái phải là đang mượn ('borrowed')
+      // 2. Ngày hẹn trả phải NHỎ HƠN thời điểm hiện tại
+      query.status = 'borrowed';
+      query.ngayHenTra = { $lt: new Date() }; 
+    } 
+    else if (filter.status.includes(',')) {
+      // Logic tìm nhiều trạng thái (ví dụ: "returned,cancelled")
+      const statuses = filter.status.split(',');
+      query.status = { $in: statuses };
+    } 
+    else {
+      // Các trạng thái bình thường (pending, borrowed, returned...)
+      query.status = filter.status;
+    }
+  }
+
+  // 2. XỬ LÝ FILTER USER (Nếu có)
+  if (filter.userId) {
+    query.userId = filter.userId;
+  }
+
+  // 3. XỬ LÝ TÌM KIẾM TỪ KHÓA (Nếu có - Search box)
+  // (Phần này tùy code cũ của bạn, nếu chưa có thì bỏ qua hoặc thêm vào sau)
+  
+  // --- THỰC HIỆN TRUY VẤN ---
+  const loans = await Loan.find(query)
+    .populate('userId', 'username email hoLot ten') // Lấy thông tin user
+    .populate('bookId', 'tenSach maSach coverUrl')  // Lấy thông tin sách
+    .sort({ createdAt: -1 }) // Mới nhất lên đầu
+    .skip(skip)
+    .limit(limit);
+
+  const total = await Loan.countDocuments(query);
+
+  return { loans, total };
+};
 const getLoanById = async (id) => loanRepository.getLoanById(id);
 const getLoansForCalendar = async (userId, year, month) => loanRepository.getLoansForCalendar(userId, year, month);
 const deleteLoan = async (loanId) => {

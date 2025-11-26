@@ -121,7 +121,7 @@
             >
               <div class="img-wrapper position-relative rounded-t-lg overflow-hidden">
                 <v-img
-                  :src="book.coverUrl || 'https://via.placeholder.com/300x450'"
+                  :src="book.coverUrl || 'https://placehold.co/300x450'"
                   aspect-ratio="2/3"
                   cover
                   class="align-end book-cover"
@@ -203,13 +203,13 @@
               >
                 <div class="img-wrapper position-relative rounded-t-lg overflow-hidden">
                   <v-img
-                    :src="book.coverUrl || 'https://via.placeholder.com/300x450'"
+                    :src="book.coverUrl || 'https://placehold.co/300x450'"
                     aspect-ratio="2/3"
                     cover
                     class="align-end book-cover"
                   >
                      <template v-slot:error>
-                        <v-img src="https://via.placeholder.com/300x450?text=No+Cover" cover class="fill-height"></v-img>
+                        <v-img src="https://placehold.co/300x450?text=No+Cover" cover class="fill-height"></v-img>
                     </template>
                   </v-img>
                 </div>
