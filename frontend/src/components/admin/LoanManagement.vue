@@ -277,7 +277,7 @@ const fetchStats = async () => {
 
 const openConfirmDialog = (item) => { confirmDialog.value = { show: true, loan: item }; }
 const executeConfirmLoan = async () => {
-    try { await api.put(`/loans/${confirmDialog.value.loan._id}/confirm`); showSnackbar('Approved!', 'success'); confirmDialog.value.show = false; loadLoans(); } catch (error) { showSnackbar('Error', 'error'); }
+    try { await api.put(`/loans/${confirmDialog.value.loan._id}/confirm`); showSnackbar('Approved!', 'success'); confirmDialog.value.show = false; loadLoans(); } catch (error) { showSnackbar('Thất bại!!! Sách chưa thanh toán.', 'error'); }
 }
 
 const openReturnDialog = (item) => { 

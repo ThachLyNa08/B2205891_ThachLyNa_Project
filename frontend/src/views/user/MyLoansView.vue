@@ -170,7 +170,7 @@
 
                        <!-- Nút Thanh Toán (Cho Unpaid) -->
                        <v-btn 
-                          v-if="!loan.isFinePaid && loan.phatTien > 0"
+                          v-if="(!loan.isPaid && loan.rentCost > 0) || (!loan.isFinePaid && loan.phatTien > 0)"
                           color="success" size="small" variant="elevated"
                           prepend-icon="mdi-credit-card-outline"
                           @click="openPaymentDialog(loan)"
@@ -282,7 +282,8 @@ const filteredList = computed(() => {
             list = allLoans.value.filter(l => ['returned', 'cancelled'].includes(l.status));
             break;
         case 'unpaid': 
-            list = allLoans.value.filter(l => l.phatTien > 0 && !l.isFinePaid);
+            // Lọc ra sách chưa trả tiền thuê HOẶC chưa trả tiền phạt
+            list = allLoans.value.filter(l => (!l.isPaid && l.rentCost > 0) || (!l.isFinePaid && l.phatTien > 0));
             break;
     }
     // Sắp xếp mới nhất lên đầu
@@ -339,21 +340,43 @@ const returnBook = async (loan) => {
 
 const openPaymentDialog = (loan) => {
     selectedLoan.value = loan;
-    paymentInfo.amount = loan.phatTien || 0;
+    
+    // Tính tổng tiền: Thuê (nếu chưa trả) + Phạt (nếu chưa trả)
+    let total = 0;
+    if (!loan.isPaid) total += (loan.rentCost || 0);
+    if (!loan.isFinePaid) total += (loan.phatTien || 0);
+    
+    paymentInfo.amount = total;
     payDialog.value = true;
 };
 
 const processPayment = async () => {
     paymentLoading.value = true;
-    setTimeout(async () => {
-        try {
-            await api.put(`/loans/${selectedLoan.value._id}/pay-fine`);
-            payDialog.value = false;
-            showSnack('Payment Successful!', 'success');
-            await fetchLoans();
-        } catch (e) { showSnack('Payment Failed', 'error'); }
-        finally { paymentLoading.value = false; }
-    }, 1500);
+    try {
+        // 1. Tạo Payment Intent
+        const intentRes = await api.post('/payments/create-intent', {
+            loanId: selectedLoan.value._id,
+            amount: paymentInfo.amount,
+            paymentType: 'rent_and_fine'
+        });
+
+        // 2. Xử lý thanh toán
+        await api.post(`/payments/${intentRes.data.payment._id}/process`, {
+            paymentMethod: paymentInfo.method,
+            billingDetails: { 
+                name: authStore.user?.username || 'User', 
+                phone: authStore.user?.dienThoai || '' 
+            }
+        });
+
+        payDialog.value = false;
+        showSnack('Payment Successful!', 'success');
+        await fetchLoans(); // Load lại danh sách để cập nhật trạng thái
+    } catch (e) { 
+        showSnack(e.response?.data?.message || 'Payment Failed', 'error'); 
+    } finally { 
+        paymentLoading.value = false; 
+    }
 };
 
 // Helpers & Watchers

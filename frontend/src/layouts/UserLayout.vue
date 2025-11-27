@@ -41,6 +41,7 @@
         <div class="text-caption text-grey ml-4 mb-1 font-weight-bold mt-2">EXPLORE</div>
         <v-list-item to="/home" prepend-icon="mdi-home-outline" title="Home" rounded="lg" color="primary"></v-list-item>
         <v-list-item to="/books" prepend-icon="mdi-bookshelf" title="Catalog" rounded="lg" color="primary"></v-list-item>
+        <v-list-item to="/leaderboard" prepend-icon="mdi-trophy-outline" title="Leaderboard" rounded="lg" color="amber-darken-2"></v-list-item>
         
         <template v-if="authStore.isAuthenticated">
           <div class="text-caption text-grey ml-4 mb-1 font-weight-bold mt-4">MY LIBRARY</div>

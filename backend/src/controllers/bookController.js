@@ -1,5 +1,5 @@
 const bookService = require('../services/bookService');
-
+const Loan = require('../models/loan');
 // ==================================================
 // 1. HÀM HELPER: Xử lý dữ liệu từ FormData (QUAN TRỌNG)
 // ==================================================
@@ -127,11 +127,41 @@ const deleteBook = async (req, res, next) => {
     next(error);
   }
 };
+const getTopBooks = async (req, res, next) => {
+  try {
+    const topBooks = await Loan.aggregate([
+      { $group: { _id: "$bookId", count: { $sum: 1 } } }, // Gom nhóm theo sách
+      { $sort: { count: -1 } }, // Sắp xếp giảm dần
+      { $limit: 5 },            // Lấy top 5
+      { 
+        $lookup: { 
+          from: "books", 
+          localField: "_id", 
+          foreignField: "_id", 
+          as: "bookInfo" 
+        } 
+      },
+      { $unwind: "$bookInfo" },
+      {
+        $project: {
+          tenSach: "$bookInfo.tenSach",
+          tacGia: "$bookInfo.tacGia",
+          coverUrl: "$bookInfo.coverUrl",
+          borrowedCount: "$count"
+        }
+      }
+    ]);
+    res.status(200).json(topBooks);
+  } catch (error) {
+    next(error);
+  }
+};
 
 module.exports = {
   getBooks,
   getBook,
   createBook,
   updateBook,
-  deleteBook
+  deleteBook,
+  getTopBooks
 };

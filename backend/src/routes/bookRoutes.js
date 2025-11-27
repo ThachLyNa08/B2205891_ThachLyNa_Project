@@ -13,6 +13,7 @@ router.route('/')
     upload.single('coverImage'), // <--- Đặt middleware upload vào đây
     bookController.createBook
   );
+router.get('/top-borrowed', bookController.getTopBooks);
 
 // Group 2: /api/books/:id
 router.route('/:id')

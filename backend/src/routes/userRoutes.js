@@ -11,7 +11,7 @@ router.post('/:id/avatar', protect, upload.single('avatar'), userController.uplo
 
 // Frontend gọi: POST /api/users/:id/cover
 router.post('/:id/cover', protect, upload.single('cover'), userController.uploadCover);
-
+router.get('/top-readers', userController.getTopReaders);
 router.get('/favorites', protect, userController.getFavorites);
 router.post('/favorites', protect, userController.addFavorite);
 router.delete('/favorites/:bookId', protect, userController.removeFavorite);

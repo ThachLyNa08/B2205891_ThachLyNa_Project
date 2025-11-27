@@ -15,6 +15,7 @@ import MyLoansView from "@/views/user/MyLoansView.vue";
 import LoginView from "@/views/user/LoginView.vue";
 import RegisterView from "@/views/user/RegisterView.vue";
 import AuthCallback from "@/views/AuthCallback.vue";
+import LeaderboardView from "@/views/user/LeaderboardView.vue";
 
 // 3. VIEWS (ADMIN)
 import AdminDashboardView from "@/views/admin/AdminDashboardView.vue";
@@ -68,6 +69,7 @@ const router = createRouter({
           component: () => import("@/views/user/NotificationsView.vue"),
           meta: { requiresAuth: true },
         },
+        { path: "/leaderboard", name: "leaderboard", component: LeaderboardView },
       ],
     },
 

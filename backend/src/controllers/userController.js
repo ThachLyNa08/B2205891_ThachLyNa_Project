@@ -1,5 +1,5 @@
 const userService = require('../services/userService');
-
+const Loan = require('../models/loan');
 // @desc    Get all users (with search support)
 // @route   GET /api/users
 // @access  Private/Admin
@@ -193,6 +193,35 @@ const removeFavorite = async (req, res, next) => {
         res.status(200).json({ message: 'Removed from favorites', favorites });
     } catch (error) { next(error); }
 };
+// [MỚI] API lấy Top 5 độc giả
+const getTopReaders = async (req, res, next) => {
+  try {
+    const topReaders = await Loan.aggregate([
+        { $group: { _id: "$userId", count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 5 },
+        {
+            $lookup: {
+                from: "users",
+                localField: "_id",
+                foreignField: "_id",
+                as: "userInfo"
+            }
+        },
+        { $unwind: "$userInfo" },
+        {
+            $project: {
+                username: "$userInfo.username",
+                avatar: "$userInfo.avatar", // Lấy avatar nếu có
+                borrowedCount: "$count"
+            }
+        }
+    ]);
+    res.status(200).json(topReaders);
+  } catch (error) {
+    next(error);
+  }
+};
 
 module.exports = {
   getUsers,
@@ -205,5 +234,6 @@ module.exports = {
   uploadCover,
   getFavorites,
   addFavorite,
-  removeFavorite
+  removeFavorite,
+  getTopReaders
 };
