@@ -106,6 +106,11 @@ const menuItems = ref([
     icon: 'mdi-star-circle-outline', // Icon ngôi sao
     to: '/admin-portal/reviews' 
   },
+  { 
+    title: 'Reports & Stats', 
+    icon: 'mdi-file-chart-outline', 
+    to: '/admin-portal/reports' 
+  }
 ]);
 
 const logout = async () => {

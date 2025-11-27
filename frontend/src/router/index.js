@@ -27,6 +27,7 @@ import PaymentHistory from "@/components/admin/PaymentHistory.vue";
 import ReviewManagement from '@/components/admin/ReviewManagement.vue';
 import CategoryManagement from '../components/admin/CategoryManagement.vue'
 import PublisherManagement from '../components/admin/PublisherManagement.vue'
+import ReportsView from "@/components/admin/ReportsView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -96,6 +97,7 @@ const router = createRouter({
         { path: 'reviews', name: 'admin-reviews', component: ReviewManagement },
         { path: 'categories', name: 'admin-categories', component: CategoryManagement },
         { path: 'publishers', name: 'admin-publishers', component: PublisherManagement },
+        { path: "reports", name: "admin-reports", component: ReportsView },
       ],
     },
 

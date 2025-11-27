@@ -1,25 +1,34 @@
-// File: backend/check_models.js
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 require('dotenv').config();
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const apiKey = process.env.GEMINI_API_KEY;
 
-async function listModels() {
-  try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); 
-    // Đoạn này chỉ để init, ta dùng genAI để list
-    // Google SDK hiện tại chưa có hàm list trực tiếp đơn giản trong document mới nhất
-    // Nhưng ta có thể test thử gọi 1 model cơ bản nhất:
-    
-    console.log("Đang kiểm tra model gemini-1.5-flash-latest...");
-    const testModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
-    const result = await testModel.generateContent("Hello");
-    console.log("Kết quả: Model hoạt động tốt!", result.response.text());
-    
-  } catch (error) {
-    console.error("Lỗi:", error.message);
-    console.log("Thử đổi sang 'gemini-pro' hoặc 'gemini-1.0-pro' xem sao.");
-  }
+if (!apiKey) {
+    console.error("❌ Chưa có GEMINI_API_KEY trong file .env");
+    process.exit(1);
 }
 
-listModels();
+const genAI = new GoogleGenerativeAI(apiKey);
+
+async function run() {
+    try {
+        // Đây là cách lấy danh sách model (dùng fetch thủ công vì SDK đôi khi ẩn hàm này)
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+        const data = await response.json();
+        
+        console.log("✅ DANH SÁCH MODEL KHẢ DỤNG:");
+        if (data.models) {
+            data.models.forEach(m => {
+                if (m.supportedGenerationMethods.includes("generateContent")) {
+                    console.log(`- ${m.name.replace('models/', '')}`);
+                }
+            });
+        } else {
+            console.log("Không tìm thấy model nào. Lỗi:", data);
+        }
+    } catch (error) {
+        console.error("❌ Lỗi kiểm tra:", error.message);
+    }
+}
+
+run();

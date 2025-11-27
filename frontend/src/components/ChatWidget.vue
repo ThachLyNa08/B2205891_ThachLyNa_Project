@@ -1,22 +1,25 @@
 <template>
   <div class="chat-widget-container">
     
-    <!-- 1. Nút tròn để mở Chat (Fab Button) -->
     <v-scale-transition>
-      <v-btn
-        v-if="!isOpen"
-        icon
-        color="primary"
-        size="x-large"
-        class="chat-fab elevation-8"
-        @click="isOpen = true"
-      >
-        <v-icon size="32">mdi-robot-excited-outline</v-icon>
-        <v-tooltip activator="parent" location="start">Chat với AI</v-tooltip>
-      </v-btn>
+      <div v-if="!isOpen" class="fab-wrapper">
+        <div class="pulse-ring"></div>
+        
+        <v-btn
+          icon
+          color="primary"
+          size="x-large"
+          class="chat-fab elevation-8"
+          @click="isOpen = true"
+        >
+          <v-icon size="32" class="swing-icon">mdi-robot-excited-outline</v-icon>
+          <v-tooltip activator="parent" location="start">Hỏi AI về sách ngay!</v-tooltip>
+        </v-btn>
+        
+        <v-badge content="1" color="red" floating offset-x="10" offset-y="10" class="notification-badge"></v-badge>
+      </div>
     </v-scale-transition>
 
-    <!-- 2. Cửa sổ Chat -->
     <v-slide-y-reverse-transition>
       <v-card
         v-if="isOpen"
@@ -24,18 +27,14 @@
         width="380"
         height="500"
       >
-        <!-- Header -->
         <v-toolbar color="primary" density="compact" flat>
           <v-icon class="ml-4 mr-2">mdi-robot</v-icon>
-          <v-toolbar-title class="text-subtitle-1 font-weight-bold">Nexus AI Assistant</v-toolbar-title>
+          <v-toolbar-title class="text-subtitle-1 font-weight-bold">Nexus AI</v-toolbar-title>
           <v-spacer></v-spacer>
           <v-btn icon="mdi-close" size="small" variant="text" @click="isOpen = false"></v-btn>
         </v-toolbar>
 
-        <!-- Nội dung tin nhắn (Scrollable) -->
         <div class="chat-messages flex-grow-1 pa-4 bg-grey-lighten-4" ref="chatContainer">
-          
-          <!-- Tin nhắn chào mừng -->
           <div class="message-wrapper ai">
              <v-avatar color="primary" size="32" class="mr-2">
                 <v-icon size="18" color="white">mdi-robot</v-icon>
@@ -45,7 +44,6 @@
              </div>
           </div>
 
-          <!-- List tin nhắn -->
           <div 
              v-for="(msg, index) in messages" 
              :key="index" 
@@ -58,39 +56,31 @@
              
              <div 
                 class="message-bubble elevation-1"
-                :class="msg.role === 'user' ? 'bg-primary text-white' : 'bg-white text-grey-darken-3'"
+                :class="msg.isUser ? 'bg-primary text-white rounded-br-0' : 'bg-grey-lighten-4 text-grey-darken-3 rounded-bl-0'"
              >
-                <div v-if="msg.isLoading">
-                   <v-progress-circular indeterminate size="16" width="2" color="grey"></v-progress-circular>
-                </div>
-                <div v-else class="message-content" v-html="formatMessage(msg.text)"></div>
+               <div v-if="!msg.isUser" v-html="parseMessage(msg.text)" class="ai-content" @click="handleLinkClick"></div>
+               <div v-else>{{ msg.text }}</div>
+            </div>
+          </div>
+          
+          <div v-if="loading" class="message-wrapper ai">
+             <v-avatar color="primary" size="32" class="mr-2 mt-1"><v-icon size="18" color="white">mdi-robot</v-icon></v-avatar>
+             <div class="message-bubble bg-grey-lighten-4 rounded-bl-0 pa-2">
+                <v-progress-circular indeterminate color="primary" size="20" width="2"></v-progress-circular>
              </div>
           </div>
         </div>
 
-        <!-- Input Area -->
         <div class="chat-input-area pa-2 bg-white border-t">
           <v-text-field
             v-model="inputMessage"
             placeholder="Type your question..."
-            variant="outlined"
-            density="compact"
-            hide-details
-rounded="pill"
-            bg-color="grey-lighten-5"
+            variant="outlined" density="compact" hide-details rounded="pill" bg-color="grey-lighten-5"
             @keyup.enter="sendMessage"
             :disabled="loading"
           >
             <template v-slot:append-inner>
-               <v-btn 
-                  icon="mdi-send" 
-                  size="small" 
-                  variant="text" 
-                  color="primary" 
-                  @click="sendMessage"
-                  :loading="loading"
-                  :disabled="!inputMessage.trim()"
-               ></v-btn>
+               <v-btn icon="mdi-send" size="small" variant="text" color="primary" @click="sendMessage" :loading="loading" :disabled="!inputMessage.trim()"></v-btn>
             </template>
           </v-text-field>
         </div>
@@ -102,14 +92,34 @@ rounded="pill"
 <script setup>
 import { ref, nextTick, watch } from 'vue';
 import api from '@/services/api.service';
+import { useRouter } from 'vue-router'; // [MỚI] Import Router
 
+const router = useRouter(); // [MỚI]
 const isOpen = ref(false);
 const inputMessage = ref('');
 const loading = ref(false);
 const messages = ref([]);
 const chatContainer = ref(null);
 
-// Hàm cuộn xuống cuối
+// [MỚI] Xử lý click link nội bộ (SPA Navigation)
+const handleLinkClick = (event) => {
+    const link = event.target.closest('a');
+    // Nếu click vào link nội bộ (có href bắt đầu bằng /)
+    if (link && link.getAttribute('href').startsWith('/')) {
+        event.preventDefault(); // Chặn reload trang
+        router.push(link.getAttribute('href')); // Chuyển trang bằng Vue Router
+    }
+};
+
+const parseMessage = (text) => {
+    if (!text) return '';
+    const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+    // Thêm data-internal để đánh dấu
+    return text.replace(linkRegex, (match, title, url) => {
+        return `<a href="${url}" class="chat-link" target="_self" data-internal>${title}</a>`;
+    });
+};
+
 const scrollToBottom = async () => {
   await nextTick();
   if (chatContainer.value) {
@@ -119,155 +129,191 @@ const scrollToBottom = async () => {
 
 const sendMessage = async () => {
   if (!inputMessage.value.trim() || loading.value) return;
-
   const userText = inputMessage.value;
   
-  // 1. Thêm tin nhắn user vào list
-  messages.value.push({ role: 'user', text: userText });
+  messages.value.push({ role: 'user', text: userText, isUser: true });
   inputMessage.value = '';
   scrollToBottom();
 
-  // 2. Thêm tin nhắn "Đang gõ..." của AI
   loading.value = true;
-  messages.value.push({ role: 'ai', text: '', isLoading: true });
-  scrollToBottom();
-
   try {
-    // 3. Gọi API Backend (Không gọi trực tiếp Google)
-    const history = messages.value
-        .filter(m => !m.isLoading)
-        .map(m => ({
-            role: m.role === 'user' ? 'user' : 'model',
-            parts: [{ text: m.text }]
-        }));
+    const history = messages.value.filter(m => m.role).map(m => ({
+        role: m.isUser ? 'user' : 'model',
+        parts: [{ text: m.text }]
+    }));
 
     const response = await api.post('/ai/chat', { 
         message: userText,
-        history: history.slice(-10) // Chỉ gửi 10 tin gần nhất để tiết kiệm token
+        history: history.slice(-10)
     });
 
-    // 4. Cập nhật tin nhắn AI
-    messages.value.pop(); // Xóa cục loading
-    messages.value.push({ role: 'ai', text: response.data.reply });
-
+    messages.value.push({ role: 'ai', text: response.data.reply, isUser: false });
   } catch (error) {
-    messages.value.pop();
-    messages.value.push({ role: 'ai', text: 'Xin lỗi, tôi đang gặp sự cố kết nối.' });
-    console.error(error);
+    messages.value.push({ role: 'ai', text: 'Xin lỗi, tôi đang gặp sự cố kết nối.', isUser: false });
   } finally {
     loading.value = false;
     scrollToBottom();
   }
 };
 
-// Tự động focus hoặc scroll khi mở
-watch(isOpen, (val) => {
-    if (val) scrollToBottom();
-});
-// Thêm hàm này vào trong script setup
-const formatMessage = (text) => {
-  if (!text) return '';
-  
-  // Regex để tìm pattern [Tên Link](/đường-dẫn) và chuyển thành thẻ <a href>
-  // Ví dụ: [Xem ngay](/books/123) -> <a href="/books/123">Xem ngay</a>
-  
-  // Lưu ý: Chúng ta dùng router-link giả bằng cách bắt sự kiện click sau, 
-  // hoặc dùng thẻ a thường. Ở đây dùng thẻ a đơn giản.
-  
-  let formatted = text.replace(/\n/g, '<br>'); // Xuống dòng
-  
-// Convert Markdown link [Text](Url) to HTML Link
-  formatted = formatted.replace(
-    /\[([^\]]+)\]\(([^)]+)\)/g, 
-    '<a href="$2" class="chat-link" target="_self">$1</a>'
-  );
-  
-  // Làm đậm các từ khóa trong dấu **text**
-  formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  
-  return formatted;
-};
+watch(isOpen, (val) => { if (val) scrollToBottom(); });
 </script>
 
 <style scoped>
-/* KHUNG BAO NGOÀI (Tấm kính vô hình) */
+/* 1. CONTAINER CHÍNH (Vị trí nút Chat) */
 .chat-widget-container {
   position: fixed;
   bottom: 24px;
   right: 24px;
-  z-index: 9999; /* Luôn nổi trên cùng */
-  
+  z-index: 9999;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  
-  /* --- DÒNG QUAN TRỌNG NHẤT: ĐỂ BẤM XUYÊN QUA --- */
-  /* Nó bảo trình duyệt: "Đừng bắt sự kiện chuột ở khung này, cho nó đi xuyên qua" */
-  /*pointer-events: none; 
-  
-  /* Đảm bảo nó không chiếm hết màn hình nếu không cần thiết */
-  width: auto;
-  height: auto;
+  pointer-events: none; /* Cho phép bấm xuyên qua vùng trống */
 }
 
-/* CÁC THÀNH PHẦN CON (Nút tròn + Cửa sổ chat) */
-.chat-fab, 
-.chat-window {
-  /* --- DÒNG QUAN TRỌNG NHÌ: ĐỂ BẮT LẠI SỰ KIỆN --- */
-  /* Nó bảo: "Riêng nút và cửa sổ thì phải bấm được nhé" */
-  pointer-events: auto; 
+.fab-wrapper, .chat-window {
+  pointer-events: auto; /* Bắt sự kiện click cho nút và cửa sổ */
 }
 
-/* --- CÁC CSS TRANG TRÍ (GIỮ NGUYÊN) --- */
+/* 2. HIỆU ỨNG NÚT CHAT */
+.fab-wrapper { position: relative; display: inline-block; }
+
 .chat-fab {
-  box-shadow: 0 4px 20px rgba(33, 150, 243, 0.4);
+  background: linear-gradient(135deg, #1976D2, #42A5F5);
+  border: 2px solid white;
   transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
-.chat-fab:hover { transform: scale(1.1) rotate(-10deg); }
+.chat-fab:hover { transform: scale(1.1) translateY(-5px); }
 
+.swing-icon { animation: swing 3s infinite ease-in-out; transform-origin: bottom center; }
+@keyframes swing { 
+    0%, 100% { transform: rotate(0deg); } 
+    20% { transform: rotate(15deg); } 
+    40% { transform: rotate(-10deg); } 
+    60% { transform: rotate(5deg); } 
+    80% { transform: rotate(-5deg); } 
+}
+
+.pulse-ring {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 100%; height: 100%; border-radius: 50%;
+    border: 2px solid #42A5F5;
+    animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+@keyframes pulse-ring {
+    0% { width: 100%; height: 100%; opacity: 1; }
+    100% { width: 200%; height: 200%; opacity: 0; }
+}
+
+.notification-badge { position: absolute; top: 0; right: 0; z-index: 10; animation: bounce 2s infinite; }
+@keyframes bounce { 0%, 100% {transform: translateY(0);} 50% {transform: translateY(-6px);} }
+
+/* 3. CỬA SỔ CHAT */
 .chat-window {
+  width: 380px;
+  height: 500px;
+  max-width: 90vw; /* Responsive trên mobile */
   box-shadow: 0 10px 40px rgba(0,0,0,0.2) !important;
   border: 1px solid rgba(0,0,0,0.05);
-  /*overflow: hidden;*/
-  width: 380px;
-  max-width: 90vw;
+  overflow: hidden;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .chat-messages {
   overflow-y: auto;
   scroll-behavior: smooth;
+  display: flex;
+  flex-direction: column; /* Quan trọng để message xếp dọc */
+  gap: 12px; /* Khoảng cách giữa các tin nhắn */
 }
 
+/* 4. BỐ CỤC TIN NHẮN (USER VS AI) */
 .message-wrapper {
   display: flex;
-  margin-bottom: 12px;
-  align-items: flex-start;
+  align-items: flex-end; /* Avatar nằm dưới cùng */
+  width: 100%;
 }
-.message-wrapper.user { justify-content: flex-end; }
-.message-wrapper.ai { justify-content: flex-start; }
 
+/* AI: Căn trái */
+.message-wrapper.ai {
+  justify-content: flex-start;
+}
+
+/* USER: Căn phải */
+.message-wrapper.user {
+  justify-content: flex-end; /* Đẩy sang phải */
+  flex-direction: row-reverse; /* Đảo chiều để avatar (nếu có) nằm bên phải */
+}
+
+/* Bong bóng chat */
 .message-bubble {
   padding: 10px 14px;
-  border-radius: 16px;
   max-width: 80%;
   font-size: 0.9rem;
   line-height: 1.4;
   word-wrap: break-word;
+  position: relative;
 }
-.message-wrapper.ai .message-bubble { border-top-left-radius: 4px; }
-.message-wrapper.user .message-bubble { border-bottom-right-radius: 4px; }
 
+/* Kiểu dáng riêng cho AI */
+.message-wrapper.ai .message-bubble {
+  background-color: #F5F5F5; /* Xám nhạt */
+  color: #333;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  border-bottom-right-radius: 16px;
+  border-bottom-left-radius: 4px; /* Góc nhọn phía avatar */
+}
+
+/* Kiểu dáng riêng cho User */
+.message-wrapper.user .message-bubble {
+  background-color: #1976D2; /* Xanh dương */
+  color: white;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 4px; /* Góc nhọn phía avatar (ảo) */
+}
+
+/* Thanh cuộn đẹp */
 .chat-messages::-webkit-scrollbar { width: 6px; }
 .chat-messages::-webkit-scrollbar-track { background: transparent; }
 .chat-messages::-webkit-scrollbar-thumb { background: #E0E0E0; border-radius: 3px; }
 
 /* Link style */
-:deep(.chat-link) {
-  color: #1976D2;
-  text-decoration: underline;
-  font-weight: bold;
-  cursor: pointer;
+:deep(.ai-content a) {
+    color: #1565C0 !important;
+    font-weight: bold;
+    text-decoration: underline;
+    cursor: pointer;
 }
-:deep(.chat-link:hover) { color: #0D47A1; }
-.message-content { white-space: pre-wrap; }
+:deep(.ai-content a:hover) { color: #0D47A1; }
+.message-wrapper {
+  display: flex;
+  width: 100%; /* Bắt buộc chiếm hết chiều ngang */
+  align-items: flex-end; /* Căn đáy để avatar nằm dưới */
+}
+
+/* --- TIN NHẮN NGƯỜI DÙNG (BÊN PHẢI) --- */
+.message-wrapper.user {
+  justify-content: flex-end; /* Đẩy nội dung sang phải */
+}
+
+.message-wrapper.user .message-bubble {
+  background: linear-gradient(135deg, #1976D2, #1565C0);
+  color: white;
+  border-radius: 16px 16px 4px 16px; /* Bo tròn, trừ góc dưới phải */
+  margin-left: auto; /* Ép sang phải lần nữa cho chắc */
+}
+
+/* --- TIN NHẮN AI (BÊN TRÁI) --- */
+.message-wrapper.ai {
+  justify-content: flex-start; /* Đẩy nội dung sang trái */
+}
 </style>

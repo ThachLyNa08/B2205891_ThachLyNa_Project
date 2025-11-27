@@ -1,5 +1,5 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const Book = require("../models/book.js"); // Import Model Sách
+const Book = require("../models/book");
 
 // Khởi tạo Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -12,69 +12,100 @@ const chatWithAI = async (req, res) => {
       return res.status(400).json({ message: "Message is required" });
     }
 
-    // --- BƯỚC 1: TÌM SÁCH TRONG DB LIÊN QUAN ĐẾN CÂU HỎI ---
-    // Tạo từ khóa tìm kiếm đơn giản từ tin nhắn người dùng
-    // (Lấy các sách có tên hoặc tác giả chứa từ khóa trong tin nhắn)
-    // Ví dụ: User hỏi "Có sách Harry Potter không?", ta tìm chữ "Harry Potter"
-    
-    // Lấy tối đa 10 cuốn sách ngẫu nhiên hoặc khớp từ khóa để làm ngữ cảnh
-    // Ở đây mình dùng RegExp đơn giản để tìm sách có tên khớp với nội dung chat
-    const searchRegex = new RegExp(message.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-    
-    let foundBooks = await Book.find({
-        $or: [
-            { tenSach: { $regex: searchRegex } },
-            { tacGia: { $in: [searchRegex] } },
-            { 'categories.tenTheLoai': { $regex: searchRegex } }
-        ]
-    }).limit(5).select('tenSach tacGia stock _id');
+    // [QUAN TRỌNG] Sử dụng model có trong danh sách của bạn
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
-    // Nếu không tìm thấy sách nào khớp (ví dụ user chào hỏi), 
-    // ta lấy đại 5 cuốn sách mới nhất để AI có dữ liệu giới thiệu
-    if (foundBooks.length === 0) {
-        foundBooks = await Book.find().sort({ createdAt: -1 }).limit(5).select('tenSach tacGia stock _id');
-    }
-
-    // --- BƯỚC 2: TẠO CONTEXT (NGỮ CẢNH) CHO AI ---
-    let bookContext = "Dưới đây là danh sách các sách hiện có trong thư viện:\n";
-    foundBooks.forEach(book => {
-        const status = book.stock > 0 ? "Còn sách" : "Hết hàng";
-        bookContext += `- Tên: "${book.tenSach}", Tác giả: ${book.tacGia}, ID: ${book._id}, Trạng thái: ${status}\n`;
-    });
-
-    // --- BƯỚC 3: CẤU HÌNH SYSTEM PROMPT ---
-    const systemPrompt = `
-      Bạn là 'Nexus AI', thủ thư ảo của thư viện 'Library Nexus'.
+    // --- BƯỚC 1: TRÍCH XUẤT TỪ KHÓA THÔNG MINH ---
+    const extractPrompt = `
+      Nhiệm vụ: Trích xuất TỪ KHÓA TÌM KIẾM CỐT LÕI (Tên sách hoặc Tác giả) từ câu của người dùng.
       
-      DỮ LIỆU SÁCH CỦA THƯ VIỆN:
-      ${bookContext}
-
-      NHIỆM VỤ CỦA BẠN:
-      1. Trả lời câu hỏi của người dùng dựa trên danh sách sách ở trên.
-      2. Nếu người dùng hỏi về sách có trong danh sách, hãy giới thiệu nó và cung cấp đường dẫn mượn sách theo định dạng: [Mượn ngay](/books/ID_SÁCH).
-      3. Ví dụ: "Cuốn Harry Potter rất hay. Bạn có thể xem tại đây: [Xem sách](/books/12345)".
-      4. Nếu sách hết hàng, hãy báo cho họ biết.
-      5. Nếu không có sách nào phù hợp trong danh sách trên, hãy xin lỗi và gợi ý họ tìm kiếm trên thanh Catalog.
-      6. Trả lời ngắn gọn, thân thiện bằng tiếng Việt.
+      QUY TẮC LOẠI BỎ:
+      1. Bỏ các từ chỉ định dạng: "khổ nhỏ", "bìa cứng", "tái bản", "tập 1", "bộ 2", "full", "pdf", "sách", "truyện".
+      2. Bỏ các từ cảm thán/hỏi: "có không", "tìm giúp", "cho mình hỏi", "là gì".
+      3. Bỏ năm tháng: "2022", "2020".
+      4. Bỏ nội dung trong ngoặc đơn () hoặc ngoặc vuông [].
+      
+      Ví dụ:
+      - "Sách Đắc Nhân Tâm (Khổ Nhỏ) (Tái bản 2022) có hong" -> Output: "Đắc Nhân Tâm"
+      - "Tìm cuốn Nhà Giả Kim bản mới nhất" -> Output: "Nhà Giả Kim"
+      - "Nguyễn Nhật Ánh có truyện gì" -> Output: "Nguyễn Nhật Ánh"
+      - "Hello bot" -> Output: "null"
+      
+      Câu user: "${message}"
+      Output (Chỉ 1 cụm từ):
     `;
 
-    // --- BƯỚC 4: GỌI GEMINI ---
-    // Dùng model mới nhất để tránh lỗi 404
-    const model = genAI.getGenerativeModel({ model: "models/gemini-2.5-flash" });
+    const extractionResult = await model.generateContent(extractPrompt);
+    let keyword = extractionResult.response.text().trim();
+    
+    // Làm sạch từ khóa
+    keyword = keyword.replace(/^"|"$/g, '').replace(/\(.*?\)/g, '').trim();
+    console.log(`🔍 AI Extracted: "${keyword}"`);
 
-    const chat = model.startChat({
-      history: history || [],
+    // --- BƯỚC 2: TÌM KIẾM TRONG DB ---
+    let foundBooks = [];
+    
+    if (keyword !== "null" && keyword.length > 0) {
+        const searchRegex = new RegExp(keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+        
+        foundBooks = await Book.find({
+             $or: [
+                { tenSach: { $regex: searchRegex } },
+                { tacGia: { $elemMatch: { $regex: searchRegex } } }, 
+                { tacGia: { $regex: searchRegex } }
+             ]
+        }).limit(8).select('tenSach tacGia availableCopies _id pricePerDay coverUrl');
+    }
+
+    // Fallback: Tìm "mở rộng" nếu từ khóa dài
+    if (foundBooks.length === 0 && keyword.includes(' ')) {
+        const shortKeyword = keyword.split(' ').slice(0, 2).join(' ');
+        if (shortKeyword.length > 3) {
+             const shortRegex = new RegExp(shortKeyword, 'i');
+             foundBooks = await Book.find({ tenSach: { $regex: shortRegex } }).limit(5);
+        }
+    }
+
+    // Nếu vẫn không có, lấy sách mới nhất
+    if (foundBooks.length === 0) {
+        foundBooks = await Book.find().sort({ createdAt: -1 }).limit(5).select('tenSach tacGia availableCopies _id pricePerDay');
+    }
+
+    // --- BƯỚC 3: TẠO CONTEXT ---
+    let bookContext = foundBooks.length > 0 
+        ? "Dữ liệu sách tìm được trong thư viện:\n" 
+        : "Không tìm thấy sách khớp từ khóa, đây là các sách mới nhất:\n";
+
+    foundBooks.forEach(book => {
+        const status = book.availableCopies > 0 ? "✅ Còn sách" : "❌ Hết hàng";
+        const tacGiaStr = Array.isArray(book.tacGia) ? book.tacGia.join(', ') : book.tacGia;
+        bookContext += `- Tên: "${book.tenSach}" | Tác giả: ${tacGiaStr} | ID: ${book._id} | ${status}\n`;
     });
 
-    const result = await chat.sendMessage(`${systemPrompt}\nUser: ${message}`);
-    const response = await result.response;
-    const text = response.text();
+    // --- BƯỚC 4: TRẢ LỜI ---
+    const systemPrompt = `
+      Bạn là 'Nexus AI'.
+      
+      THÔNG TIN SÁCH TỪ HỆ THỐNG:
+      ${bookContext}
 
-    res.status(200).json({ reply: text });
+      YÊU CẦU TRẢ LỜI VỚI USER ("${message}"):
+      1. Dựa vào danh sách trên để trả lời.
+      2. Nếu tìm thấy sách đúng tên ("${keyword}"), xác nhận là CÓ.
+      3. BẮT BUỘC tạo link: [Xem sách](/books/ID_SÁCH).
+      4. Nếu không đúng sách họ tìm, hãy xin lỗi và gợi ý sách khác trong danh sách.
+      5. Ngắn gọn, vui vẻ.
+    `;
+
+    const chat = model.startChat({ history: history || [] });
+    const result = await chat.sendMessage(systemPrompt);
+    const response = result.response.text();
+
+    res.status(200).json({ reply: response });
 
   } catch (error) {
     console.error("AI Error:", error);
-    res.status(500).json({ message: "AI đang bận, vui lòng thử lại sau!" });
+    res.status(500).json({ reply: "Hệ thống đang bận, bạn thử lại sau nhé! 🤖" });
   }
 };
 

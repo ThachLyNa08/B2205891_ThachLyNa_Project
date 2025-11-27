@@ -1,86 +1,297 @@
-<!-- frontend/src/components/admin/ReportsView.vue -->
 <template>
-    <v-card class="pa-4">
-        <v-card-title class="text-h5">Reports and Statistics</v-card-title>
-        <v-card-text>
-            <p>This section will contain various reports and statistics about the library system.</p>
-            <v-list>
-                <v-list-item>Total Books: <strong>{{ totalBooks }}</strong></v-list-item>
-                <v-list-item>Total Users: <strong>{{ totalUsers }}</strong></v-list-item>
-                <v-list-item>Active Loans: <strong>{{ activeLoans }}</strong></v-list-item>
-                <v-list-item>Overdue Loans: <strong>{{ overdueLoans }}</strong></v-list-item>
-            </v-list>
+  <div class="reports-wrapper h-100">
+    <v-card class="pa-6 rounded-xl h-100 d-flex flex-column" color="#1e293b" elevation="0">
+      
+      <div class="mb-8 d-flex justify-space-between align-center">
+        <div>
+            <h2 class="text-h5 font-weight-bold text-white d-flex align-center">
+            <v-icon start color="teal-accent-3" class="mr-2">mdi-file-chart</v-icon>
+            Export Center
+            </h2>
+            <div class="text-subtitle-2 text-grey-lighten-1">Download system data reports</div>
+        </div>
+        <v-btn icon variant="text" color="grey" @click="fetchDashboardStats">
+            <v-icon>mdi-refresh</v-icon>
+        </v-btn>
+      </div>
 
-            <h3 class="text-h6 mt-4">Books borrowed per month (Graph Placeholder)</h3>
-            <v-sheet
-                class="d-flex align-center justify-center flex-wrap text-center mx-auto px-2"
-                elevation="4"
-                height="200"
-                rounded
-            >
-                <p class="text-h6 text-grey">Chart will be displayed here</p>
-            </v-sheet>
-            
-            <h3 class="text-h6 mt-4">Most popular books (List Placeholder)</h3>
-            <v-list density="compact">
-                <v-list-item v-for="i in 3" :key="i">
-                    <v-list-item-title>Book Title {{ i }}</v-list-item-title>
-                    <v-list-item-subtitle>Borrowed <strong>{{ 10 - i }}</strong> times</v-list-item-subtitle>
-                </v-list-item>
-            </v-list>
+      <v-row>
+         <v-col cols="12" md="4">
+            <v-card class="rounded-xl pa-6 bg-blue-grey-darken-4 border border-opacity-10 h-100 d-flex flex-column">
+               <div class="d-flex justify-space-between align-start mb-4">
+                  <v-avatar color="blue-darken-3" rounded="lg" size="56">
+                     <v-icon size="32">mdi-book-clock</v-icon>
+                  </v-avatar>
+                  <div class="text-right">
+                      <div class="text-h5 font-weight-bold text-white">{{ stats.borrowedLoans || 0 }}</div>
+                      <div class="text-caption text-blue-lighten-4">Active Loans</div>
+                  </div>
+               </div>
+               <h3 class="text-h6 font-weight-bold text-white mb-1">Transaction Report</h3>
+               <p class="text-body-2 text-grey mb-6">
+                  Export detailed history of borrowing, returns, overdue items, and fines.
+               </p>
+               <div class="mt-auto">
+                  <v-btn 
+                    block 
+                    color="blue" 
+                    variant="flat" 
+                    prepend-icon="mdi-microsoft-excel" 
+                    :loading="loading.loans"
+                    @click="exportLoansReport"
+                  >
+                    Download .XLSX
+                  </v-btn>
+               </div>
+            </v-card>
+         </v-col>
 
-            <v-btn color="secondary" class="mt-4" @click="generateReport">
-                <v-icon left>mdi-file-chart</v-icon> Generate Full Report (PDF/Excel)
-            </v-btn>
+         <v-col cols="12" md="4">
+            <v-card class="rounded-xl pa-6 bg-blue-grey-darken-4 border border-opacity-10 h-100 d-flex flex-column">
+               <div class="d-flex justify-space-between align-start mb-4">
+                  <v-avatar color="teal-darken-3" rounded="lg" size="56">
+                     <v-icon size="32">mdi-bookshelf</v-icon>
+                  </v-avatar>
+                  <div class="text-right">
+                      <div class="text-h5 font-weight-bold text-white">{{ stats.totalBooks || 0 }}</div>
+                      <div class="text-caption text-teal-lighten-4">Total Books</div>
+                  </div>
+               </div>
+               <h3 class="text-h6 font-weight-bold text-white mb-1">Inventory Report</h3>
+               <p class="text-body-2 text-grey mb-6">
+                  Current stock levels, categories, publisher details, and availability status.
+               </p>
+               <div class="mt-auto">
+                  <v-btn 
+                    block 
+                    color="teal" 
+                    variant="flat" 
+                    prepend-icon="mdi-microsoft-excel" 
+                    :loading="loading.books"
+                    @click="exportBooksReport"
+                  >
+                    Download .XLSX
+                  </v-btn>
+               </div>
+            </v-card>
+         </v-col>
 
-        </v-card-text>
-        <v-snackbar
-            v-model="snackbar.show"
-            :color="snackbar.color"
-            timeout="3000"
-        >
-            {{ snackbar.message }}
-            <template v-slot:actions>
-                <v-btn text @click="snackbar.show = false">Close</v-btn>
+         <v-col cols="12" md="4">
+            <v-card class="rounded-xl pa-6 bg-blue-grey-darken-4 border border-opacity-10 h-100 d-flex flex-column">
+               <div class="d-flex justify-space-between align-start mb-4">
+                  <v-avatar color="purple-darken-3" rounded="lg" size="56">
+                     <v-icon size="32">mdi-account-group</v-icon>
+                  </v-avatar>
+                  <div class="text-right">
+                      <div class="text-h5 font-weight-bold text-white">{{ stats.totalUsers || 0 }}</div>
+                      <div class="text-caption text-purple-lighten-4">Total Readers</div>
+                  </div>
+               </div>
+               <h3 class="text-h6 font-weight-bold text-white mb-1">Member Registry</h3>
+               <p class="text-body-2 text-grey mb-6">
+                  List of all registered members, roles, contact info, and join dates.
+               </p>
+               <div class="mt-auto">
+                  <v-btn 
+                    block 
+                    color="purple" 
+                    variant="flat" 
+                    prepend-icon="mdi-microsoft-excel" 
+                    :loading="loading.users"
+                    @click="exportUsersReport"
+                  >
+                    Download .XLSX
+                  </v-btn>
+               </div>
+            </v-card>
+         </v-col>
+      </v-row>
+
+      <v-divider class="my-8 border-opacity-12"></v-divider>
+
+      <div class="d-flex align-center mb-4">
+          <v-icon color="grey" size="small" class="mr-2">mdi-history</v-icon>
+          <h3 class="text-subtitle-2 font-weight-bold text-grey">Recent Exports</h3>
+      </div>
+      
+      <v-list bg-color="transparent" density="compact" class="py-0">
+         <v-list-item v-for="(log, i) in exportLogs" :key="i" class="px-0 min-h-40">
+            <template v-slot:prepend>
+               <v-icon color="success" size="x-small" class="mr-3">mdi-check-circle-outline</v-icon>
             </template>
-        </v-snackbar>
+            <v-list-item-title class="text-caption text-grey-lighten-2">
+                Exported <strong>{{ log.name }}</strong>
+            </v-list-item-title>
+            <template v-slot:append>
+               <span class="text-caption text-grey font-italic">{{ log.time }}</span>
+            </template>
+         </v-list-item>
+         <v-list-item v-if="exportLogs.length === 0" class="px-0">
+            <span class="text-caption text-grey font-italic">No recent exports in this session.</span>
+         </v-list-item>
+      </v-list>
+
     </v-card>
+
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" location="top right">
+        {{ snackbar.message }}
+    </v-snackbar>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import api from '../services/api.service';
+import { ref, reactive, onMounted } from 'vue';
+import api from '@/services/api.service';
+import * as XLSX from 'xlsx'; // Thư viện xử lý Excel
 
-const totalBooks = ref(0);
-const totalUsers = ref(0);
-const activeLoans = ref(0);
-const overdueLoans = ref(0);
-
-const snackbar = ref({
-    show: false,
-    message: '',
-    color: ''
+const loading = reactive({
+    loans: false,
+    books: false,
+    users: false
 });
 
-const fetchStats = async () => {
+const stats = ref({});
+const snackbar = ref({ show: false, message: '', color: '' });
+const exportLogs = ref([]);
+
+// --- 1. LẤY SỐ LIỆU TỔNG QUAN ---
+const fetchDashboardStats = async () => {
     try {
-        // TODO: Cần tạo các API backend cho thống kê
-        // Ví dụ:
-        // const bookStats = await api.get('/reports/book-count');
-        // totalBooks.value = bookStats.data.count;
-        // const userStats = await api.get('/reports/user-count');
-        // totalUsers.value = userStats.data.count;
-        // const loanStats = await api.get('/reports/loan-stats'); // active, overdue
-        // activeLoans.value = loanStats.data.active;
-        // overdueLoans.value = loanStats.data.overdue;
-
-        // Mock data for now
-        totalBooks.value = 150;
-        totalUsers.value = 85;
-        activeLoans.value = 30;
-        overdueLoans.value = 5;
-
-    } catch (error) {
-        console.error('Error')};
+        const res = await api.get('/dashboard/stats');
+        if(res.data && res.data.stats) {
+            stats.value = res.data.stats;
+        }
+    } catch (e) {
+        console.error("Không tải được thống kê:", e);
+    }
 };
-</script setup>
+
+// --- 2. HÀM CHUNG: XUẤT FILE EXCEL ---
+const exportToExcel = (jsonData, fileName, sheetName) => {
+    // Tạo Workbook mới
+    const wb = XLSX.utils.book_new();
+    // Tạo Worksheet từ JSON
+    const ws = XLSX.utils.json_to_sheet(jsonData);
+    
+    // Tự động chỉnh độ rộng cột (Optional but nice)
+    const wscols = Object.keys(jsonData[0] || {}).map(() => ({ wch: 20 }));
+    ws['!cols'] = wscols;
+
+    // Thêm sheet vào workbook
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+
+    // Xuất file
+    XLSX.writeFile(wb, `${fileName}_${new Date().toISOString().slice(0,10)}.xlsx`);
+};
+
+// --- 3. XUẤT BÁO CÁO MƯỢN TRẢ ---
+const exportLoansReport = async () => {
+    loading.loans = true;
+    try {
+        // Gọi API lấy 10,000 bản ghi (coi như lấy hết)
+        const res = await api.get('/loans?limit=10000');
+        const loans = res.data.data || [];
+
+        if (loans.length === 0) {
+            showSnack('No data available to export.', 'warning');
+            return;
+        }
+
+        // Chuẩn hóa dữ liệu cho đẹp
+        const exportData = loans.map(loan => ({
+            'Mã Phiếu': loan._id.slice(-6).toUpperCase(),
+            'Người Mượn': loan.userId?.username || 'Unknown',
+            'Email': loan.userId?.email || '',
+            'Tên Sách': loan.bookId?.tenSach || 'Unknown',
+            'Ngày Mượn': new Date(loan.ngayMuon).toLocaleDateString('vi-VN'),
+            'Hạn Trả': new Date(loan.ngayHenTra).toLocaleDateString('vi-VN'),
+            'Ngày Trả Thực Tế': loan.ngayTraThucTe ? new Date(loan.ngayTraThucTe).toLocaleDateString('vi-VN') : '-',
+            'Trạng Thái': loan.status.toUpperCase(),
+            'Phí Thuê': loan.rentCost || 0,
+            'Tiền Phạt': loan.phatTien || 0,
+            'Đã Thanh Toán': loan.isPaid ? 'Rồi' : 'Chưa'
+        }));
+
+        exportToExcel(exportData, 'Library_Transactions', 'Loans');
+        addLog('Transactions Report');
+        showSnack('Exported Loans Report successfully!', 'success');
+    } catch (e) {
+        showSnack('Failed to export loans.', 'error');
+    } finally {
+        loading.loans = false;
+    }
+};
+
+// --- 4. XUẤT BÁO CÁO KHO SÁCH ---
+const exportBooksReport = async () => {
+    loading.books = true;
+    try {
+        const res = await api.get('/books?limit=10000');
+        const books = res.data.data || [];
+
+        const exportData = books.map(book => ({
+            'Tên Sách': book.tenSach,
+            'Tác Giả': Array.isArray(book.tacGia) ? book.tacGia.join(', ') : book.tacGia,
+            'Nhà Xuất Bản': book.maNXB?.tenNXB || '',
+            'Năm XB': book.namXuatBan,
+            'Tổng Kho': book.soQuyen,
+            'Đang Có Sẵn': book.availableCopies,
+            'Giá Thuê/Ngày': book.pricePerDay,
+            'ISBN': book.isbn || ''
+        }));
+
+        exportToExcel(exportData, 'Library_Inventory', 'Books');
+        addLog('Inventory Report');
+        showSnack('Exported Inventory Report successfully!', 'success');
+    } catch (e) {
+        showSnack('Failed to export books.', 'error');
+    } finally {
+        loading.books = false;
+    }
+};
+
+// --- 5. XUẤT DANH SÁCH THÀNH VIÊN ---
+const exportUsersReport = async () => {
+    loading.users = true;
+    try {
+        // API getAllUsers không phân trang của bạn trả về toàn bộ mảng
+        const res = await api.get('/users');
+        const users = Array.isArray(res.data) ? res.data : (res.data.data || []);
+
+        const exportData = users.map(user => ({
+            'Tài Khoản': user.username,
+            'Họ Tên': `${user.hoLot || ''} ${user.ten || ''}`.trim(),
+            'Email': user.email,
+            'Vai Trò': user.role,
+            'Điện Thoại': user.dienThoai || '',
+            'Địa Chỉ': user.diaChi || '',
+            'Ngày Tham Gia': new Date(user.createdAt).toLocaleDateString('vi-VN')
+        }));
+
+        exportToExcel(exportData, 'Library_Members', 'Users');
+        addLog('Member Registry Report');
+        showSnack('Exported Users Report successfully!', 'success');
+    } catch (e) {
+        showSnack('Failed to export users.', 'error');
+    } finally {
+        loading.users = false;
+    }
+};
+
+// Helper Functions
+const addLog = (name) => {
+    exportLogs.value.unshift({ name: name, time: new Date().toLocaleTimeString() });
+    if(exportLogs.value.length > 3) exportLogs.value.pop();
+};
+
+const showSnack = (msg, color) => { snackbar.value = { show: true, message: msg, color }; };
+
+onMounted(() => {
+    fetchDashboardStats();
+});
+</script>
+
+<style scoped>
+.border-opacity-10 { border-color: rgba(255,255,255,0.1) !important; }
+.min-h-40 { min-height: 32px !important; }
+</style>
