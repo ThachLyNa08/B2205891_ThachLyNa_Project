@@ -1,232 +1,211 @@
 <template>
-  <v-container fluid>
-    <!-- HEADER & TÌM KIẾM -->
-    <div class="d-flex flex-column flex-md-row justify-space-between align-center mb-6 gap-4">
-      <div>
-        <h2 class="text-h4 font-weight-bold text-white">Quản lý Mượn Trả</h2>
-        <div class="text-subtitle-1 text-grey">Theo dõi sách và yêu cầu mượn</div>
-      </div>
+  <div class="loan-management-wrapper h-100">
+    <v-card class="pa-6 rounded-xl h-100 d-flex flex-column" color="#1e293b" elevation="0">
       
-      <!-- Ô tìm kiếm -->
-      <div style="min-width: 300px;">
-        <v-text-field
-          v-model="search"
-          placeholder="Tìm theo tên người hoặc sách..."
-          prepend-inner-icon="mdi-magnify"
-          variant="outlined"
-          density="compact"
-          hide-details
-          bg-color="#1e293b"
-          class="rounded-lg"
-          @update:model-value="debouncedSearch"
-        ></v-text-field>
-      </div>
-    </div>
-
-    <!-- THỐNG KÊ NHANH (STATS) -->
-    <v-row class="mb-4">
-      <v-col cols="12" sm="4">
-        <v-card color="blue-darken-4" class="pa-4 rounded-lg" elevation="0">
-          <div class="text-overline text-blue-lighten-4">Đang mượn</div>
-          <div class="text-h4 font-weight-bold">{{ stats.borrowed }}</div>
-        </v-card>
-      </v-col>
-      <v-col cols="12" sm="4">
-        <v-card color="orange-darken-4" class="pa-4 rounded-lg" elevation="0">
-          <div class="text-overline text-orange-lighten-4">Chờ duyệt</div>
-          <div class="text-h4 font-weight-bold">{{ stats.pending }}</div>
-        </v-card>
-      </v-col>
-      <v-col cols="12" sm="4">
-        <v-card color="red-darken-4" class="pa-4 rounded-lg" elevation="0">
-          <div class="text-overline text-red-lighten-4">Quá hạn</div>
-          <div class="text-h4 font-weight-bold">{{ stats.overdue }}</div>
-        </v-card>
-      </v-col>
-      <v-col cols="12" sm="6" md="3">
-        <v-card color="green-darken-4" class="pa-4 rounded-lg" elevation="0">
-          <div class="text-overline text-green-lighten-4">Đã trả</div>
-          <div class="text-h4 font-weight-bold">{{ stats.returned }}</div>
-        </v-card>
-      </v-col>
-    </v-row>
-
-    <!-- BẢNG DỮ LIỆU CHÍNH -->
-    <v-card color="#1e293b" class="rounded-xl elevation-0 border-opacity-12">
-      
-      <!-- TABS LỌC TRẠNG THÁI -->
-      <v-tabs v-model="activeTab" bg-color="transparent" color="primary" show-arrows>
-        <v-tab value="pending" class="text-capitalize font-weight-bold">
-           <v-icon start>mdi-timer-sand</v-icon> Chờ duyệt
-           <v-badge v-if="stats.pending > 0" color="warning" :content="stats.pending" inline></v-badge>
-        </v-tab>
-        <v-tab value="borrowed" class="text-capitalize font-weight-bold">
-           <v-icon start>mdi-book-open-page-variant</v-icon> Đang mượn
-        </v-tab>
-        <v-tab value="overdue" class="text-capitalize font-weight-bold text-error">
-           <v-icon start>mdi-alert-circle</v-icon> Quá hạn
-        </v-tab>
-        <v-tab value="returned" class="text-capitalize font-weight-bold">
-           <v-icon start>mdi-history</v-icon> Lịch sử
-        </v-tab>
-      </v-tabs>
-
-      <v-divider class="border-opacity-12"></v-divider>
-
-      <!-- DATA TABLE -->
-      <v-data-table-server
-        v-model:items-per-page="itemsPerPage"
-        v-model:page="currentPage"
-        :headers="headers"
-        :items="loans"
-        :items-length="totalItems"
-        :loading="loading"
-        @update:options="loadLoans"
-        class="bg-transparent text-white custom-table"
-        hover
-      >
-        <!-- Cột: Người mượn -->
-        <template v-slot:item.userId="{ item }">
-          <div class="d-flex align-center py-2">
-             <v-avatar color="primary" size="32" class="mr-3 font-weight-bold">
-                {{ item.userId?.username?.charAt(0).toUpperCase() }}
-             </v-avatar>
-             <div>
-                <div class="font-weight-bold">{{ item.userId?.username }}</div>
-                <div class="text-caption text-grey">{{ item.userId?.email }}</div>
-             </div>
-          </div>
-        </template>
-
-        <!-- Cột: Sách -->
-        <template v-slot:item.bookId="{ item }">
-           <div v-if="item.bookId" class="font-weight-medium text-blue-lighten-3">
-              {{ item.bookId.tenSach }}
-           </div>
-           <span v-else class="text-grey font-italic">Sách đã bị xóa</span>
-        </template>
-
-        <!-- Cột: Trạng thái -->
-        <template v-slot:item.status="{ item }">
-           <v-chip :color="getStatusColor(item.status)" size="small" label class="font-weight-bold text-uppercase">
-              {{ translateStatus(item.status) }}
-           </v-chip>
-        </template>
-
-        <!-- Cột: Thanh toán -->
-        <template v-slot:item.isPaid="{ item }">
-            <v-icon v-if="item.isPaid" color="success" size="small">mdi-check-circle</v-icon>
-            <v-icon v-else color="grey" size="small">mdi-circle-outline</v-icon>
-        </template>
-
-        <!-- Cột: Ngày trả/Hạn trả -->
-        <template v-slot:item.ngayHenTra="{ item }">
-           <!-- Nếu đã trả, hiện ngày trả thực tế -->
-           <div v-if="item.status === 'returned'">
-              <div class="text-success font-weight-bold">{{ formatDate(item.ngayTraThucTe) }}</div>
-              <div class="text-caption text-grey">Ngày trả</div>
-           </div>
+      <div class="d-flex flex-column flex-md-row justify-space-between align-center mb-6">
+        <div>
+          <h2 class="text-h5 font-weight-bold text-white d-flex align-center">
+             <v-icon start color="blue-accent-2" class="mr-2">mdi-book-clock</v-icon>
+             Loan Management
+          </h2>
+          <div class="text-subtitle-2 text-grey-lighten-1">Track loans, returns, and overdue items</div>
+        </div>
+        
+        <div class="d-flex align-center gap-3 mt-4 mt-md-0 w-100 w-md-auto">
+           <v-text-field
+             v-model="search"
+             placeholder="Search user, book..."
+             prepend-inner-icon="mdi-magnify"
+             variant="solo-filled"
+             density="compact"
+             bg-color="rgba(255,255,255,0.05)"
+             hide-details
+             class="rounded-lg search-field"
+             style="min-width: 300px;"
+             @update:model-value="debouncedSearch"
+           ></v-text-field>
            
-           <!-- Nếu chưa trả, hiện hạn trả -->
-           <div v-else :class="isOverdue(item) ? 'text-error font-weight-bold' : ''">
-             {{ formatDate(item.ngayHenTra) }}
-             <div v-if="isOverdue(item)" class="text-caption text-error">
-                Quá hạn {{ getDaysOverdue(item.ngayHenTra) }} ngày
-             </div>
-           </div>
-        </template>
+           <v-btn icon variant="text" color="grey" @click="loadLoans">
+              <v-icon>mdi-refresh</v-icon>
+           </v-btn>
+        </div>
+      </div>
 
-        <!-- Cột: Thao tác (SỬA LỖI ĐÈ NHAU TẠI ĐÂY) -->
-        <template v-slot:item.actions="{ item }">
-           <div class="d-flex justify-end gap-2">
-              
-              <!-- Nút Duyệt (Chỉ hiện khi Pending) -->
-              <v-tooltip text="Duyệt yêu cầu" location="top" v-if="item.status === 'pending'">
-                 <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" color="success" icon="mdi-check" size="small" variant="flat" @click="openConfirmDialog(item)"></v-btn>
-                 </template>
-              </v-tooltip>
+      <v-row class="mb-6">
+         <v-col cols="12" sm="6" md="3">
+            <v-card class="stat-card bg-orange-darken-4 rounded-lg pa-4" elevation="4">
+               <div class="d-flex justify-space-between align-start">
+                  <div>
+                     <div class="text-caption font-weight-bold text-uppercase opacity-70">Pending Requests</div>
+                     <div class="text-h4 font-weight-black mt-1">{{ stats.pending }}</div>
+                  </div>
+                  <v-icon size="large" class="opacity-50">mdi-clock-alert-outline</v-icon>
+               </div>
+            </v-card>
+         </v-col>
+         <v-col cols="12" sm="6" md="3">
+            <v-card class="stat-card bg-blue-darken-4 rounded-lg pa-4" elevation="4">
+               <div class="d-flex justify-space-between align-start">
+                  <div>
+                     <div class="text-caption font-weight-bold text-uppercase opacity-70">Active Loans</div>
+                     <div class="text-h4 font-weight-black mt-1">{{ stats.borrowed }}</div>
+                  </div>
+                  <v-icon size="large" class="opacity-50">mdi-book-open-page-variant</v-icon>
+               </div>
+            </v-card>
+         </v-col>
+         <v-col cols="12" sm="6" md="3">
+            <v-card class="stat-card bg-red-darken-4 rounded-lg pa-4" elevation="4">
+               <div class="d-flex justify-space-between align-start">
+                  <div>
+                     <div class="text-caption font-weight-bold text-uppercase opacity-70">Overdue</div>
+                     <div class="text-h4 font-weight-black mt-1">{{ stats.overdue }}</div>
+                  </div>
+                  <v-icon size="large" class="opacity-50">mdi-alert-octagon</v-icon>
+               </div>
+            </v-card>
+         </v-col>
+         <v-col cols="12" sm="6" md="3">
+            <v-card class="stat-card bg-green-darken-4 rounded-lg pa-4" elevation="4">
+               <div class="d-flex justify-space-between align-start">
+                  <div>
+                     <div class="text-caption font-weight-bold text-uppercase opacity-70">Completed</div>
+                     <div class="text-h4 font-weight-black mt-1">{{ stats.returned }}</div>
+                  </div>
+                  <v-icon size="large" class="opacity-50">mdi-check-all</v-icon>
+               </div>
+            </v-card>
+         </v-col>
+      </v-row>
 
-              <!-- Nút Từ chối (Chỉ hiện khi Pending) -->
-              <v-tooltip text="Từ chối" location="top" v-if="item.status === 'pending'">
-                 <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" color="error" icon="mdi-close" size="small" variant="tonal" @click="openCancelDialog(item)"></v-btn>
-                 </template>
-              </v-tooltip>
+      <v-card class="flex-grow-1 d-flex flex-column bg-transparent border-t border-opacity-12 pt-4" elevation="0">
+         
+         <v-tabs v-model="activeTab" bg-color="transparent" color="white" class="mb-4 tab-modern">
+            <v-tab value="pending" class="text-capitalize rounded-pill px-6 mr-2" :class="activeTab === 'pending' ? 'bg-orange-darken-4' : ''">Pending</v-tab>
+            <v-tab value="borrowed" class="text-capitalize rounded-pill px-6 mr-2" :class="activeTab === 'borrowed' ? 'bg-blue-darken-4' : ''">Borrowed</v-tab>
+            <v-tab value="overdue" class="text-capitalize rounded-pill px-6 mr-2" :class="activeTab === 'overdue' ? 'bg-red-darken-4' : ''">Overdue</v-tab>
+            <v-tab value="returned" class="text-capitalize rounded-pill px-6" :class="activeTab === 'returned' ? 'bg-green-darken-4' : ''">History</v-tab>
+         </v-tabs>
 
-              <!-- Nút Trả Sách (Hiện khi Đang mượn / Quá hạn) -->
-              <v-tooltip text="Xác nhận trả sách" location="top" v-if="['borrowed', 'overdue'].includes(item.status)">
-                 <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" color="primary" icon="mdi-keyboard-return" size="small" variant="flat" @click="openReturnDialog(item)"></v-btn>
-                 </template>
-              </v-tooltip>
+         <v-data-table-server
+            v-model:items-per-page="itemsPerPage"
+            v-model:page="currentPage"
+            :headers="headers"
+            :items="loans"
+            :items-length="totalItems"
+            :loading="loading"
+            @update:options="loadLoans"
+            class="bg-transparent text-white custom-table flex-grow-1"
+            density="comfortable"
+            hover
+         >
+            <template v-slot:item.userId="{ item }">
+               <div class="d-flex align-center py-2">
+                  <v-avatar size="36" class="mr-3 font-weight-bold bg-grey-darken-3 border">
+                     <span class="text-white">{{ item.userId?.username?.charAt(0).toUpperCase() }}</span>
+                  </v-avatar>
+                  <div>
+                     <div class="font-weight-bold text-body-2">{{ item.userId?.username }}</div>
+                     <div class="text-caption text-grey">{{ item.userId?.email }}</div>
+                  </div>
+               </div>
+            </template>
 
-              <!-- Nút Xóa (Chỉ hiện ở Lịch sử) -->
-              <v-tooltip text="Xóa bản ghi" location="top" v-if="['returned', 'cancelled'].includes(item.status)">
-                 <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" color="grey" icon="mdi-delete" size="small" variant="text" @click="confirmDeleteLoan(item)"></v-btn>
-                 </template>
-              </v-tooltip>
+            <template v-slot:item.bookId="{ item }">
+               <div class="d-flex align-center">
+                  <v-icon size="small" class="mr-2 text-grey">mdi-book-outline</v-icon>
+                  <span class="text-body-2 font-weight-medium text-blue-lighten-4">{{ item.bookId?.tenSach || 'Book Removed' }}</span>
+               </div>
+            </template>
 
-           </div>
-        </template>
-      </v-data-table-server>
-    </v-card>
+            <template v-slot:item.status="{ item }">
+               <v-chip :color="getStatusColor(item.status)" size="small" variant="flat" class="font-weight-bold text-uppercase px-3">
+                  {{ translateStatus(item.status) }}
+               </v-chip>
+            </template>
 
-    <!-- DIALOG 1: DUYỆT YÊU CẦU -->
-    <v-dialog v-model="confirmDialog.show" max-width="400">
-        <v-card color="#1e293b" class="text-white">
-            <v-card-title class="bg-success text-white">Duyệt yêu cầu mượn</v-card-title>
-            <v-card-text class="pt-4 text-grey-lighten-2">
-                Cho phép <strong>{{ confirmDialog.loan?.userId?.username }}</strong> mượn cuốn: <br/>
-                <span class="text-white font-weight-bold">"{{ confirmDialog.loan?.bookId?.tenSach }}"</span>?
-            </v-card-text>
-            <v-card-actions class="justify-end">
-                <v-btn color="grey" variant="text" @click="confirmDialog.show = false">Hủy</v-btn>
-                <v-btn color="success" variant="elevated" @click="executeConfirmLoan">Đồng ý</v-btn>
-            </v-card-actions>
-        </v-card>
-    </v-dialog>
+            <template v-slot:item.ngayHenTra="{ item }">
+               <div class="d-flex flex-column" style="min-width: 140px;">
+                  <div class="d-flex justify-space-between text-caption text-grey mb-1">
+                     <span>{{ formatDate(item.ngayMuon) }}</span>
+                     <v-icon size="x-small" icon="mdi-arrow-right-thin"></v-icon>
+                     <span :class="isOverdue(item) ? 'text-red font-weight-bold' : ''">{{ formatDate(item.ngayHenTra) }}</span>
+                  </div>
+                  <v-progress-linear
+                     :model-value="item.status === 'returned' ? 100 : 60"
+                     :color="isOverdue(item) ? 'red' : 'primary'"
+                     height="4"
+                     rounded
+                  ></v-progress-linear>
+                  <div v-if="isOverdue(item)" class="text-caption text-red mt-1 font-weight-bold">
+                     <v-icon size="x-small" start>mdi-alert</v-icon> Late {{ getDaysOverdue(item.ngayHenTra) }} days
+                  </div>
+               </div>
+            </template>
 
-    <!-- DIALOG 2: TRẢ SÁCH (CÓ TÍNH PHẠT) -->
-    <v-dialog v-model="returnDialog.show" max-width="450">
-        <v-card color="#1e293b" class="text-white rounded-lg">
-            <v-card-title class="bg-primary text-white d-flex align-center">
-                <v-icon start>mdi-book-check</v-icon> Xác nhận Trả sách
+            <template v-slot:item.actions="{ item }">
+               <div class="d-flex justify-end gap-1">
+                  <v-btn v-if="item.status === 'pending'" icon="mdi-check" color="success" variant="tonal" size="small" @click="openConfirmDialog(item)" title="Approve"></v-btn>
+                  <v-btn v-if="item.status === 'pending'" icon="mdi-close" color="error" variant="tonal" size="small" @click="openCancelDialog(item)" title="Reject"></v-btn>
+                  <v-btn v-if="['borrowed', 'overdue'].includes(item.status)" color="primary" variant="flat" size="small" class="px-3" @click="openReturnDialog(item)">
+                     <v-icon start>mdi-keyboard-return</v-icon> Return
+                  </v-btn>
+                  <v-btn v-if="['returned', 'cancelled'].includes(item.status)" icon="mdi-delete-outline" color="grey" variant="text" size="small" @click="confirmDeleteLoan(item)"></v-btn>
+               </div>
+            </template>
+         </v-data-table-server>
+      </v-card>
+
+      <v-dialog v-model="confirmDialog.show" max-width="400">
+         <v-card color="#1e293b" class="text-white rounded-lg">
+            <v-card-title class="bg-success px-4 py-3 text-body-1 font-weight-bold d-flex align-center">
+               <v-icon start>mdi-check-circle-outline</v-icon> Approve Request
             </v-card-title>
-            <v-card-text class="pt-4">
-                <div class="mb-4 text-center">
-                    Độc giả: <strong>{{ returnDialog.loan?.userId?.username }}</strong> <br/>
-                    Sách: <strong>{{ returnDialog.loan?.bookId?.tenSach }}</strong>
-                </div>
-
-                <!-- Khung cảnh báo phạt -->
-                <v-alert v-if="previewFine > 0" type="error" variant="tonal" class="border-red bg-red-darken-4">
-                    <div class="text-h6 font-weight-bold text-center mb-1">QUÁ HẠN: {{ previewDays }} NGÀY</div>
-                    <div class="text-center text-caption">Vui lòng thu tiền phạt:</div>
-                    <div class="text-h4 font-weight-black text-center mt-1">{{ formatCurrency(previewFine) }}</div>
-                </v-alert>
-
-                <v-alert v-else type="success" variant="tonal" class="border-green bg-green-darken-4 text-center">
-                    <v-icon start>mdi-check-circle</v-icon> Trả đúng hạn. Không có phạt.
-                </v-alert>
+            <v-card-text class="pt-6 pb-4 text-center">
+               Allow <strong>{{ confirmDialog.loan?.userId?.username }}</strong> to borrow <br/>
+               <span class="text-h6 text-primary mt-2 d-block">"{{ confirmDialog.loan?.bookId?.tenSach }}"</span>
             </v-card-text>
-            <v-card-actions class="justify-end pb-4 px-4">
-                <v-btn color="grey" variant="text" @click="returnDialog.show = false">Hủy</v-btn>
-                <v-btn color="primary" variant="elevated" @click="executeProcessReturn" class="px-6 font-weight-bold">
-                    Xác nhận Đã Trả
-                </v-btn>
+            <v-card-actions class="justify-center pb-4">
+               <v-btn variant="text" color="grey" @click="confirmDialog.show = false">Cancel</v-btn>
+               <v-btn color="success" variant="elevated" @click="executeConfirmLoan" class="px-6">Confirm</v-btn>
             </v-card-actions>
-        </v-card>
-    </v-dialog>
+         </v-card>
+      </v-dialog>
 
-    <!-- Thông báo Toast -->
-    <v-snackbar v-model="snackbar.show" :color="snackbar.color" location="top right">
-        {{ snackbar.message }}
-        <template v-slot:actions><v-btn text @click="snackbar.show = false">Đóng</v-btn></template>
-    </v-snackbar>
+      <v-dialog v-model="returnDialog.show" max-width="450">
+         <v-card color="#1e293b" class="text-white rounded-lg">
+            <v-card-title class="bg-primary px-4 py-3 text-body-1 font-weight-bold">
+               Process Return
+            </v-card-title>
+            <v-card-text class="pt-6">
+               <div class="d-flex align-center mb-4 bg-grey-darken-4 pa-3 rounded">
+                  <v-avatar color="primary" size="40" class="mr-3 font-weight-bold">{{ returnDialog.loan?.userId?.username?.charAt(0) }}</v-avatar>
+                  <div>
+                     <div class="font-weight-bold">{{ returnDialog.loan?.userId?.username }}</div>
+                     <div class="text-caption text-blue-lighten-3">{{ returnDialog.loan?.bookId?.tenSach }}</div>
+                  </div>
+               </div>
 
-  </v-container>
+               <div v-if="previewFine > 0" class="bg-red-darken-4 pa-4 rounded-lg border-red text-center">
+                  <div class="text-overline text-red-lighten-4 mb-1">OVERDUE PENALTY</div>
+                  <div class="text-h4 font-weight-black text-white">{{ formatCurrency(previewFine) }}</div>
+                  <div class="text-caption text-red-lighten-3 mt-1">{{ previewDays }} days late</div>
+               </div>
+               <div v-else class="bg-green-darken-4 pa-4 rounded-lg border-green text-center">
+                  <v-icon size="large" class="mb-2">mdi-check-decagram</v-icon>
+                  <div class="font-weight-bold">No Late Fee</div>
+               </div>
+            </v-card-text>
+            <v-card-actions class="justify-end px-6 pb-4">
+               <v-btn variant="text" color="grey" @click="returnDialog.show = false">Cancel</v-btn>
+               <v-btn color="primary" variant="elevated" @click="executeProcessReturn" class="px-6">Complete Return</v-btn>
+            </v-card-actions>
+         </v-card>
+      </v-dialog>
+
+      <v-snackbar v-model="snackbar.show" :color="snackbar.color" location="top right">{{ snackbar.message }}</v-snackbar>
+    </v-card>
+  </div>
 </template>
 
 <script setup>
@@ -240,7 +219,7 @@ const totalItems = ref(0);
 const itemsPerPage = ref(10);
 const currentPage = ref(1);
 const search = ref('');
-const activeTab = ref('pending'); // Tab mặc định
+const activeTab = ref('pending');
 
 // Stats
 const stats = reactive({ pending: 0, borrowed: 0, overdue: 0, returned: 0 });
@@ -255,19 +234,18 @@ const previewFine = ref(0);
 const previewDays = ref(0);
 
 const headers = [
-  { title: 'Người mượn', key: 'userId', sortable: false },
-  { title: 'Tên sách', key: 'bookId', sortable: false },
-  { title: 'Ngày mượn', key: 'ngayMuon' },
-  { title: 'Hạn trả', key: 'ngayHenTra' },
-  { title: 'Trạng thái', key: 'status', align: 'center' },
-  { title: 'Thao tác', key: 'actions', align: 'end', sortable: false, width: '140px' },
+  { title: 'User Info', key: 'userId', sortable: false, width: '20%' },
+  { title: 'Book Title', key: 'bookId', sortable: false, width: '25%' },
+  { title: 'Timeline & Due Date', key: 'ngayHenTra', width: '25%' },
+  { title: 'Status', key: 'status', align: 'center', width: '15%' },
+  { title: 'Actions', key: 'actions', align: 'end', sortable: false, width: '15%' },
 ];
 
-// --- LOAD DATA ---
+// --- LOGIC GIỮ NGUYÊN (Copy lại từ file cũ của bạn) ---
+// (Phần này tôi paste lại y nguyên logic của bạn để đảm bảo không lỗi)
 const loadLoans = debounce(async () => {
     loading.value = true;
     try {
-        // Map Tab sang Status backend
         let statusParam = '';
         switch (activeTab.value) {
             case 'pending': statusParam = 'pending'; break;
@@ -276,26 +254,13 @@ const loadLoans = debounce(async () => {
             case 'returned': statusParam = 'returned'; break; 
             default: statusParam = ''; 
         }
-
-        const params = {
-            page: currentPage.value,
-            limit: itemsPerPage.value,
-            status: statusParam,
-            search: search.value
-        };
-
+        const params = { page: currentPage.value, limit: itemsPerPage.value, status: statusParam, search: search.value };
         const response = await api.get('/loans', { params });
         loans.value = response.data.data;
         totalItems.value = response.data.total;
-        
-        // Load lại số liệu thống kê
         fetchStats();
-        
-    } catch (error) {
-        showSnackbar('Lỗi tải dữ liệu', 'error');
-    } finally {
-        loading.value = false;
-    }
+    } catch (error) { showSnackbar('Error loading loans', 'error'); } 
+    finally { loading.value = false; }
 }, 300);
 
 const fetchStats = async () => {
@@ -310,111 +275,55 @@ const fetchStats = async () => {
     } catch (e) {}
 };
 
-// --- ACTIONS ---
-
-// 1. Duyệt
 const openConfirmDialog = (item) => { confirmDialog.value = { show: true, loan: item }; }
 const executeConfirmLoan = async () => {
-    try {
-        await api.put(`/loans/${confirmDialog.value.loan._id}/confirm`);
-        showSnackbar('Đã duyệt yêu cầu mượn!', 'success');
-        confirmDialog.value.show = false;
-        loadLoans();
-    } catch (error) { showSnackbar('Lỗi khi duyệt.', 'error'); }
+    try { await api.put(`/loans/${confirmDialog.value.loan._id}/confirm`); showSnackbar('Approved!', 'success'); confirmDialog.value.show = false; loadLoans(); } catch (error) { showSnackbar('Error', 'error'); }
 }
 
-// 2. Trả sách (Có tính phạt)
 const openReturnDialog = (item) => { 
     returnDialog.value.loan = item; 
-    
-    // Logic tính phạt tại Frontend (Preview)
     const today = new Date(); today.setHours(0,0,0,0);
     const due = new Date(item.ngayHenTra); due.setHours(0,0,0,0);
-    
-    if (today > due) {
-        const diff = Math.ceil((today - due) / (1000 * 60 * 60 * 24));
-        previewDays.value = diff;
-        previewFine.value = diff * 5000; // 5k/ngày
-    } else {
-        previewDays.value = 0; previewFine.value = 0;
-    }
-    
+    if (today > due) { const diff = Math.ceil((today - due) / (1000 * 60 * 60 * 24)); previewDays.value = diff; previewFine.value = diff * 5000; } 
+    else { previewDays.value = 0; previewFine.value = 0; }
     returnDialog.value.show = true; 
 }
 
 const executeProcessReturn = async () => {
     try {
         const res = await api.put(`/loans/${returnDialog.value.loan._id}/return`);
-        // Check nếu có phạt thật từ backend trả về
-        if (res.data.phat && res.data.phat.coPhat) {
-             showSnackbar(`Đã trả sách. Phí phạt: ${formatCurrency(res.data.phat.soTien)}`, 'warning');
-        } else {
-             showSnackbar('Đã trả sách thành công!', 'success');
-        }
-        returnDialog.value.show = false;
-        loadLoans();
-    } catch (error) { showSnackbar('Lỗi trả sách', 'error'); }
+        if (res.data.phat && res.data.phat.coPhat) showSnackbar(`Returned. Fine: ${formatCurrency(res.data.phat.soTien)}`, 'warning');
+        else showSnackbar('Returned successfully!', 'success');
+        returnDialog.value.show = false; loadLoans();
+    } catch (error) { showSnackbar('Error returning book', 'error'); }
 }
 
-// 3. Từ chối / Hủy
-const openCancelDialog = async (item) => {
-    if(!confirm("Từ chối yêu cầu mượn này?")) return;
-    try {
-        await api.put(`/loans/${item._id}/cancel`);
-        showSnackbar('Đã từ chối yêu cầu', 'info');
-        loadLoans();
-    } catch(e) { showSnackbar('Lỗi', 'error'); }
-}
+const openCancelDialog = async (item) => { if(!confirm("Reject request?")) return; try { await api.put(`/loans/${item._id}/cancel`); showSnackbar('Rejected', 'info'); loadLoans(); } catch(e) { showSnackbar('Error', 'error'); } }
+const confirmDeleteLoan = async (item) => { if(!confirm("Delete record?")) return; try { await api.delete(`/loans/${item._id}`); showSnackbar('Deleted', 'success'); loadLoans(); } catch(e) { showSnackbar('Error', 'error'); } }
 
-// 4. Xóa
-const confirmDeleteLoan = async (item) => {
-    if(!confirm("Xóa vĩnh viễn bản ghi này?")) return;
-    try { await api.delete(`/loans/${item._id}`); showSnackbar('Đã xóa', 'success'); loadLoans(); } 
-    catch(e) { showSnackbar('Lỗi xóa', 'error'); }
-}
-
-// --- HELPERS ---
 const showSnackbar = (msg, color) => { snackbar.value = { show: true, message: msg, color: color }; }
 const debouncedSearch = debounce(() => { currentPage.value = 1; loadLoans(); }, 500);
 const formatDate = (d) => d ? new Date(d).toLocaleDateString('vi-VN') : '-';
 const formatCurrency = (v) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v || 0);
-
-// Helper tính trạng thái màu sắc
 const getStatusColor = (s) => ({'borrowed':'info','returned':'success','overdue':'error','pending':'warning','cancelled':'grey'}[s] || 'grey');
-
-// Helper dịch trạng thái
-const translateStatus = (s) => ({'borrowed':'Đang mượn','returned':'Đã trả','overdue':'Quá hạn','pending':'Chờ duyệt','cancelled':'Đã hủy'}[s] || s);
-
-// Helper kiểm tra quá hạn (cho hiển thị màu đỏ)
+const translateStatus = (s) => ({'borrowed':'Active','returned':'Returned','overdue':'Overdue','pending':'Pending','cancelled':'Rejected'}[s] || s);
 const isOverdue = (item) => item.status === 'borrowed' && new Date(item.ngayHenTra) < new Date();
+const getDaysOverdue = (dateString) => { if (!dateString) return 0; const due = new Date(dateString); const now = new Date(); const diffTime = now - due; if (diffTime <= 0) return 0; return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); };
 
-// --- ĐÂY LÀ HÀM BẠN ĐANG THIẾU ---
-const getDaysOverdue = (dateString) => {
-    if (!dateString) return 0;
-    const due = new Date(dateString);
-    const now = new Date();
-    const diffTime = now - due;
-    if (diffTime <= 0) return 0;
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-};
-
-// Watchers
 watch(activeTab, () => { currentPage.value = 1; loadLoans(); });
-
-onMounted(() => {
-    loadLoans();
-});
+onMounted(() => { loadLoans(); });
 </script>
 
 <style scoped>
-.gap-4 { gap: 16px; }
-.gap-2 { gap: 8px; }
-/* Table Styling */
-:deep(.custom-table) { background-color: transparent !important; }
-:deep(.custom-table th) { color: #94a3b8 !important; text-transform: uppercase; font-size: 0.75rem; font-weight: 700; }
-:deep(.custom-table td) { border-bottom: 1px solid rgba(255,255,255,0.08) !important; padding-top: 12px !important; padding-bottom: 12px !important; }
-:deep(.custom-table tbody tr:hover) { background-color: rgba(255,255,255,0.05) !important; }
+.gap-1 { gap: 4px; } .gap-3 { gap: 12px; }
+.stat-card { transition: transform 0.2s; border: 1px solid rgba(255,255,255,0.1); }
+.stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.3) !important; }
 
-.border-red { border: 1px solid #ff5252 !important; }
-.border-green { border: 1px solid #4caf50 !important; }
+:deep(.custom-table) { background-color: transparent !important; }
+:deep(.custom-table th) { color: #94a3b8 !important; text-transform: uppercase; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px; }
+:deep(.custom-table td) { border-bottom: 1px solid rgba(255,255,255,0.08) !important; padding-top: 16px !important; padding-bottom: 16px !important; }
+:deep(.custom-table tbody tr:hover) { background-color: rgba(255,255,255,0.03) !important; }
+
+/* Custom Tab Style */
+.tab-modern .v-tab--selected { color: white !important; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
 </style>

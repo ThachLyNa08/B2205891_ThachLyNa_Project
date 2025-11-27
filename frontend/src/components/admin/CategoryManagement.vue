@@ -1,105 +1,164 @@
 <template>
-  <div class="category-management">
-    <v-card class="pa-4 rounded-lg" color="#1e293b" elevation="0">
-      <div class="d-flex justify-space-between align-center mb-4">
-        <div>
-          <h2 class="text-h6 text-white">Category Management</h2>
-          <div class="text-caption text-grey">Manage book categories and genres</div>
-        </div>
-        <v-btn color="primary" @click="openDialog" prepend-icon="mdi-plus">
-          Add Category
-        </v-btn>
+  <div class="category-management h-100 d-flex flex-column">
+    
+    <!-- HEADER AREA -->
+    <div class="d-flex flex-column flex-md-row justify-space-between align-center mb-6 gap-4">
+      <div>
+        <h2 class="text-h5 font-weight-bold text-white">Category Management</h2>
+        <div class="text-subtitle-2 text-grey">Organize book genres and tags</div>
+      </div>
+      
+      <!-- Quick Search & Add Button -->
+      <div class="d-flex gap-3 w-100 w-md-auto">
+         <v-text-field
+            v-model="search"
+            placeholder="Find category..."
+            prepend-inner-icon="mdi-magnify"
+            variant="outlined"
+            density="compact"
+            bg-color="rgba(255,255,255,0.05)"
+            hide-details
+            class="rounded-lg flex-grow-1"
+            style="min-width: 250px;"
+         ></v-text-field>
+         
+         <v-btn 
+            color="success" 
+            height="40"
+            prepend-icon="mdi-plus" 
+            class="text-capitalize font-weight-bold px-6"
+            @click="openDialog"
+         >
+            Add New
+         </v-btn>
+      </div>
+    </div>
+
+    <!-- CONTENT CARD -->
+    <v-card color="#1e293b" class="rounded-xl elevation-0 border-opacity-12 flex-grow-1 d-flex flex-column">
+      
+      <!-- Stats Bar (Optional) -->
+      <div class="px-6 py-3 border-b border-opacity-12 d-flex align-center">
+         <div class="text-caption text-grey text-uppercase font-weight-bold">Total Categories:</div>
+         <v-chip size="small" color="primary" class="ml-2 font-weight-bold">{{ categories.length }}</v-chip>
       </div>
 
-      <v-text-field
-        v-model="search"
-        placeholder="Search categories..."
-        prepend-inner-icon="mdi-magnify"
-        variant="outlined"
-        density="compact"
-        bg-color="#0f172a"
-        color="white"
-        hide-details
-        class="mb-4 rounded-lg"
-      />
+      <div class="pa-6 flex-grow-1 overflow-y-auto custom-scrollbar">
+         
+         <!-- Loading State -->
+         <v-row v-if="loading">
+            <v-col cols="12" sm="6" md="4" lg="3" v-for="n in 8" :key="n">
+               <v-skeleton-loader type="list-item-avatar" class="bg-transparent rounded-lg border border-opacity-12"></v-skeleton-loader>
+            </v-col>
+         </v-row>
 
-      <v-data-table
-        :headers="headers"
-        :items="categories"
-        :search="search"
-        :loading="loading"
-        class="elevation-1 bg-transparent text-white custom-table"
-        hover
-      >
-        <template v-slot:item.tenTheLoai="{ item }">
-          <v-chip 
-            :color="getCategoryColor(item.tenTheLoai)" 
-            variant="flat" 
-            size="small" 
-            class="font-weight-bold text-white"
-          >
-            {{ item.tenTheLoai }}
-          </v-chip>
-        </template>
+         <!-- Empty State -->
+         <div v-else-if="filteredCategories.length === 0" class="text-center py-10">
+            <v-icon size="64" color="grey-darken-2">mdi-shape-outline</v-icon>
+            <div class="text-grey mt-2">No categories found matching "{{ search }}"</div>
+         </div>
 
-        <template v-slot:item.actions="{ item }">
-          <v-icon small class="mr-2" color="primary" @click="editItem(item)">mdi-pencil</v-icon>
-          <v-icon small color="error" @click="confirmDelete(item)">mdi-delete</v-icon>
-        </template>
-        
-        <template v-slot:no-data>
-          <v-alert type="info" variant="tonal" class="mt-2">No categories found.</v-alert>
-        </template>
-      </v-data-table>
+         <!-- Category Grid -->
+         <v-row v-else>
+            <v-col 
+               cols="12" sm="6" md="4" lg="3" 
+               v-for="item in filteredCategories" 
+               :key="item._id"
+            >
+               <v-hover v-slot="{ isHovering, props }">
+                  <v-card 
+                     v-bind="props"
+                     class="category-card rounded-lg border transition-swing d-flex align-center px-4 py-3 cursor-pointer"
+                     color="rgba(255,255,255,0.03)"
+                     :elevation="isHovering ? 4 : 0"
+                     :class="{'border-primary': isHovering}"
+                     @click="editItem(item)"
+                  >
+                     <!-- Icon màu sắc đại diện -->
+                     <v-avatar 
+                        size="40" 
+                        :color="getCategoryColor(item.tenTheLoai)" 
+                        variant="tonal" 
+                        class="mr-3 rounded-lg"
+                     >
+                        <span class="text-h6 font-weight-bold">
+                           {{ item.tenTheLoai.charAt(0).toUpperCase() }}
+                        </span>
+                     </v-avatar>
+
+                     <!-- Tên thể loại -->
+                     <div class="flex-grow-1 min-w-0">
+                        <div class="font-weight-bold text-white text-truncate" :title="item.tenTheLoai">
+                           {{ item.tenTheLoai }}
+                        </div>
+                     </div>
+
+                     <!-- Actions (Hiện khi hover) -->
+                     <div v-if="isHovering" class="d-flex gap-1">
+                        <v-btn icon="mdi-pencil" size="x-small" variant="text" color="primary" @click.stop="editItem(item)"></v-btn>
+                        <v-btn icon="mdi-delete" size="x-small" variant="text" color="error" @click.stop="confirmDelete(item)"></v-btn>
+                     </div>
+                  </v-card>
+               </v-hover>
+            </v-col>
+         </v-row>
+      </div>
     </v-card>
 
-    <v-dialog v-model="dialog" max-width="500px">
-      <v-card>
-        <v-card-title>
-          <span class="text-h5">{{ formTitle }}</span>
+    <!-- Dialogs giữ nguyên logic cũ -->
+    <v-dialog v-model="dialog" max-width="450px">
+      <v-card color="#1e293b" class="text-white rounded-xl">
+        <v-card-title class="bg-primary text-white px-6 py-4">
+          <span class="text-h6 font-weight-bold">{{ formTitle }}</span>
         </v-card-title>
 
-        <v-card-text>
+        <v-card-text class="pt-6 px-6">
           <v-form ref="form" @submit.prevent="save">
             <v-text-field
               v-model="editedItem.tenTheLoai"
-              label="Category Name *"
+              label="Category Name"
               variant="outlined"
-              density="compact"
+              bg-color="rgba(255,255,255,0.05)"
+              prepend-inner-icon="mdi-tag-text-outline"
               :rules="[v => !!v || 'Name is required']"
-              placeholder="e.g., Fantasy, Science Fiction"
+              placeholder="e.g., Science Fiction"
+              autofocus
             ></v-text-field>
             
-            <div class="mt-2" v-if="editedItem.tenTheLoai">
-               <span class="text-caption text-grey mr-2">Preview Color:</span>
-               <v-chip :color="getCategoryColor(editedItem.tenTheLoai)" size="small" class="text-white font-weight-bold">
+            <div class="d-flex align-center mt-2 pa-3 rounded bg-grey-darken-4 border border-dashed" v-if="editedItem.tenTheLoai">
+               <span class="text-caption text-grey mr-3">Preview Style:</span>
+               <v-chip :color="getCategoryColor(editedItem.tenTheLoai)" variant="flat" class="font-weight-bold">
                   {{ editedItem.tenTheLoai }}
                </v-chip>
             </div>
           </v-form>
         </v-card-text>
 
-        <v-card-actions>
+        <v-card-actions class="px-6 pb-6">
           <v-spacer></v-spacer>
-          <v-btn color="grey-darken-1" variant="text" @click="close">Cancel</v-btn>
-          <v-btn color="primary" variant="flat" @click="save">Save</v-btn>
+          <v-btn color="grey-lighten-1" variant="text" @click="close">Cancel</v-btn>
+          <v-btn color="primary" variant="elevated" class="px-6 font-weight-bold" @click="save">Save</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
     <v-dialog v-model="dialogDelete" max-width="400px">
-      <v-card>
-        <v-card-title class="text-h6">Confirm Delete</v-card-title>
-        <v-card-text>Delete category "<strong>{{ editedItem.tenTheLoai }}</strong>"?</v-card-text>
-        <v-card-actions>
+      <v-card color="#1e293b" class="text-white rounded-lg">
+        <v-card-title class="bg-error text-white px-6 py-3">Confirm Delete</v-card-title>
+        <v-card-text class="pt-6 px-6">
+           Are you sure you want to delete category <br/>
+           <strong class="text-h6 text-white">"{{ editedItem.tenTheLoai }}"</strong>?
+           <div class="text-caption text-grey mt-2">This action cannot be undone.</div>
+        </v-card-text>
+        <v-card-actions class="px-6 pb-6">
           <v-spacer></v-spacer>
           <v-btn color="grey" variant="text" @click="closeDelete">Cancel</v-btn>
-          <v-btn color="error" variant="flat" @click="deleteItemConfirm">Delete</v-btn>
+          <v-btn color="error" variant="elevated" class="px-6 font-weight-bold" @click="deleteItemConfirm">Delete</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <v-snackbar v-model="snackbar.show" :color="snackbar.color">{{ snackbar.message }}</v-snackbar>
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" location="top right">{{ snackbar.message }}</v-snackbar>
   </div>
 </template>
 
@@ -114,11 +173,6 @@ const dialog = ref(false);
 const dialogDelete = ref(false);
 const snackbar = ref({ show: false, message: '', color: '' });
 
-const headers = [
-  { title: 'Category Name', key: 'tenTheLoai', align: 'start' },
-  { title: 'Actions', key: 'actions', sortable: false, align: 'end' },
-];
-
 const editedIndex = ref(-1);
 const editedItem = ref({ tenTheLoai: '' });
 const defaultItem = { tenTheLoai: '' };
@@ -126,20 +180,21 @@ const form = ref(null);
 
 const formTitle = computed(() => editedIndex.value === -1 ? 'New Category' : 'Edit Category');
 
-// Hàm lấy màu (Dùng chung logic với BookManagement)
+// Filter Logic
+const filteredCategories = computed(() => {
+    if (!search.value) return categories.value;
+    return categories.value.filter(cat => 
+        cat.tenTheLoai.toLowerCase().includes(search.value.toLowerCase())
+    );
+});
+
 const getCategoryColor = (catName) => {
     if (!catName || typeof catName !== 'string') return 'grey';
     const lower = catName.toLowerCase();
-    if (lower.includes('fantasy')) return '#8E24AA';
-    if (lower.includes('sci')) return '#1E88E5';
-    if (lower.includes('history') || lower.includes('lịch sử')) return '#F57C00';
-    if (lower.includes('mystery')) return '#00897B';
-    if (lower.includes('thiếu nhi')) return '#43A047';
-    if (lower.includes('văn học')) return '#D81B60';
-    if (lower.includes('kinh tế')) return '#5D4037';
-    if (lower.includes('tâm lý') || lower.includes('kỹ năng')) return '#00ACC1';
-    if (lower.includes('truyện tranh') || lower.includes('comic')) return '#FFC107';
-    return 'primary';
+    const colors = ['#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#2196F3', '#03A9F4', '#00BCD4', '#009688', '#4CAF50', '#8BC34A', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722'];
+    let hash = 0;
+    for (let i = 0; i < catName.length; i++) hash = catName.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
 };
 
 const fetchCategories = async () => {
@@ -148,7 +203,6 @@ const fetchCategories = async () => {
     const res = await api.get('/categories');
     categories.value = Array.isArray(res.data) ? res.data : (res.data.data || []);
   } catch (error) {
-    console.error(error);
     snackbar.value = { show: true, message: 'Failed to load categories', color: 'error' };
   } finally {
     loading.value = false;
@@ -170,10 +224,7 @@ const editItem = (item) => {
 
 const close = () => {
   dialog.value = false;
-  nextTick(() => {
-    editedItem.value = { ...defaultItem };
-    editedIndex.value = -1;
-  });
+  nextTick(() => { editedItem.value = { ...defaultItem }; editedIndex.value = -1; });
 };
 
 const save = async () => {
@@ -205,10 +256,7 @@ const confirmDelete = (item) => {
 
 const closeDelete = () => {
   dialogDelete.value = false;
-  nextTick(() => {
-    editedItem.value = { ...defaultItem };
-    editedIndex.value = -1;
-  });
+  nextTick(() => { editedItem.value = { ...defaultItem }; editedIndex.value = -1; });
 };
 
 const deleteItemConfirm = async () => {
@@ -218,7 +266,7 @@ const deleteItemConfirm = async () => {
     snackbar.value = { show: true, message: 'Deleted successfully', color: 'success' };
     closeDelete();
   } catch (error) {
-    snackbar.value = { show: true, message: 'Không thể xóa!!! Thể loại này đang có sách được mượn.', color: 'error' };
+    snackbar.value = { show: true, message: 'Cannot delete category in use', color: 'error' };
     closeDelete();
   }
 };
@@ -227,8 +275,12 @@ onMounted(fetchCategories);
 </script>
 
 <style scoped>
-.custom-table { color: white !important; }
-:deep(.custom-table th) { color: #94a3b8 !important; text-transform: uppercase; font-size: 0.75rem; }
-:deep(.custom-table td) { border-bottom: 1px solid #334155 !important; }
-:deep(.custom-table tbody tr:hover) { background-color: #1e293b !important; }
+.gap-3 { gap: 12px; }
+.gap-4 { gap: 16px; }
+.category-card { border: 1px solid rgba(255,255,255,0.08); }
+.border-primary { border-color: #2196F3 !important; box-shadow: 0 0 10px rgba(33,150,243,0.2) !important; }
+.border-dashed { border-style: dashed !important; }
+.min-w-0 { min-width: 0; }
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
 </style>

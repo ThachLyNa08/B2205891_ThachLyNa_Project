@@ -6,16 +6,21 @@ const escapeRegExp = (string) => {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); 
 };
 // Lấy tất cả người dùng (chỉ admin)
-const getAllUsers = async (search) => {
+const getAllUsers = async (search, role) => {
   let query = {};
 
-  // Nếu có từ khóa tìm kiếm, tạo bộ lọc (filter)
+  // [MỚI] Nếu có role và role không phải là 'all', thêm điều kiện lọc
+  if (role && role !== 'all') {
+      query.role = role;
+  }
+
+  // Logic tìm kiếm (Search) giữ nguyên, nhưng kết hợp với role
   if (search) {
     const safeSearch = escapeRegExp(search);
-    const searchRegex = new RegExp(safeSearch, 'i'); // 'i' nghĩa là không phân biệt hoa thường
+    const searchRegex = new RegExp(safeSearch, 'i');
 
-    // Tìm kiếm trong: username, email, số điện thoại, họ, tên
-    query = {
+    // Sử dụng $and để kết hợp: (Role = ?) VÀ (Tên like ? HOẶC Email like ? ...)
+    const searchQuery = {
       $or: [
         { username: { $regex: searchRegex } },
         { email: { $regex: searchRegex } },
@@ -24,10 +29,12 @@ const getAllUsers = async (search) => {
         { ten: { $regex: searchRegex } }
       ]
     };
+
+    // Gộp query role và query search
+    query = { ...query, ...searchQuery };
   }
 
-  // Truyền query vào find()
-  return await User.find(query).select('-password');
+  return await User.find(query).select('-password').sort({ createdAt: -1 });
 };
 
 // Lấy thông tin một người dùng theo ID

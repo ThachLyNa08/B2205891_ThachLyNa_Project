@@ -5,11 +5,11 @@ const userService = require('../services/userService');
 // @access  Private/Admin
 const getUsers = async (req, res, next) => {
   try {
-    // [MỚI] Lấy từ khóa tìm kiếm từ URL
     const search = req.query.search;
+    const role = req.query.role; // [MỚI] Lấy tham số role
     
-    // [SỬA] Truyền biến search vào hàm getAllUsers
-    const users = await userService.getAllUsers(search);
+    // Truyền role vào service
+    const users = await userService.getAllUsers(search, role);
     
     res.status(200).json(users);
   } catch (error) {
