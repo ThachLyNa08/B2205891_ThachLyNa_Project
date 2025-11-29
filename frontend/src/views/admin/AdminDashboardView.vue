@@ -164,12 +164,11 @@ const statsCards = ref([]);
 const topBooks = ref([]);
 const activities = ref([]);
 const totalLoans = ref(0);
-const totalFines = ref(0); // [MỚI] Biến lưu tổng tiền phạt
+const totalFines = ref(0);
 
 const lineChartData = ref({ labels: [], datasets: [] });
 const doughnutChartData = ref({ labels: [], datasets: [] });
 
-// [GIỮ NGUYÊN] Cấu hình Chart
 const lineChartOptions = {
     responsive: true, maintainAspectRatio: false,
     scales: {
@@ -196,13 +195,10 @@ const fetchData = async () => {
         const monthlyLoans = res.data.monthlyLoans || [];
         const statusDist = res.data.statusDist || [];
         
-        // [MỚI] Lấy số liệu doanh thu (từ lần cập nhật trước)
-        // Nếu chưa có API revenueStats, bạn có thể mock hoặc dùng biến tạm
         const revenueStats = res.data.revenueStats || []; 
         totalFines.value = revenueStats.reduce((sum, item) => sum + item.totalAmount, 0);
 
         if (stats) {
-             // [MỚI] Thêm thẻ Tổng tiền phạt vào đây (Chia cột lg="2" để vừa 5 thẻ)
              statsCards.value = [
                 { title: 'Tổng Sách', value: stats.totalBooks || 0, icon: 'mdi-book', color: 'purple', percent: stats.bookGrowth || 0, isUp: true },
                 { title: 'Độc Giả', value: stats.totalUsers || 0, icon: 'mdi-account-group', color: 'blue', percent: stats.userGrowth || 0, isUp: true },
@@ -210,16 +206,14 @@ const fetchData = async () => {
                 { title: 'Quá Hạn', value: stats.overdueLoans || 0, icon: 'mdi-alert', color: 'red', percent: 0, isUp: false },
                 { 
                     title: 'Tổng Tiền Phạt', 
-                    // [SỬA] Dùng biến totalFineCollected mới từ backend
                     value: stats.totalFineCollected || 0, 
                     icon: 'mdi-cash-multiple', 
                     color: 'green', 
                     isMoney: true 
-                } // Thẻ mới
+                } 
             ];
         }
 
-        // Line Chart (Giữ nguyên logic)
         const weeks = monthlyLoans.map(m => `Tuần ${m._id.week}`); 
         const counts = monthlyLoans.map(m => m.count);
         
@@ -239,7 +233,6 @@ const fetchData = async () => {
             }]
         };
 
-        // Doughnut Chart (Dịch nhãn sang tiếng Việt)
         const colorMap = { 'pending': '#FFA726', 'borrowed': '#29B6F6', 'returned': '#66BB6A', 'overdue': '#EF5350', 'cancelled': '#BDBDBD' };
         const labelMap = { 'pending': 'Chờ Duyệt', 'borrowed': 'Đang Mượn', 'returned': 'Đã Trả', 'overdue': 'Quá Hạn', 'cancelled': 'Đã Hủy' };
 
@@ -275,7 +268,6 @@ const fetchData = async () => {
     finally { loading.value = false; }
 };
 
-// Helper Functions
 const formatDate = (d) => {
    const date = new Date(d);
    const now = new Date();
@@ -290,7 +282,6 @@ const formatCurrencyCompact = (value) => {
    return new Intl.NumberFormat('vi-VN', { notation: "compact", compactDisplay: "short", currency: 'VND', style: 'currency' }).format(value);
 };
 
-// Dịch hành động Recent Activity
 const translateAction = (text) => {
     if(text.includes('requested')) return text.replace('requested', 'đã yêu cầu mượn');
     if(text.includes('borrowed')) return text.replace('borrowed', 'đang mượn');
@@ -308,7 +299,7 @@ onMounted(fetchData);
 .bg-gradient-blue { background: linear-gradient(135deg, #2AFADF 0%, #4C83FF 100%); }
 .bg-gradient-orange { background: linear-gradient(135deg, #FF9D6C 0%, #BB4E75 100%); }
 .bg-gradient-red { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%); }
-.bg-gradient-green { background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%); } /* Gradient cho thẻ Tiền */
+.bg-gradient-green { background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%); } 
 
 .backdrop-blur { backdrop-filter: blur(10px); }
 .decor-circle { position: absolute; top: -20px; right: -20px; width: 100px; height: 100px; background: rgba(255,255,255,0.1); border-radius: 50%; z-index: 1; }

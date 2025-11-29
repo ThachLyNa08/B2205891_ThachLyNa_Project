@@ -1,35 +1,24 @@
 const bookService = require('../services/bookService');
 const Loan = require('../models/loan');
-// ==================================================
-// 1. HÀM HELPER: Xử lý dữ liệu từ FormData (QUAN TRỌNG)
-// ==================================================
+
 const parseBookData = (req) => {
-  // Copy dữ liệu từ body (text fields)
   const data = { ...req.body };
   
-  // A. XỬ LÝ ẢNH UPLOAD
   if (req.file) {
-    // Lấy giao thức (http) và tên miền (localhost:5000)
     const url = `${req.protocol}://${req.get('host')}`;
-    
-    // Tạo đường dẫn đầy đủ để Frontend hiển thị được
-    // Ví dụ: http://localhost:5000/uploads/1715...png
+
     data.coverUrl = `${url}/uploads/${req.file.filename}`;
   }
 
-  // B. XỬ LÝ MẢNG JSON (Vì FormData gửi mảng dưới dạng chuỗi)
-  // Ví dụ: gửi "['Kinh dị', 'Hài']" -> Phải parse thành mảng thật
   const arrayFields = ['categories', 'tacGia'];
   
   arrayFields.forEach(field => {
     if (data[field]) {
       try {
-        // Nếu là chuỗi thì parse, nếu đã là mảng thì giữ nguyên
         if (typeof data[field] === 'string') {
            data[field] = JSON.parse(data[field]);
         }
       } catch (e) {
-        // Nếu lỗi parse (ví dụ gửi 1 ID trần), bọc nó vào mảng
         console.log(`Warning parsing ${field}:`, e.message);
         data[field] = [data[field]];
       }
@@ -38,10 +27,6 @@ const parseBookData = (req) => {
   
   return data;
 };
-
-// ==================================================
-// 2. CÁC HÀM CONTROLLER CHÍNH
-// ==================================================
 
 // @desc    Get all books
 // @route   GET /api/books
@@ -88,9 +73,7 @@ const getBook = async (req, res, next) => {
 // @route   POST /api/books
 const createBook = async (req, res, next) => {
   try {
-    // Gọi helper để xử lý ảnh và dữ liệu json
     const bookData = parseBookData(req); 
-    
     const newBook = await bookService.createBook(bookData);
     res.status(201).json({ message: 'Book created successfully.', book: newBook });
   } catch (error) {
@@ -103,9 +86,7 @@ const createBook = async (req, res, next) => {
 // @route   PUT /api/books/:id
 const updateBook = async (req, res, next) => {
   try {
-    // Gọi helper để xử lý ảnh và dữ liệu json
     const bookData = parseBookData(req); 
-    
     const updatedBook = await bookService.updateBook(req.params.id, bookData);
     res.status(200).json({ message: 'Book updated successfully.', book: updatedBook });
   } catch (error) {
@@ -130,9 +111,9 @@ const deleteBook = async (req, res, next) => {
 const getTopBooks = async (req, res, next) => {
   try {
     const topBooks = await Loan.aggregate([
-      { $group: { _id: "$bookId", count: { $sum: 1 } } }, // Gom nhóm theo sách
-      { $sort: { count: -1 } }, // Sắp xếp giảm dần
-      { $limit: 5 },            // Lấy top 5
+      { $group: { _id: "$bookId", count: { $sum: 1 } } },
+      { $sort: { count: -1 } }, 
+      { $limit: 5 },            
       { 
         $lookup: { 
           from: "books", 

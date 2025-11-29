@@ -22,19 +22,18 @@ onMounted(async () => {
   
   if (token) {
     try {
-      // 1. Lưu token tạm
+      //Lưu token tạm
       authStore.token = token;
       sessionStorage.setItem('token', token);
       
-      // 2. Gọi API lấy thông tin User (vì token chỉ chứa ID)
-      const res = await api.get('/users/me'); // Cần đảm bảo API này hoạt động
+      //Gọi API lấy thông tin User
+      const res = await api.get('/users/me'); 
       
-      // 3. Lưu user vào store
+      //Lưu user vào store
       authStore.user = res.data;
       sessionStorage.setItem('user', JSON.stringify(res.data));
       authStore.isAuthenticated = true;
 
-      // 4. Chuyển hướng vào Home
       router.push('/home');
     } catch (error) {
       console.error("Login failed", error);

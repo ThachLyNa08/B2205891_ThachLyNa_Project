@@ -141,12 +141,10 @@ onMounted(fetchLeaderboard);
 .min-vh-100 { min-height: 100vh; }
 .font-serif { font-family: 'Playfair Display', serif; }
 
-/* Hình tròn trang trí nền */
 .absolute-circle { position: absolute; border-radius: 50%; filter: blur(80px); z-index: 1; opacity: 0.4; }
 .circle-1 { width: 400px; height: 400px; background: #FFC107; top: -100px; left: -100px; }
 .circle-2 { width: 500px; height: 500px; background: #00BCD4; bottom: -150px; right: -150px; }
 
-/* Huy hiệu số thứ tự */
 .rank-badge {
     width: 36px; height: 36px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
@@ -155,12 +153,10 @@ onMounted(fetchLeaderboard);
     border: 2px solid #CFD8DC;
 }
 
-/* Màu sắc Top 1-2-3 */
 .rank-1 { background: linear-gradient(135deg, #FFD700, #FFA000); color: white; border: none; box-shadow: 0 4px 12px rgba(255, 160, 0, 0.4); transform: scale(1.2); }
 .rank-2 { background: linear-gradient(135deg, #E0E0E0, #9E9E9E); color: white; border: none; box-shadow: 0 4px 12px rgba(158, 158, 158, 0.4); transform: scale(1.1); }
 .rank-3 { background: linear-gradient(135deg, #D7CCC8, #8D6E63); color: white; border: none; box-shadow: 0 4px 12px rgba(141, 110, 99, 0.4); transform: scale(1.05); }
 
-/* Hiệu ứng hover item */
 .rank-item { transition: transform 0.2s ease, box-shadow 0.2s ease; }
 .rank-item:hover { transform: translateX(5px); background-color: #FAFAFA !important; }
 

@@ -22,7 +22,7 @@
         <v-col cols="12" md="10" lg="8">
           <v-row justify="center" class="gap-6">
             
-            <!-- 1. USER PORTAL CARD -->
+            <!--USER PORTAL CARD-->
             <v-col cols="12" md="5">
               <v-hover v-slot="{ isHovering, props }">
                 <v-card
@@ -43,7 +43,7 @@
                     Login as Reader
                   </v-btn>
                   
-                  <!-- Nút phụ để vào trang chủ mà không cần login -->
+                  <!--Nút phụ để vào trang chủ mà không cần login-->
                   <div class="mt-4">
                      <span 
                         class="text-caption text-primary text-decoration-underline cursor-pointer"
@@ -56,7 +56,7 @@
               </v-hover>
             </v-col>
 
-            <!-- 2. ADMIN PORTAL CARD -->
+            <!--ADMIN PORTAL CARD-->
             <v-col cols="12" md="5">
               <v-hover v-slot="{ isHovering, props }">
                 <v-card
@@ -86,7 +86,7 @@
       </v-row>
     </v-container>
 
-    <!-- Footer nhỏ -->
+    <!--Footer nhỏ-->
     <div class="footer-text text-white text-caption opacity-60">
       &copy; {{ new Date().getFullYear() }} Library Nexus System
     </div>
@@ -105,13 +105,12 @@ const navigateTo = (role) => {
   if (role === 'admin') {
     router.push('/admin-portal/login');
   } else if (role === 'user') {
-    router.push('/login'); // Trang login user
+    router.push('/login');
   } else if (role === 'home') {
-    router.push('/home'); // Trang chủ thư viện (Public)
+    router.push('/home');
   }
 };
 
-// Kiểm tra nếu đã login rồi thì chuyển hướng luôn, đỡ phải chọn lại
 onMounted(() => {
     if (authStore.isAuthenticated) {
         if (['admin', 'staff'].includes(authStore.user?.role)) {
@@ -128,28 +127,26 @@ onMounted(() => {
   position: relative;
   width: 100%;
   min-height: 100vh;
-  overflow: hidden; /* [QUAN TRỌNG] Bỏ comment dòng này để cắt phần ảnh thừa do scale */
+  overflow: hidden; 
   background-color: #000;
 }
 
-/* Ảnh nền full màn hình */
 .bg-image {
-  position: fixed; /* [SỬA] Đổi từ absolute sang fixed để hình luôn gim chặt vào màn hình kể cả khi scroll */
+  position: fixed; 
   top: 0; left: 0; width: 100%; height: 100%;
   background-image: url('https://images.unsplash.com/photo-1507842217153-eae850688719?q=80&w=2000&auto=format&fit=crop');
   background-size: cover;
   background-position: center;
   filter: blur(2px);
   transform: scale(1.05); 
-  z-index: 0; /* Đảm bảo nằm dưới cùng */
+  z-index: 0; 
 }
 
-/* Lớp phủ tối */
 .bg-overlay {
-  position: fixed; /* [SỬA] Đổi từ absolute sang fixed */
+  position: fixed; 
   top: 0; left: 0; width: 100%; height: 100%;
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(21, 101, 192, 0.8));
-  z-index: 1; /* Nằm đè lên ảnh */
+  z-index: 1; 
 }
 
 .z-10 { z-index: 10; }
@@ -189,7 +186,6 @@ onMounted(() => {
   z-index: 10;
 }
 
-/* Animation */
 .animate-fade-down {
   animation: fadeDown 1s ease-out;
 }

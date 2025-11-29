@@ -24,10 +24,8 @@ const register = async (req, res, next) => {
         username: user.username,
         email: user.email,
         role: user.role,
-        // --- THÊM 2 DÒNG NÀY ---
         avatar: user.avatar,      
         coverImage: user.coverImage
-        // -----------------------
       },
       token
     });
@@ -62,10 +60,8 @@ const login = async (req, res, next) => {
         username: user.username,
         email: user.email,
         role: user.role,
-        // --- THÊM 2 DÒNG NÀY (QUAN TRỌNG NHẤT) ---
         avatar: user.avatar,
         coverImage: user.coverImage
-        // ----------------------------------------
       },
       token
     });
@@ -78,7 +74,6 @@ const login = async (req, res, next) => {
 };
 
 const refresh = async (req, res, next) => {
-    // ... Giữ nguyên code cũ của bạn ...
     try {
         const oldRefreshToken = req.cookies.refreshToken;
         if (!oldRefreshToken) {

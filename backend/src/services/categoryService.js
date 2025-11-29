@@ -31,16 +31,13 @@ const updateCategory = async (id, updateData) => {
   return category;
 };
 
-// [SỬA] Hàm xóa thể loại có kiểm tra ràng buộc
 const deleteCategory = async (id) => {
-  // 1. Kiểm tra xem có sách nào thuộc thể loại này không
   const bookCount = await Book.countDocuments({ categories: id });
   
   if (bookCount > 0) {
       throw new Error(`Cannot delete: This category is used by ${bookCount} book(s).`);
   }
 
-  // 2. Nếu không có sách nào dùng, tiến hành xóa
   const result = await categoryRepository.deleteCategory(id);
   
   if (!result) {

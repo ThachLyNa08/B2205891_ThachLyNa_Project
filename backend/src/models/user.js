@@ -6,8 +6,8 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
-    trim: true, // Loại bỏ khoảng trắng ở đầu và cuối
-    lowercase: true // Chuyển username về chữ thường
+    trim: true, 
+    lowercase: true 
   },
   email: {
     type: String,
@@ -15,16 +15,15 @@ const userSchema = new mongoose.Schema({
     unique: true,
     trim: true,
     lowercase: true,
-    match: [/.+@.+\..+/, 'Please fill a valid email address'] // Regex kiểm tra định dạng email
+    match: [/.+@.+\..+/, 'Please fill a valid email address'] 
   },
-  password: { // Lưu ý: sẽ hash password trước khi lưu
+  password: { 
     type: String,
     required: true,
-    minlength: 6 // Mật khẩu tối thiểu 6 ký tự
-  },
+    minlength: 6 },
   role: {
     type: String,
-    enum: ['reader', 'staff', 'admin'], // Các vai trò có thể có
+    enum: ['reader', 'staff', 'admin'], 
     default: 'reader'
   },
   hoLot: {
@@ -40,7 +39,7 @@ const userSchema = new mongoose.Schema({
   },
   gioiTinh: {
     type: String,
-    enum: ['M', 'F', 'Other'] // Male, Female, Other
+    enum: ['M', 'F', 'Other'] 
   },
   diaChi: {
     type: String,
@@ -60,12 +59,12 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: function() { return !this.googleId; } // Chỉ bắt buộc nếu không đăng nhập bằng Google
+    required: function() { return !this.googleId; } 
   },
   googleId: {
       type: String,
       unique: true,
-      sparse: true // Cho phép null mà không báo lỗi unique
+      sparse: true 
   },
   favorites: [{ 
       type: mongoose.Schema.Types.ObjectId, 
@@ -79,7 +78,6 @@ const userSchema = new mongoose.Schema({
   avatar: { type: String }
 }); 
 
-// Cập nhật updatedAt mỗi khi save
 userSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
   next();

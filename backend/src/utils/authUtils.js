@@ -1,10 +1,7 @@
-
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const generateToken = (payload, secret, expiresIn) => {
-  // Thay vì dùng biến expiresIn từ bên ngoài (có thể đang là '1h'),
-  // ta ép cứng thành '30d' (30 ngày) để thoải mái code mà không bị văng ra.
   return jwt.sign(payload, secret, { expiresIn: '30d' });
 };
 

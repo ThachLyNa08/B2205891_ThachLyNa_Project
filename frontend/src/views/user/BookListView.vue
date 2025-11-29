@@ -101,7 +101,6 @@
 </template>
 
 <script setup>
-// ... (Phần Script giữ nguyên không thay đổi gì cả)
 import { ref, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '@/services/api.service';
@@ -125,7 +124,7 @@ const showFavorites = ref(false);
 
 const currentPage = ref(1);
 const pages = ref(1);
-const limit = 18; // [NÊN TĂNG LIMIT] Vì thẻ nhỏ đi nên 1 trang chứa được nhiều sách hơn (ví dụ 18 hoặc 24)
+const limit = 18; 
 
 const filterFavoritesLocally = () => {
     let result = [...allFavorites.value];

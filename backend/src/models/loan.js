@@ -15,44 +15,42 @@ const loanSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
-  ngayHenTra: { // Ngày dự kiến trả
+  ngayHenTra: { 
     type: Date,
     required: true
   },
-  ngayTraThucTe: { // Ngày khách trả thật
+  ngayTraThucTe: { 
     type: Date,
     default: null
   },
   status: {
     type: String,
     enum: ['pending', 'borrowed', 'returned', 'overdue', 'cancelled'],
-    default: 'pending' // Nên set là 'borrowed' khi admin duyệt cho mượn
+    default: 'pending' 
   },
   
-  // --- NHÓM CHI PHÍ THUÊ ---
-  rentCost: { // Tiền thuê sách (Phí mượn)
+  rentCost: { 
     type: Number,
     default: 0
   },
-  deposit: { // Tiền cọc
+  deposit: { 
     type: Number,
     default: 0
   },
-  isPaid: { // Đã thanh toán phí thuê/cọc chưa?
+  isPaid: { 
     type: Boolean,
     default: false
   },
 
-  // --- NHÓM CHI PHÍ PHẠT (QUAN TRỌNG) ---
   phatTien: { 
     type: Number,
     default: 0
   },
-  lyDoPhat: { // Lưu lý do: "Quá hạn 3 ngày"
+  lyDoPhat: { 
     type: String,
     default: ''
   },
-  isFinePaid: { // Đã đóng tiền phạt chưa? (Tách riêng với isPaid của tiền thuê)
+  isFinePaid: { 
     type: Boolean,
     default: false
   },
@@ -61,7 +59,6 @@ const loanSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now }
 });
 
-// Middleware cập nhật thời gian
 loanSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
   next();

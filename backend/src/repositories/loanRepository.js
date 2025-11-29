@@ -4,9 +4,9 @@ const Loan = require('../models/loan');
 const getLoans = async (query = {}, pagination = {}) => {
   const total = await Loan.countDocuments(query);
   const loans = await Loan.find(query)
-    .populate('userId', 'username email hoLot ten') // Lấy thông tin cơ bản của user
-    .populate('bookId', 'tenSach maSach tacGia coverUrl') // Lấy thông tin cơ bản của sách
-    .sort({ ngayMuon: -1 }) // Sắp xếp theo ngày mượn mới nhất
+    .populate('userId', 'username email hoLot ten') 
+    .populate('bookId', 'tenSach maSach tacGia coverUrl') 
+    .sort({ ngayMuon: -1 }) 
     .skip((pagination.page - 1) * pagination.limit)
     .limit(pagination.limit);
   return { loans, total };
@@ -31,10 +31,9 @@ const deleteLoan = async (id) => {
   return await Loan.findByIdAndDelete(id);
 };
 
-// Lấy lịch mượn theo tháng/năm
 const getLoansForCalendar = async (userId, year, month) => {
-  const startDate = new Date(year, month - 1, 1); // Tháng trong JS là 0-11
-  const endDate = new Date(year, month, 0); // Ngày cuối của tháng
+  const startDate = new Date(year, month - 1, 1); 
+  const endDate = new Date(year, month, 0); 
 
   const query = {
     $or: [

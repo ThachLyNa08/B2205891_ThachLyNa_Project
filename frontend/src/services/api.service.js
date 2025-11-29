@@ -1,13 +1,11 @@
-// frontend/src/services/api.service.js
 import axios from 'axios';
 
-// 1. SỬA: Xử lý URL để tránh lỗi 2 dấu gạch chéo (//) khi nối chuỗi
 const rawBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 const API_BASE_URL = rawBaseUrl.replace(/\/$/, ''); 
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true, // Quan trọng để gửi cookie (refresh token)
+  withCredentials: true, 
 });
 
 // Interceptor để thêm Authorization header cho mỗi request
@@ -29,10 +27,8 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    // Nếu lỗi là 401 (Unauthorized) và không phải request refresh token
-    // Thêm kiểm tra error.response để tránh crash nếu mất mạng
     if (error.response && error.response.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true; // Đánh dấu request này đã được thử lại
+      originalRequest._retry = true; 
 
       try {
         // Gọi API refresh token
@@ -49,10 +45,9 @@ api.interceptors.response.use(
       } catch (refreshError) {
         // Nếu refresh token thất bại, chuyển hướng về trang login
         console.error('Refresh token failed:', refreshError);
-        sessionStorage.removeItem('token'); // Xóa token cũ
-        sessionStorage.removeItem('user');  // Xóa luôn thông tin user cho sạch
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');  
         
-        // 2. SỬA: Đường dẫn login đúng là /auth/login (theo router của bạn)
         window.location.href = '/login'; 
         return Promise.reject(refreshError);
       }

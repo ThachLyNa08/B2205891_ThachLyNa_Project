@@ -221,7 +221,6 @@
 </template>
 
 <script setup>
-// Script giữ nguyên logic, chỉ dịch text trong các hàm alert/confirm/showSnack
 import { ref, onMounted, computed, reactive, watch } from 'vue';
 import api from '@/services/api.service';
 import { useAuthStore } from '@/stores/auth';
@@ -284,7 +283,7 @@ const fetchLoans = async () => {
   finally { loading.value = false; }
 };
 
-// Actions - Dịch các thông báo
+// Actions
 const cancelRequest = async (loan) => {
     if(!confirm("Bạn có chắc muốn hủy yêu cầu mượn này?")) return;
     try {
@@ -369,7 +368,6 @@ const getStatusColorClass = (loan) => {
     return 'bg-blue-darken-2';
 };
 
-// Helper dịch trạng thái
 const translateStatus = (status) => {
     const map = {
         'pending': 'Chờ Duyệt',
@@ -392,7 +390,7 @@ onMounted(fetchLoans);
 .line-height-1 { line-height: 1; }
 .line-height-1-2 { line-height: 1.2; }
 .min-w-0 { min-width: 0; }
-.text-truncate-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.text-truncate-2 { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
 .hover-underline:hover { text-decoration: underline; }
 .cursor-pointer { cursor: pointer; }
 .status-badge { position: absolute; top: 0; left: 0; z-index: 2; font-size: 0.7rem; }

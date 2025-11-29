@@ -1,7 +1,7 @@
 <template>
   <v-container class="py-6 max-width-800">
     
-    <!-- HEADER: Bỏ nút Back, chỉ giữ tiêu đề và nút Đọc tất cả -->
+    <!--HEADER-->
     <div class="d-flex justify-space-between align-center mb-4">
       <div>
         <h2 class="text-h4 font-weight-bold text-primary">Thông báo</h2>
@@ -20,7 +20,7 @@
       </v-btn>
     </div>
 
-    <!-- BỘ LỌC (TABS) -->
+    <!-- BỘ LỌC -->
     <v-tabs v-model="currentFilter" color="primary" align-tabs="start" class="mb-6 border-b">
       <v-tab value="all" class="text-capitalize font-weight-bold">Tất cả</v-tab>
       <v-tab value="unread" class="text-capitalize font-weight-bold">
@@ -97,8 +97,6 @@ import { ref, onMounted, computed, watch } from 'vue';
 import api from '@/services/api.service';
 import { useRouter } from 'vue-router';
 
-// ... (Giữ nguyên toàn bộ phần Script Logic như cũ không cần sửa gì)
-// Copy lại phần script từ câu trả lời trước
 const router = useRouter();
 const notifications = ref([]);
 const loading = ref(true);
@@ -181,7 +179,6 @@ onMounted(fetchNotifications);
 .min-w-0 { min-width: 0; }
 .line-clamp-2 {
     display: -webkit-box;
-    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }

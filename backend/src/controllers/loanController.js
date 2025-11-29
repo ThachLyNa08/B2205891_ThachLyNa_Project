@@ -1,5 +1,4 @@
 const loanService = require('../services/loanService');
-// --- THÊM IMPORT MODEL ĐỂ XỬ LÝ LOGIC TRẢ SÁCH ---
 const Loan = require('../models/loan');
 const Book = require('../models/book');
 
@@ -43,17 +42,13 @@ const confirmLoan = async (req, res, next) => {
   }
 };
 
-// ==================================================================
 // @desc    Process book return (ĐÃ CẬP NHẬT TÍNH TIỀN PHẠT)
 // @route   PUT /api/loans/:id/return
 // @access  Private/Staff, Admin
-// ==================================================================
 const processReturn = async (req, res, next) => {
   try {
     const loanId = req.params.id;
     
-    // 1. Tìm phiếu mượn và populate thông tin sách
-    // Lưu ý: Dùng 'bookId' theo đúng Model bạn cung cấp
     const loan = await Loan.findById(loanId).populate('bookId');
     
     if (!loan) {
@@ -64,9 +59,9 @@ const processReturn = async (req, res, next) => {
       return res.status(400).json({ message: 'This book has already been returned.' });
     }
 
-    // 2. TÍNH TOÁN NGÀY QUÁ HẠN & TIỀN PHẠT
+    // TÍNH TOÁN NGÀY QUÁ HẠN & TIỀN PHẠT
     const today = new Date();
-    const duKien = new Date(loan.ngayHenTra); // Model của bạn dùng 'ngayHenTra'
+    const duKien = new Date(loan.ngayHenTra);
     
     // Đặt giờ về 00:00:00 để chỉ so sánh ngày
     today.setHours(0,0,0,0);
@@ -81,27 +76,26 @@ const processReturn = async (req, res, next) => {
       const diffTime = Math.abs(today - duKien);
       soNgayQuaHan = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
       
-      const PHI_PHAT_MOI_NGAY = 5000; // Cấu hình: 5k / 1 ngày
+      const PHI_PHAT_MOI_NGAY = 5000; 
       tienPhat = soNgayQuaHan * PHI_PHAT_MOI_NGAY;
       lyDo = `Quá hạn ${soNgayQuaHan} ngày`;
     }
 
-    // 3. Cập nhật thông tin phiếu mượn
+    // Cập nhật thông tin phiếu mượn
     loan.ngayTraThucTe = Date.now();
     loan.status = 'returned';
-    loan.phatTien = tienPhat; // Model của bạn dùng 'phatTien'
-    loan.lyDoPhat = lyDo;      // (Nếu model chưa có trường này thì nó sẽ tự bỏ qua, không lỗi)
+    loan.phatTien = tienPhat; 
+    loan.lyDoPhat = lyDo;      
     
     // Nếu có tiền phạt -> chưa thanh toán (false), nếu không phạt -> coi như xong (true)
     loan.isFinePaid = tienPhat === 0;
-    // Cập nhật luôn trạng thái thanh toán chung nếu cần
+  
     if (tienPhat === 0 && loan.isPaid) {
-        // Giữ nguyên logic cũ
+ 
     } else if (tienPhat > 0) {
-        loan.isPaid = false; // Có phát sinh phí mới nên set lại chưa thanh toán hết
+        loan.isPaid = false; 
     }
 
-    // 4. Cộng lại số lượng sách vào kho (Stock)
     if (loan.bookId) {
       const book = await Book.findById(loan.bookId._id);
       if (book) {
@@ -112,7 +106,6 @@ const processReturn = async (req, res, next) => {
 
     await loan.save();
 
-    // 5. Trả về kết quả cho Frontend (Frontend cần cục 'phat' này để hiển thị)
     res.status(200).json({ 
       message: 'Book returned successfully.', 
       loan: loan,
@@ -151,7 +144,6 @@ const cancelLoan = async (req, res, next) => {
 // @access  Private/Reader, Staff, Admin
 const getLoans = async (req, res, next) => {
   try {
-    // [SỬA] Thêm 'search' vào danh sách destructuring
     const { page, limit, status, userId, search } = req.query;
     
     const pagination = { page: parseInt(page) || 1, limit: parseInt(limit) || 10 };
@@ -159,7 +151,6 @@ const getLoans = async (req, res, next) => {
 
     if (status) query.status = status;
     
-    // [MỚI] Nếu có search, thêm vào object query để truyền sang service
     if (search) query.search = search;
 
     if (req.user.role === 'reader') {
@@ -255,36 +246,28 @@ const payFine = async (req, res, next) => {
     const loanId = req.params.id;
     const userId = req.user._id;
 
-    // Tìm phiếu mượn
     const loan = await Loan.findById(loanId);
 
     if (!loan) {
       return res.status(404).json({ message: 'Loan not found.' });
     }
 
-    // Kiểm tra quyền (chính chủ mới được trả)
     if (loan.userId.toString() !== userId.toString()) {
       return res.status(403).json({ message: 'Unauthorized action.' });
     }
 
-    // Kiểm tra xem có phạt không
     if (loan.phatTien <= 0) {
         return res.status(400).json({ message: 'No fine to pay for this loan.' });
     }
 
-    // Kiểm tra đã trả chưa
     if (loan.isFinePaid) {
         return res.status(400).json({ message: 'Fine already paid.' });
     }
 
-    // Cập nhật trạng thái thanh toán
     loan.isFinePaid = true;
-    
-    // (Optional) Nếu bạn có logic isPaid chung cho cả tiền thuê và tiền phạt:
-    // Kiểm tra nếu tiền thuê (rentCost) cũng đã trả hoặc = 0 thì set isPaid = true
-    // Ở đây mình giả định logic đơn giản:
+
     if (loan.rentCost === 0 || loan.isPaid) { 
-        loan.isPaid = true; // Đánh dấu hoàn tất toàn bộ
+        loan.isPaid = true; 
     }
 
     await loan.save();

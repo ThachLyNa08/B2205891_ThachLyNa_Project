@@ -35,12 +35,10 @@ const createCategory = async (req, res, next) => {
     const newCategory = await categoryService.createCategory(req.body);
     res.status(201).json({ message: 'Category created successfully.', category: newCategory });
   } catch (error) {
-    // [SỬA] Bắt lỗi thủ công từ Service ném ra
     if (error.message === 'Category name already exists.') {
         return res.status(409).json({ message: error.message });
     }
 
-    // [GIỮ NGUYÊN] Bắt lỗi từ MongoDB (Duplicate Key) phòng hờ
     if (error.code === 11000 && error.keyPattern && error.keyPattern.tenTheLoai) {
       return res.status(409).json({ message: 'Category name already exists.' });
     }
@@ -59,7 +57,6 @@ const updateCategory = async (req, res, next) => {
     if (error.message.includes('Category not found')) {
       return res.status(404).json({ message: error.message });
     }
-    // [NÊN THÊM] Bắt lỗi trùng tên khi update luôn cho chắc
     if (error.code === 11000 || error.message === 'Category name already exists.') {
         return res.status(409).json({ message: 'Category name already exists.' });
     }
@@ -79,7 +76,6 @@ const deleteCategory = async (req, res, next) => {
       return res.status(404).json({ message: error.message });
     }
     
-    // [MỚI] Bắt lỗi ràng buộc dữ liệu (Nếu đang có sách thuộc thể loại này)
     if (error.message.includes('Cannot delete')) {
         return res.status(409).json({ message: error.message });
     }

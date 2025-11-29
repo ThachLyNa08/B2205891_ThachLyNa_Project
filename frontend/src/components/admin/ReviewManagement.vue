@@ -238,7 +238,6 @@ const executeDelete = async () => {
     try {
         await api.delete(`/reviews/${reviewToDelete.value._id}`);
         snackbar.value = { show: true, message: 'Review deleted', color: 'success' };
-        // Xóa trực tiếp khỏi mảng local để đỡ gọi lại API
         allReviews.value = allReviews.value.filter(r => r._id !== reviewToDelete.value._id);
         deleteDialog.value = false;
     } catch (e) { 
@@ -254,7 +253,6 @@ onMounted(fetchAllReviews);
 <style scoped>
 .gap-3 { gap: 12px; }
 
-/* Table Override */
 :deep(.custom-table) { background-color: transparent !important; }
 :deep(.custom-table th) { 
     color: #94a3b8 !important; 

@@ -7,12 +7,10 @@ const getBooks = async (filters, pagination, search) => {
   const query = {};
 
   if (filters.category) {
-    // Tìm ID của category từ tên
     const category = await Category.findOne({ tenTheLoai: new RegExp(filters.category, 'i') });
     if (category) {
       query.categories = category._id;
     } else {
-      // Nếu category không tồn tại, không trả về sách nào
       return { books: [], total: 0 };
     }
   }
@@ -36,8 +34,8 @@ const getBooks = async (filters, pagination, search) => {
 
   const total = await Book.countDocuments(query);
   const books = await Book.find(query)
-    .populate('maNXB', 'tenNXB') // Lấy tên NXB
-    .populate('categories', 'tenTheLoai') // Lấy tên thể loại
+    .populate('maNXB', 'tenNXB') 
+    .populate('categories', 'tenTheLoai') 
     .skip((pagination.page - 1) * pagination.limit)
     .limit(pagination.limit);
 

@@ -287,7 +287,6 @@ import api from '@/services/api.service';
 import debounce from 'lodash.debounce';
 import { VDataTableServer, VBtn, VChip, VIcon, VAvatar, VImg } from 'vuetify/components';
 
-// --- [FIX 1] DEFINE HELPER FUNCTION HERE SO IT'S AVAILABLE IN TEMPLATE ---
 const getCategoryColor = (catName) => {
     if (!catName) return 'grey';
     const colors = ['#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#2196F3', '#03A9F4', '#009688', '#4CAF50', '#8BC34A', '#FFEB3B'];
@@ -295,7 +294,6 @@ const getCategoryColor = (catName) => {
     return colors[Math.abs(hash) % colors.length];
 };
 
-// --- IN-FILE COMPONENT: BookTable (Reusable) ---
 const BookTable = defineComponent({
   props: ['books', 'loading', 'total', 'title', 'icon', 'page', 'limit'],
   emits: ['update:page', 'update:limit', 'refresh', 'edit', 'delete'],
@@ -337,7 +335,6 @@ const BookTable = defineComponent({
   }
 });
 
-// --- MAIN COMPONENT LOGIC ---
 const currentTab = ref('all');
 const books = ref([]);
 const categories = ref([]);
@@ -349,14 +346,12 @@ const itemsPerPage = ref(12);
 const currentPage = ref(1);
 const search = ref('');
 
-// Bộ lọc
 const selectedFilter = ref({
     category: null,
     publisher: null,
     author: null
 });
 
-// File Upload
 const fileInput = ref([]);
 const selectedFile = ref(null);
 const previewUploadUrl = ref(null);
@@ -379,18 +374,14 @@ const bookForm = ref(null);
 const formTitle = computed(() => (editedIndex.value === -1 ? 'Add New Book' : 'Edit Book'));
 const formatCurrency = (val) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
 
-// --- METHODS ---
 const handleFileChange = (files) => {
-    // Vuetify 3 trả về mảng các file, ta lấy file đầu tiên
     const file = Array.isArray(files) ? files[0] : files;
 
     if (file) {
         selectedFile.value = file;
-        // Xóa URL cũ để tránh rò rỉ bộ nhớ
         if (previewUploadUrl.value) {
             URL.revokeObjectURL(previewUploadUrl.value);
         }
-        // Tạo URL tạm thời để hiển thị preview
         previewUploadUrl.value = URL.createObjectURL(file);
     } else {
         selectedFile.value = null;
@@ -542,13 +533,11 @@ onMounted(() => { fetchMetadata(); loadBooks(); });
 .max-h-80vh { max-height: 80vh; }
 .bg-slate-900 { background-color: #0f172a; }
 
-/* Card Styles */
 .book-card { border: 1px solid rgba(255,255,255,0.05); }
 .border-primary { border-color: #2196F3 !important; box-shadow: 0 0 15px rgba(33,150,243,0.3); }
 .action-overlay { background: rgba(0,0,0,0.6); position: absolute; top:0; width:100%; }
 .stock-badge { position: absolute; top: 8px; right: 8px; z-index: 2; }
 
-/* Table Fixes */
 :deep(.custom-table) { color: white !important; }
 :deep(.custom-table td) { border-bottom: 1px solid rgba(255,255,255,0.08) !important; }
 :deep(.custom-table tbody tr:hover) { background-color: rgba(255,255,255,0.05) !important; }

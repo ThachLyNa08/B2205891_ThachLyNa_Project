@@ -1,14 +1,13 @@
 const Book = require('../models/book');
 const User = require('../models/user');
 const Loan = require('../models/loan');
-const Payment = require('../models/payment'); // Import model Payment
+const Payment = require('../models/payment'); 
 
 exports.getDashboardStats = async (req, res) => {
   try {
     const today = new Date();
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-    // 1. THỐNG KÊ SỐ LƯỢNG CƠ BẢN
     const [
       totalBooks,
       totalUsers,
@@ -30,7 +29,6 @@ exports.getDashboardStats = async (req, res) => {
       User.countDocuments({ role: 'reader', createdAt: { $gte: startOfMonth } })
     ]);
 
-    // 2. TOP SÁCH MƯỢN NHIỀU
     const trendingBooks = await Loan.aggregate([
       { $group: { _id: "$bookId", count: { $sum: 1 } } },
       { $sort: { count: -1 } }, 
@@ -55,7 +53,6 @@ exports.getDashboardStats = async (req, res) => {
       }
     ]);
 
-    // 3. TOP ĐỘC GIẢ TÍCH CỰC
     const topReaders = await Loan.aggregate([
         { $group: { _id: "$userId", count: { $sum: 1 } } },
         { $sort: { count: -1 } },
@@ -79,7 +76,6 @@ exports.getDashboardStats = async (req, res) => {
         }
     ]);
 
-    // 4. HOẠT ĐỘNG GẦN ĐÂY
     const recentLoans = await Loan.find()
       .sort({ updatedAt: -1 })
       .limit(5)
@@ -102,7 +98,6 @@ exports.getDashboardStats = async (req, res) => {
       };
     });
 
-    // 5. THỐNG KÊ DOANH THU 6 THÁNG (Revenue Stats)
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
     sixMonthsAgo.setDate(1);
@@ -126,14 +121,12 @@ exports.getDashboardStats = async (req, res) => {
         { $sort: { "_id.year": 1, "_id.month": 1 } }
     ]);
 
-    // 6. TỔNG TIỀN PHẠT ĐÃ THU (Lấy từ bảng Loan cho chính xác)
     const fineStats = await Loan.aggregate([
         { $match: { isFinePaid: true } }, 
         { $group: { _id: null, total: { $sum: "$phatTien" } } }
     ]);
     const totalFineCollected = fineStats.length > 0 ? fineStats[0].total : 0;
 
-    // 7. BIỂU ĐỒ TĂNG TRƯỞNG (Loan Growth Chart)
     const weeksAgo = new Date();
     weeksAgo.setDate(weeksAgo.getDate() - (4 * 7)); 
 
@@ -147,7 +140,7 @@ exports.getDashboardStats = async (req, res) => {
        { $group: { _id: "$status", count: { $sum: 1 } } }
     ]);
 
-    // Tính toán % tăng trưởng (Chỉ khai báo 1 lần tại đây)
+    // Tính toán % tăng trưởng
     const bookGrowth = totalBooks > 0 ? ((newBooksThisMonth / totalBooks) * 100).toFixed(1) : 0;
     const userGrowth = totalUsers > 0 ? ((newUsersThisMonth / totalUsers) * 100).toFixed(1) : 0;
 
@@ -160,7 +153,7 @@ exports.getDashboardStats = async (req, res) => {
         overdueLoans, 
         bookGrowth, 
         userGrowth,
-        totalFineCollected, // Tổng tiền phạt
+        totalFineCollected, 
         monthlyLoans: weeklyLoans,       
         statusDist 
       },

@@ -92,29 +92,26 @@
 <script setup>
 import { ref, nextTick, watch } from 'vue';
 import api from '@/services/api.service';
-import { useRouter } from 'vue-router'; // [MỚI] Import Router
+import { useRouter } from 'vue-router';
 
-const router = useRouter(); // [MỚI]
+const router = useRouter(); 
 const isOpen = ref(false);
 const inputMessage = ref('');
 const loading = ref(false);
 const messages = ref([]);
 const chatContainer = ref(null);
 
-// [MỚI] Xử lý click link nội bộ (SPA Navigation)
 const handleLinkClick = (event) => {
     const link = event.target.closest('a');
-    // Nếu click vào link nội bộ (có href bắt đầu bằng /)
     if (link && link.getAttribute('href').startsWith('/')) {
-        event.preventDefault(); // Chặn reload trang
-        router.push(link.getAttribute('href')); // Chuyển trang bằng Vue Router
+        event.preventDefault(); 
+        router.push(link.getAttribute('href')); 
     }
 };
 
 const parseMessage = (text) => {
     if (!text) return '';
     const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
-    // Thêm data-internal để đánh dấu
     return text.replace(linkRegex, (match, title, url) => {
         return `<a href="${url}" class="chat-link" target="_self" data-internal>${title}</a>`;
     });
@@ -160,7 +157,6 @@ watch(isOpen, (val) => { if (val) scrollToBottom(); });
 </script>
 
 <style scoped>
-/* 1. CONTAINER CHÍNH (Vị trí nút Chat) */
 .chat-widget-container {
   position: fixed;
   bottom: 24px;
@@ -169,14 +165,13 @@ watch(isOpen, (val) => { if (val) scrollToBottom(); });
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  pointer-events: none; /* Cho phép bấm xuyên qua vùng trống */
+  pointer-events: none; 
 }
 
 .fab-wrapper, .chat-window {
-  pointer-events: auto; /* Bắt sự kiện click cho nút và cửa sổ */
+  pointer-events: auto;
 }
 
-/* 2. HIỆU ỨNG NÚT CHAT */
 .fab-wrapper { position: relative; display: inline-block; }
 
 .chat-fab {
@@ -209,11 +204,10 @@ watch(isOpen, (val) => { if (val) scrollToBottom(); });
 .notification-badge { position: absolute; top: 0; right: 0; z-index: 10; animation: bounce 2s infinite; }
 @keyframes bounce { 0%, 100% {transform: translateY(0);} 50% {transform: translateY(-6px);} }
 
-/* 3. CỬA SỔ CHAT */
 .chat-window {
   width: 380px;
   height: 500px;
-  max-width: 90vw; /* Responsive trên mobile */
+  max-width: 90vw;
   box-shadow: 0 10px 40px rgba(0,0,0,0.2) !important;
   border: 1px solid rgba(0,0,0,0.05);
   overflow: hidden;
@@ -229,29 +223,25 @@ watch(isOpen, (val) => { if (val) scrollToBottom(); });
   overflow-y: auto;
   scroll-behavior: smooth;
   display: flex;
-  flex-direction: column; /* Quan trọng để message xếp dọc */
-  gap: 12px; /* Khoảng cách giữa các tin nhắn */
+  flex-direction: column; 
+  gap: 12px; 
 }
 
-/* 4. BỐ CỤC TIN NHẮN (USER VS AI) */
 .message-wrapper {
   display: flex;
-  align-items: flex-end; /* Avatar nằm dưới cùng */
+  align-items: flex-end; 
   width: 100%;
 }
 
-/* AI: Căn trái */
 .message-wrapper.ai {
   justify-content: flex-start;
 }
 
-/* USER: Căn phải */
 .message-wrapper.user {
-  justify-content: flex-end; /* Đẩy sang phải */
-  flex-direction: row-reverse; /* Đảo chiều để avatar (nếu có) nằm bên phải */
+  justify-content: flex-end; 
+  flex-direction: row-reverse; 
 }
 
-/* Bong bóng chat */
 .message-bubble {
   padding: 10px 14px;
   max-width: 80%;
@@ -261,32 +251,28 @@ watch(isOpen, (val) => { if (val) scrollToBottom(); });
   position: relative;
 }
 
-/* Kiểu dáng riêng cho AI */
 .message-wrapper.ai .message-bubble {
-  background-color: #F5F5F5; /* Xám nhạt */
+  background-color: #F5F5F5;
   color: #333;
   border-top-left-radius: 16px;
   border-top-right-radius: 16px;
   border-bottom-right-radius: 16px;
-  border-bottom-left-radius: 4px; /* Góc nhọn phía avatar */
+  border-bottom-left-radius: 4px; 
 }
 
-/* Kiểu dáng riêng cho User */
 .message-wrapper.user .message-bubble {
-  background-color: #1976D2; /* Xanh dương */
+  background-color: #1976D2;
   color: white;
   border-top-left-radius: 16px;
   border-top-right-radius: 16px;
   border-bottom-left-radius: 16px;
-  border-bottom-right-radius: 4px; /* Góc nhọn phía avatar (ảo) */
+  border-bottom-right-radius: 4px; 
 }
 
-/* Thanh cuộn đẹp */
 .chat-messages::-webkit-scrollbar { width: 6px; }
 .chat-messages::-webkit-scrollbar-track { background: transparent; }
 .chat-messages::-webkit-scrollbar-thumb { background: #E0E0E0; border-radius: 3px; }
 
-/* Link style */
 :deep(.ai-content a) {
     color: #1565C0 !important;
     font-weight: bold;
@@ -296,24 +282,22 @@ watch(isOpen, (val) => { if (val) scrollToBottom(); });
 :deep(.ai-content a:hover) { color: #0D47A1; }
 .message-wrapper {
   display: flex;
-  width: 100%; /* Bắt buộc chiếm hết chiều ngang */
-  align-items: flex-end; /* Căn đáy để avatar nằm dưới */
+  width: 100%; 
+  align-items: flex-end; 
 }
 
-/* --- TIN NHẮN NGƯỜI DÙNG (BÊN PHẢI) --- */
 .message-wrapper.user {
-  justify-content: flex-end; /* Đẩy nội dung sang phải */
+  justify-content: flex-end; 
 }
 
 .message-wrapper.user .message-bubble {
   background: linear-gradient(135deg, #1976D2, #1565C0);
   color: white;
-  border-radius: 16px 16px 4px 16px; /* Bo tròn, trừ góc dưới phải */
-  margin-left: auto; /* Ép sang phải lần nữa cho chắc */
+  border-radius: 16px 16px 4px 16px; 
+  margin-left: auto; 
 }
 
-/* --- TIN NHẮN AI (BÊN TRÁI) --- */
 .message-wrapper.ai {
-  justify-content: flex-start; /* Đẩy nội dung sang trái */
+  justify-content: flex-start; 
 }
 </style>

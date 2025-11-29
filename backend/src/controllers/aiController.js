@@ -1,7 +1,6 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const Book = require("../models/book");
 
-// Khởi tạo Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const chatWithAI = async (req, res) => {
@@ -12,10 +11,8 @@ const chatWithAI = async (req, res) => {
       return res.status(400).json({ message: "Message is required" });
     }
 
-    // [QUAN TRỌNG] Sử dụng model có trong danh sách của bạn
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
-    // --- BƯỚC 1: TRÍCH XUẤT TỪ KHÓA THÔNG MINH ---
     const extractPrompt = `
       Nhiệm vụ: Trích xuất TỪ KHÓA TÌM KIẾM CỐT LÕI (Tên sách hoặc Tác giả) từ câu của người dùng.
       
@@ -38,11 +35,9 @@ const chatWithAI = async (req, res) => {
     const extractionResult = await model.generateContent(extractPrompt);
     let keyword = extractionResult.response.text().trim();
     
-    // Làm sạch từ khóa
     keyword = keyword.replace(/^"|"$/g, '').replace(/\(.*?\)/g, '').trim();
     console.log(`🔍 AI Extracted: "${keyword}"`);
 
-    // --- BƯỚC 2: TÌM KIẾM TRONG DB ---
     let foundBooks = [];
     
     if (keyword !== "null" && keyword.length > 0) {
@@ -57,7 +52,6 @@ const chatWithAI = async (req, res) => {
         }).limit(8).select('tenSach tacGia availableCopies _id pricePerDay coverUrl');
     }
 
-    // Fallback: Tìm "mở rộng" nếu từ khóa dài
     if (foundBooks.length === 0 && keyword.includes(' ')) {
         const shortKeyword = keyword.split(' ').slice(0, 2).join(' ');
         if (shortKeyword.length > 3) {
@@ -66,12 +60,10 @@ const chatWithAI = async (req, res) => {
         }
     }
 
-    // Nếu vẫn không có, lấy sách mới nhất
     if (foundBooks.length === 0) {
         foundBooks = await Book.find().sort({ createdAt: -1 }).limit(5).select('tenSach tacGia availableCopies _id pricePerDay');
     }
 
-    // --- BƯỚC 3: TẠO CONTEXT ---
     let bookContext = foundBooks.length > 0 
         ? "Dữ liệu sách tìm được trong thư viện:\n" 
         : "Không tìm thấy sách khớp từ khóa, đây là các sách mới nhất:\n";
@@ -81,8 +73,7 @@ const chatWithAI = async (req, res) => {
         const tacGiaStr = Array.isArray(book.tacGia) ? book.tacGia.join(', ') : book.tacGia;
         bookContext += `- Tên: "${book.tenSach}" | Tác giả: ${tacGiaStr} | ID: ${book._id} | ${status}\n`;
     });
-
-    // --- BƯỚC 4: TRẢ LỜI ---
+  
     const systemPrompt = `
       Bạn là 'Nexus AI'.
       

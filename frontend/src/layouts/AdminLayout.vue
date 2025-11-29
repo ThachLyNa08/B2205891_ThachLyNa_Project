@@ -12,7 +12,7 @@
       </div>
       <v-divider class="border-opacity-12"></v-divider>
 
-      <!-- DANH SÁCH MENU MỚI -->
+      <!-- DANH SÁCH MENU -->
       <v-list nav class="mt-4">
         <v-list-item
           v-for="(item, i) in menuItems"
@@ -64,7 +64,6 @@ import { useRouter } from 'vue-router';
 const authStore = useAuthStore();
 const router = useRouter();
 
-// Cấu hình các đường dẫn (path) tương ứng với các nút
 const menuItems = ref([
   { 
     title: 'Dashboard Center', 

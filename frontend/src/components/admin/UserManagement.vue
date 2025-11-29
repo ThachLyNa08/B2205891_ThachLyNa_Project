@@ -201,8 +201,7 @@ const totalUsers = ref(0);
 const itemsPerPage = ref(10);
 const currentPage = ref(1);
 const search = ref('');
-// [MỚI] Biến quản lý Tab
-const currentTab = ref('reader'); // Mặc định hiển thị độc giả
+const currentTab = ref('reader'); 
 
 const dialog = ref(false);
 const deleteDialog = ref(false);
@@ -257,11 +256,11 @@ const loadUsers = debounce(async ({ page, itemsPerPage: perPage } = {}) => {
             page: page || currentPage.value,
             limit: perPage || itemsPerPage.value,
             search: search.value,
-            role: currentTab.value // [MỚI] Gửi role đang chọn lên Server
+            role: currentTab.value 
         };
         const response = await api.get('/users', { params });
         
-        // Xử lý response linh động (mảng hoặc object)
+        // Xử lý response linh động
         if (Array.isArray(response.data)) {
              users.value = response.data;
              totalUsers.value = response.data.length; 
@@ -279,7 +278,7 @@ const loadUsers = debounce(async ({ page, itemsPerPage: perPage } = {}) => {
 
 const openCreateDialog = () => {
     editedItem.value = { ...defaultItem };
-    // [MỚI] Tự động set role theo tab đang đứng (nếu tab != all)
+    // Tự động set role theo tab đang đứng (nếu tab != all)
     if (currentTab.value !== 'all') {
         editedItem.value.role = currentTab.value;
     }
@@ -353,9 +352,8 @@ const deleteUser = async () => {
 
 const debouncedLoad = debounce(() => { currentPage.value = 1; loadUsers(); }, 500);
 
-// [MỚI] Watch Current Tab để reload dữ liệu
 watch(currentTab, () => {
-    search.value = ''; // Reset search khi đổi tab
+    search.value = '';
     currentPage.value = 1;
     loadUsers();
 });
@@ -370,7 +368,6 @@ onMounted(() => { loadUsers({}); });
 .bg-gradient-primary { background: linear-gradient(135deg, #42a5f5, #1976d2); }
 .border-red { border: 1px solid #ef5350 !important; }
 
-/* Table Styling */
 :deep(.custom-table) { background-color: transparent !important; }
 :deep(.custom-table th) { color: #94a3b8 !important; text-transform: uppercase; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px; }
 :deep(.custom-table td) { border-bottom: 1px solid rgba(255,255,255,0.08) !important; padding-top: 12px !important; padding-bottom: 12px !important; }

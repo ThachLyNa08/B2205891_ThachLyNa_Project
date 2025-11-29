@@ -184,7 +184,6 @@ const paymentStatuses = ['pending', 'completed', 'failed'];
 
 const snackbar = ref({ show: false, message: '', color: '' });
 
-// [NEW] Computed Stats (Tính toán trên trang hiện tại để demo ý tưởng)
 const currentPageRevenue = computed(() => {
     return payments.value
         .filter(p => p.status === 'completed')
@@ -201,13 +200,12 @@ const headers = [
     { title: 'User Account', key: 'userId', align: 'start', width: '20%' },
     { title: 'Billing Info', key: 'billingDetails', width: '20%' },
     { title: 'Amount', key: 'amount', align: 'end', width: '15%' },
-    { title: 'Method', key: 'paymentType', align: 'start', width: '15%' }, // Canh trái cho đẹp icon
+    { title: 'Method', key: 'paymentType', align: 'start', width: '15%' },
     { title: 'Date', key: 'paidAt', width: '15%' },
     { title: 'Status', key: 'status', align: 'center', width: '10%' },
-    { title: '', key: 'actions', sortable: false, align: 'end', width: '5%' }, // Cột action
+    { title: '', key: 'actions', sortable: false, align: 'end', width: '5%' },
 ];
 
-// --- LOGIC CŨ GIỮ NGUYÊN ---
 const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('vi-VN');
@@ -238,7 +236,7 @@ const loadPayments = debounce(async ({ page, itemsPerPage: perPage } = {}) => {
             page: page || currentPage.value,
             limit: perPage || itemsPerPage.value,
             status: filterStatus.value,
-            search: search.value, // Đã bật search
+            search: search.value, 
         };
         Object.keys(params).forEach(key => !params[key] && delete params[key]);
 
@@ -267,14 +265,12 @@ watch(filterStatus, () => {
 </script>
 
 <style scoped>
-/* Gradient Backgrounds for Stats Cards */
 .bg-gradient-green { background: linear-gradient(135deg, #059669 0%, #10b981 100%); }
 .bg-gradient-blue { background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%); }
 .bg-gradient-dark { background: linear-gradient(135deg, #334155 0%, #475569 100%); }
 
 .gap-3 { gap: 12px; }
 
-/* Table Styling Override */
 :deep(.custom-table) { background-color: transparent !important; }
 :deep(.custom-table th) { 
     color: #94a3b8 !important; 

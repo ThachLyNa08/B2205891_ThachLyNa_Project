@@ -210,12 +210,9 @@ const openDialog = () => {
     dialog.value = true;
 };
 
-// [SỬA QUAN TRỌNG] Hàm editItem phải xử lý item.raw nếu item là Wrapper
 const editItem = (item) => {
-  // Lấy dữ liệu thô (nếu item là wrapper thì lấy item.raw, không thì lấy item)
   const rawItem = item.raw || item;
   
-  // Tìm index dựa trên dữ liệu thô
   editedIndex.value = publishers.value.findIndex(p => p._id === rawItem._id);
   editedItem.value = { ...rawItem };
   errorMsg.value = '';
@@ -231,7 +228,6 @@ const close = () => {
   });
 };
 
-// 1. Sửa hàm SAVE (Thêm/Sửa)
 const save = async () => {
   const { valid } = await form.value.validate();
   if (!valid) return;
@@ -240,16 +236,13 @@ const save = async () => {
 
   try {
     if (editedIndex.value > -1) {
-      // Update
       await api.put(`/publishers/${editedItem.value._id}`, editedItem.value);
       snackbar.value = { show: true, message: 'Updated successfully', color: 'success' };
     } else {
-      // Create
       await api.post('/publishers', editedItem.value);
       snackbar.value = { show: true, message: 'Created successfully', color: 'success' };
     }
     
-    // [QUAN TRỌNG] Tải lại danh sách từ server để đảm bảo dữ liệu mới nhất
     await fetchPublishers(); 
     
     close();
@@ -259,7 +252,6 @@ const save = async () => {
   }
 };
 
-// [SỬA QUAN TRỌNG] Hàm confirmDelete cũng phải xử lý tương tự
 const confirmDelete = (item) => {
   const rawItem = item.raw || item;
   editedIndex.value = publishers.value.findIndex(p => p._id === rawItem._id);
@@ -275,12 +267,10 @@ const closeDelete = () => {
   });
 };
 
-// 2. Sửa hàm DELETE (Xóa)
 const deleteItemConfirm = async () => {
   try {
     await api.delete(`/publishers/${editedItem.value._id}`);
     
-    // [QUAN TRỌNG] Tải lại danh sách ngay sau khi xóa
     await fetchPublishers();
 
     snackbar.value = { show: true, message: 'Deleted successfully', color: 'success' };
@@ -298,7 +288,6 @@ onMounted(fetchPublishers);
 .gap-3 { gap: 12px; }
 .border-red { border: 1px solid #ef5350 !important; }
 
-/* Table Styling */
 :deep(.custom-table) { background-color: transparent !important; }
 :deep(.custom-table th) { color: #94a3b8 !important; text-transform: uppercase; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px; }
 :deep(.custom-table td) { border-bottom: 1px solid rgba(255,255,255,0.08) !important; padding-top: 12px !important; padding-bottom: 12px !important; }

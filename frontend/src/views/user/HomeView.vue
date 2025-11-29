@@ -235,11 +235,10 @@ onMounted(async () => {
 .animate-fade-right { animation: fadeRight 1s ease-out forwards; opacity: 0; transform: translateX(-30px); }
 @keyframes fadeRight { to { opacity: 1; transform: translateX(0); } }
 
-/* CSS Slider */
 .book-slider-container { background: transparent; }
 .book-hover-wrapper { transition: transform 0.3s ease; }
 .book-hover-wrapper:hover { transform: translateY(-10px); }
 :deep(.v-slide-group__content) { padding-bottom: 10px; }
-/* Ẩn thanh cuộn mặc định */
+
 ::-webkit-scrollbar { width: 0px; background: transparent; } 
 </style>

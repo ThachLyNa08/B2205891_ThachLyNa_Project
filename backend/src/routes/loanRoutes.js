@@ -4,11 +4,6 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-/* --------------------------------------------------------
- * 1. STATIC ROUTES (ƯU TIÊN CAO)
- * -------------------------------------------------------- */
-
-// Reader sends loan request
 router.post(
   '/request',
   protect,
@@ -16,7 +11,6 @@ router.post(
   loanController.requestLoan
 );
 
-// Loan stats
 router.get(
   '/stats',
   protect,
@@ -24,7 +18,6 @@ router.get(
   loanController.getStats
 );
 
-// Calendar view
 router.get(
   '/calendar',
   protect,
@@ -32,12 +25,6 @@ router.get(
   loanController.getLoansForCalendar
 );
 
-
-/* --------------------------------------------------------
- * 2. COLLECTION ROUTES /loans
- * -------------------------------------------------------- */
-
-// List all loans (admin/staff) or user's loans (reader)
 router.get(
   '/',
   protect,
@@ -45,12 +32,6 @@ router.get(
   loanController.getLoans
 );
 
-
-/* --------------------------------------------------------
- * 3. ACTION ROUTES ON A SPECIFIC RESOURCE
- * -------------------------------------------------------- */
-
-// Confirm a pending loan
 router.put(
   '/:id/confirm',
   protect,
@@ -58,7 +39,6 @@ router.put(
   loanController.confirmLoan
 );
 
-// Process returning a book
 router.put(
   '/:id/return',
   protect,
@@ -66,7 +46,6 @@ router.put(
   loanController.processReturn
 );
 
-// Cancel a pending loan
 router.put(
   '/:id/cancel',
   protect,
@@ -81,11 +60,6 @@ router.delete(
 );
 router.put('/:id/pay-fine', protect, loanController.payFine);
 
-/* --------------------------------------------------------
- * 4. RESOURCE ROUTE /loans/:id
- * -------------------------------------------------------- */
-
-// Get a specific loan details
 router.get(
   '/:id',
   protect,

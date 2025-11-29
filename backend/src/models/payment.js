@@ -1,4 +1,3 @@
-// backend/src/models/payment.js
 const mongoose = require('mongoose');
 
 const paymentSchema = new mongoose.Schema({
@@ -17,7 +16,6 @@ const paymentSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
-  // SỬA ĐOẠN NÀY: Thêm các loại thanh toán mới vào enum
   paymentType: { 
     type: String,
     enum: ['fine', 'deposit', 'rent', 'rent_and_fine', 'other'], 

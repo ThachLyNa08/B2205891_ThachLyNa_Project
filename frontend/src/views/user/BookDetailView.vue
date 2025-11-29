@@ -232,12 +232,10 @@ const relatedBooks = ref([]);
 const dialog = ref(false);
 const loanLoading = ref(false);
 
-// Reviews
 const reviews = ref([]);
 const newReview = reactive({ rating: 0, comment: '' });
 const submitting = ref(false);
 
-// Rental State (Đã bỏ thanh toán)
 const returnDate = ref('');
 const estimatedCost = ref(0);
 const billingName = ref('');
@@ -255,12 +253,10 @@ const fetchBook = async (id) => {
     const res = await api.get(`/books/${id}`);
     book.value = res.data;
     
-    // Tính ngày trả = Hôm nay + 14 ngày
     const start = new Date();
     const end = new Date(start);
-    end.setDate(start.getDate() + 1);
+    end.setDate(start.getDate() + 14);
     returnDate.value = end.toISOString().split('T')[0];
-    // Tính giá tham khảo
     estimatedCost.value = 14 * (book.value.pricePerDay || 2000);
 
     fetchRelated();
@@ -277,14 +273,12 @@ const fetchRelated = async () => {
 const openBorrowDialog = () => {
   if (!authStore.isAuthenticated) return router.push('/login');
   
-  // Auto-fill info
   billingName.value = authStore.user?.ten ? `${authStore.user.hoLot || ''} ${authStore.user.ten}`.trim() : authStore.user?.username;
   billingPhone.value = authStore.user?.dienThoai || '';
   
   dialog.value = true;
 };
 
-// [LOGIC MỚI] Gửi yêu cầu mượn
 const confirmLoan = async () => {
   loanLoading.value = true;
   try {
@@ -306,7 +300,6 @@ const confirmLoan = async () => {
 const formatCurrency = (val) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
 const formatDate = (d) => d ? new Date(d).toLocaleDateString('vi-VN') : '';
 
-// Review Logic
 const fetchReviews = async () => { try { const res = await api.get(`/reviews/book/${route.params.id}`); reviews.value = res.data; } catch (e) {} };
 const submitReview = async () => { submitting.value = true; try { await api.post('/reviews', { bookId: route.params.id, rating: newReview.rating, comment: newReview.comment }); newReview.rating = 0; newReview.comment = ''; await fetchReviews(); alert('Đã gửi đánh giá!'); } catch (e) { alert('Lỗi'); } finally { submitting.value = false; } };
 const deleteReview = async (id) => { if(!confirm('Xóa?')) return; try { await api.delete(`/reviews/${id}`); await fetchReviews(); } catch(e) {} };
@@ -329,7 +322,6 @@ watch(() => route.params.id, async (newId) => {
 .gap-4 { gap: 16px; } .gap-2 { gap: 8px; }
 .tracking-wide { letter-spacing: 0.05em; }
 
-/* Book Cover Styling */
 .book-3d-wrapper { perspective: 1000px; transform: rotateY(-5deg); transition: transform 0.5s; }
 .book-3d-wrapper:hover { transform: rotateY(0deg) scale(1.02); }
 
@@ -340,6 +332,6 @@ watch(() => route.params.id, async (newId) => {
 .border-none { border: none !important; }
 
 .bg-gradient-primary { background: linear-gradient(135deg, #1565C0, #0D47A1); }
-.line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.line-clamp-1 { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
 .cursor-pointer { cursor: pointer; }
 </style>

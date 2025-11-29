@@ -32,7 +32,6 @@ const createPublisher = async (req, res, next) => {
     const newPublisher = await publisherService.createPublisher(req.body);
     res.status(201).json(newPublisher);
   } catch (error) {
-    // Bắt lỗi trùng tên (Unique key) từ MongoDB
     if (error.code === 11000) {
       return res.status(409).json({ message: 'Publisher name already exists.' });
     }

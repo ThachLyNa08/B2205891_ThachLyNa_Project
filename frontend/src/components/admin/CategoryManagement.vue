@@ -1,14 +1,12 @@
 <template>
   <div class="category-management h-100 d-flex flex-column">
     
-    <!-- HEADER AREA -->
     <div class="d-flex flex-column flex-md-row justify-space-between align-center mb-6 gap-4">
       <div>
         <h2 class="text-h5 font-weight-bold text-white">Category Management</h2>
         <div class="text-subtitle-2 text-grey">Organize book genres and tags</div>
       </div>
       
-      <!-- Quick Search & Add Button -->
       <div class="d-flex gap-3 w-100 w-md-auto">
          <v-text-field
             v-model="search"
@@ -34,10 +32,8 @@
       </div>
     </div>
 
-    <!-- CONTENT CARD -->
     <v-card color="#1e293b" class="rounded-xl elevation-0 border-opacity-12 flex-grow-1 d-flex flex-column">
       
-      <!-- Stats Bar (Optional) -->
       <div class="px-6 py-3 border-b border-opacity-12 d-flex align-center">
          <div class="text-caption text-grey text-uppercase font-weight-bold">Total Categories:</div>
          <v-chip size="small" color="primary" class="ml-2 font-weight-bold">{{ categories.length }}</v-chip>
@@ -45,20 +41,17 @@
 
       <div class="pa-6 flex-grow-1 overflow-y-auto custom-scrollbar">
          
-         <!-- Loading State -->
          <v-row v-if="loading">
             <v-col cols="12" sm="6" md="4" lg="3" v-for="n in 8" :key="n">
                <v-skeleton-loader type="list-item-avatar" class="bg-transparent rounded-lg border border-opacity-12"></v-skeleton-loader>
             </v-col>
          </v-row>
 
-         <!-- Empty State -->
          <div v-else-if="filteredCategories.length === 0" class="text-center py-10">
             <v-icon size="64" color="grey-darken-2">mdi-shape-outline</v-icon>
             <div class="text-grey mt-2">No categories found matching "{{ search }}"</div>
          </div>
 
-         <!-- Category Grid -->
          <v-row v-else>
             <v-col 
                cols="12" sm="6" md="4" lg="3" 
@@ -86,14 +79,12 @@
                         </span>
                      </v-avatar>
 
-                     <!-- Tên thể loại -->
                      <div class="flex-grow-1 min-w-0">
                         <div class="font-weight-bold text-white text-truncate" :title="item.tenTheLoai">
                            {{ item.tenTheLoai }}
                         </div>
                      </div>
 
-                     <!-- Actions (Hiện khi hover) -->
                      <div v-if="isHovering" class="d-flex gap-1">
                         <v-btn icon="mdi-pencil" size="x-small" variant="text" color="primary" @click.stop="editItem(item)"></v-btn>
                         <v-btn icon="mdi-delete" size="x-small" variant="text" color="error" @click.stop="confirmDelete(item)"></v-btn>
@@ -105,7 +96,6 @@
       </div>
     </v-card>
 
-    <!-- Dialogs giữ nguyên logic cũ -->
     <v-dialog v-model="dialog" max-width="450px">
       <v-card color="#1e293b" class="text-white rounded-xl">
         <v-card-title class="bg-primary text-white px-6 py-4">
@@ -180,7 +170,6 @@ const form = ref(null);
 
 const formTitle = computed(() => editedIndex.value === -1 ? 'New Category' : 'Edit Category');
 
-// Filter Logic
 const filteredCategories = computed(() => {
     if (!search.value) return categories.value;
     return categories.value.filter(cat => 

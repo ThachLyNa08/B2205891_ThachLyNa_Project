@@ -59,9 +59,8 @@ const handleAdminLogin = async () => {
   try {
     await authStore.login({ emailOrUsername: username.value, password: password.value });
     
-    // Kiểm tra quyền ngay lập tức
     if (!['admin', 'staff'].includes(authStore.user?.role)) {
-       await authStore.logout(); // Đá ra nếu không phải admin
+       await authStore.logout(); 
        error.value = "Access Denied. You are not an administrator.";
     } else {
        router.push('/admin-portal/dashboard');

@@ -12,13 +12,8 @@ const createPaymentIntent = async (req, res, next) => {
     if (!amount || !paymentType) {
       return res.status(400).json({ message: 'Amount and payment type are required.' });
     }
-
-    // Chỉ cho phép user tạo intent cho loan của mình
-    // Staff/Admin có thể tạo intent cho user khác (logic phức tạp hơn)
-    // Hiện tại đơn giản: user tạo cho mình, admin/staff tạo cho user khác nếu loanId có userId khác
     if (loanId) {
-        // Cần thêm logic kiểm tra quyền nếu loanId thuộc về người khác
-        // Hoặc client sẽ chỉ gửi loanId của chính user đang đăng nhập
+
     }
 
     const paymentIntent = await paymentService.createPaymentIntent(userId, loanId, amount, paymentType);
@@ -36,10 +31,8 @@ const createPaymentIntent = async (req, res, next) => {
 // @access  Private/Reader (simulated success from client), Staff, Admin
 const processPayment = async (req, res, next) => {
   try {
-    // Lấy thêm billingDetails từ body
     const { paymentMethod, billingDetails } = req.body; 
     
-    // Truyền billingDetails vào service
     const payment = await paymentService.processPayment(
         req.params.id, 
         paymentMethod, 
@@ -57,7 +50,6 @@ const processPayment = async (req, res, next) => {
 // @access  Private/Reader, Staff, Admin
 const getPayments = async (req, res, next) => {
     try {
-        // [SỬA] Thêm 'search' vào destructuring
         const { page, limit, status, userId, search } = req.query;
         
         const pagination = { page: parseInt(page) || 1, limit: parseInt(limit) || 10 };
@@ -65,7 +57,6 @@ const getPayments = async (req, res, next) => {
 
         if (status) query.status = status;
         
-        // [MỚI] Truyền search vào query
         if (search) query.search = search;
 
         if (req.user.role === 'reader') {
@@ -98,7 +89,6 @@ const getPayment = async (req, res, next) => {
             return res.status(404).json({ message: 'Payment not found.' });
         }
 
-        // Chỉ cho phép user xem payment của mình, hoặc admin/staff xem bất kỳ
         if (req.user._id.toString() !== payment.userId._id.toString() && !['admin', 'staff'].includes(req.user.role)) {
             return res.status(403).json({ message: 'Not authorized to view this payment.' });
         }

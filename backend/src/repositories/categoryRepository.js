@@ -1,6 +1,5 @@
 const Category = require('../models/Category');
 
-// [QUAN TRỌNG] Thêm tham số filter để Service có thể tìm theo tên
 const getCategories = async (filter = {}) => {
   return await Category.find(filter);
 };

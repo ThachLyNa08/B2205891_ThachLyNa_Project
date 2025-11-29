@@ -1,14 +1,14 @@
 const userService = require('../services/userService');
 const Loan = require('../models/loan');
+
 // @desc    Get all users (with search support)
 // @route   GET /api/users
 // @access  Private/Admin
 const getUsers = async (req, res, next) => {
   try {
     const search = req.query.search;
-    const role = req.query.role; // [MỚI] Lấy tham số role
-    
-    // Truyền role vào service
+    const role = req.query.role; 
+
     const users = await userService.getAllUsers(search, role);
     
     res.status(200).json(users);
@@ -66,7 +66,6 @@ const updateUser = async (req, res, next) => {
     const userId = req.params.id;
     const updateData = req.body;
 
-    // Logic kiểm tra quyền hạn (chỉ admin mới được sửa role, v.v...)
     if (updateData.role && req.user._id.toString() !== userId && !['admin'].includes(req.user.role)) {
         return res.status(403).json({ message: 'Not authorized to change user role.' });
     }
@@ -172,7 +171,6 @@ const uploadCover = async (req, res, next) => {
 };
 const getFavorites = async (req, res, next) => {
     try {
-        // req.user lấy từ middleware protect
         const favorites = await userService.getFavorites(req.user._id);
         res.status(200).json(favorites);
     } catch (error) { next(error); }
@@ -193,7 +191,7 @@ const removeFavorite = async (req, res, next) => {
         res.status(200).json({ message: 'Removed from favorites', favorites });
     } catch (error) { next(error); }
 };
-// [MỚI] API lấy Top 5 độc giả
+//API lấy Top 5 độc giả
 const getTopReaders = async (req, res, next) => {
   try {
     const topReaders = await Loan.aggregate([
@@ -212,7 +210,7 @@ const getTopReaders = async (req, res, next) => {
         {
             $project: {
                 username: "$userInfo.username",
-                avatar: "$userInfo.avatar", // Lấy avatar nếu có
+                avatar: "$userInfo.avatar", 
                 borrowedCount: "$count"
             }
         }

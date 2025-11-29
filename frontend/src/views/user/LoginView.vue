@@ -77,7 +77,6 @@ const handleLogin = async () => {
   try {
     await authStore.login({ emailOrUsername: emailOrUsername.value, password: password.value });
     if (['admin', 'staff'].includes(authStore.user?.role)) {
-      // QUAN TRỌNG: Chuyển sang 'admin-dashboard'
       router.push({ name: 'admin-dashboard' });
     } else {
       router.push({ name: 'home' });
@@ -91,20 +90,17 @@ const handleLogin = async () => {
 <style scoped>
 .h-screen {
   height: 100vh;
-  /* Full chiều cao màn hình */
   width: 100vw;
 }
 
 .auth-image {
   width: 50%;
-  /* Chiếm 50% chiều rộng */
   background: url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=2940&auto=format&fit=crop') center/cover no-repeat;
   position: relative;
 }
 
 .auth-form {
   width: 50%;
-  /* Chiếm 50% chiều rộng */
 }
 
 .image-overlay {
@@ -116,7 +112,6 @@ const handleLogin = async () => {
   background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.2));
 }
 
-/* Responsive: Trên mobile form chiếm 100% */
 @media (max-width: 960px) {
   .auth-form {
     width: 100%;

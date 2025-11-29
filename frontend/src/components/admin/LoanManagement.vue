@@ -297,10 +297,8 @@ const currentPage = ref(1);
 const search = ref('');
 const activeTab = ref('pending');
 
-// Stats
 const stats = reactive({ pending: 0, borrowed: 0, overdue: 0, returned: 0, unpaidFines: 0 });
 
-// Dialogs
 const confirmDialog = ref({ show: false, loan: null });
 const returnDialog = ref({ show: false, loan: null });
 const fineDialog = ref({ show: false, loan: null });
@@ -318,7 +316,6 @@ const headers = [
   { title: '', key: 'actions', align: 'end', sortable: false, width: '10%' },
 ];
 
-// --- LOGIC GIỮ NGUYÊN ---
 const loadLoans = debounce(async () => {
     loading.value = true;
     try {
@@ -334,7 +331,6 @@ const loadLoans = debounce(async () => {
             data = data.filter(l => l.phatTien > 0);
         }
         
-        //unpaidFinesCount.value = data.filter(l => l.phatTien > 0 && !l.isFinePaid).length;
         loans.value = data;
         totalItems.value = response.data.total;
         fetchStats();
@@ -346,7 +342,6 @@ const fetchStats = async () => {
     try {
         const res = await api.get('/loans/stats');
         if (res.data) {
-            // Tự động map tất cả key (bao gồm unpaidFines vừa thêm ở backend)
             Object.assign(stats, res.data);
         }
     } catch (e) {}
@@ -415,7 +410,6 @@ onMounted(() => { loadLoans(); });
 .absolute-full { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 .backdrop-blur { backdrop-filter: blur(10px); }
 
-/* Gradients */
 .bg-gradient-orange { background: linear-gradient(135deg, #FF9800, #F57C00); }
 .bg-gradient-blue { background: linear-gradient(135deg, #2196F3, #1565C0); }
 .bg-gradient-red { background: linear-gradient(135deg, #F44336, #D32F2F); }

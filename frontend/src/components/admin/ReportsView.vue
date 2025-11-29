@@ -142,7 +142,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
 import api from '@/services/api.service';
-import * as XLSX from 'xlsx'; // Thư viện xử lý Excel
+import * as XLSX from 'xlsx'; 
 
 const loading = reactive({
     loans: false,
@@ -154,7 +154,6 @@ const stats = ref({});
 const snackbar = ref({ show: false, message: '', color: '' });
 const exportLogs = ref([]);
 
-// --- 1. LẤY SỐ LIỆU TỔNG QUAN ---
 const fetchDashboardStats = async () => {
     try {
         const res = await api.get('/dashboard/stats');
@@ -166,29 +165,21 @@ const fetchDashboardStats = async () => {
     }
 };
 
-// --- 2. HÀM CHUNG: XUẤT FILE EXCEL ---
 const exportToExcel = (jsonData, fileName, sheetName) => {
-    // Tạo Workbook mới
     const wb = XLSX.utils.book_new();
-    // Tạo Worksheet từ JSON
     const ws = XLSX.utils.json_to_sheet(jsonData);
     
-    // Tự động chỉnh độ rộng cột (Optional but nice)
     const wscols = Object.keys(jsonData[0] || {}).map(() => ({ wch: 20 }));
     ws['!cols'] = wscols;
 
-    // Thêm sheet vào workbook
     XLSX.utils.book_append_sheet(wb, ws, sheetName);
 
-    // Xuất file
     XLSX.writeFile(wb, `${fileName}_${new Date().toISOString().slice(0,10)}.xlsx`);
 };
 
-// --- 3. XUẤT BÁO CÁO MƯỢN TRẢ ---
 const exportLoansReport = async () => {
     loading.loans = true;
     try {
-        // Gọi API lấy 10,000 bản ghi (coi như lấy hết)
         const res = await api.get('/loans?limit=10000');
         const loans = res.data.data || [];
 
@@ -197,7 +188,6 @@ const exportLoansReport = async () => {
             return;
         }
 
-        // Chuẩn hóa dữ liệu cho đẹp
         const exportData = loans.map(loan => ({
             'Mã Phiếu': loan._id.slice(-6).toUpperCase(),
             'Người Mượn': loan.userId?.username || 'Unknown',
@@ -222,7 +212,6 @@ const exportLoansReport = async () => {
     }
 };
 
-// --- 4. XUẤT BÁO CÁO KHO SÁCH ---
 const exportBooksReport = async () => {
     loading.books = true;
     try {
@@ -250,11 +239,9 @@ const exportBooksReport = async () => {
     }
 };
 
-// --- 5. XUẤT DANH SÁCH THÀNH VIÊN ---
 const exportUsersReport = async () => {
     loading.users = true;
     try {
-        // API getAllUsers không phân trang của bạn trả về toàn bộ mảng
         const res = await api.get('/users');
         const users = Array.isArray(res.data) ? res.data : (res.data.data || []);
 

@@ -138,7 +138,6 @@ const visibleNavItems = computed(() => {
 
 <script setup>
 import { RouterView } from 'vue-router';
-// Xóa import ChatWidget ở đây
 </script>
 
 <template>

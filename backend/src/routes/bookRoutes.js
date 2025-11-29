@@ -4,24 +4,22 @@ const bookController = require('../controllers/bookController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const upload = require('../middleware/upload'); 
 
-// Group 1: /api/books
 router.route('/')
-  .get(bookController.getBooks) // Public: Xem danh sách
+  .get(bookController.getBooks)
   .post(
     protect, 
     authorize('admin', 'staff'), 
-    upload.single('coverImage'), // <--- Đặt middleware upload vào đây
+    upload.single('coverImage'), 
     bookController.createBook
   );
 router.get('/top-borrowed', bookController.getTopBooks);
 
-// Group 2: /api/books/:id
 router.route('/:id')
-  .get(bookController.getBook) // Public: Xem chi tiết
+  .get(bookController.getBook) 
   .put(
     protect, 
     authorize('admin', 'staff'), 
-    upload.single('coverImage'), // <--- Đặt middleware upload vào đây
+    upload.single('coverImage'),
     bookController.updateBook
   )
   .delete(
@@ -29,7 +27,5 @@ router.route('/:id')
     authorize('admin'), 
     bookController.deleteBook
   );
-
-// --- XÓA CÁC DÒNG KHAI BÁO TRÙNG LẶP Ở CUỐI FILE ĐI ---
 
 module.exports = router;

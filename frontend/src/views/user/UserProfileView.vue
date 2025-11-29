@@ -297,7 +297,7 @@
 import { ref, onMounted, computed, reactive } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import api from '@/services/api.service';
-import BookCard from '@/components/BookCard.vue'; // Import component BookCard
+import BookCard from '@/components/BookCard.vue'; 
 
 const authStore = useAuthStore();
 
@@ -318,7 +318,7 @@ const updateLoading = ref(false);
 const passwordLoading = ref(false);
 const pass = reactive({ newPassword: '', confirmPassword: '' });
 
-// --- API CALLS ---
+//API CALLS
 
 const fetchUserProfile = async () => {
    loading.value = true;
@@ -346,7 +346,7 @@ const updateUserProfile = async () => {
        ['username', 'email', 'password', 'role', '_id', 'createdAt', 'updatedAt'].forEach(k => delete payload[k]);
 
        const response = await api.put(`/users/${authStore.user._id}`, payload);
-       authStore.updateUser(payload); // Update store
+       authStore.updateUser(payload); 
        showSnack(response.data.message, 'success');
    } catch (e) {
        showSnack(e.response?.data?.message || 'Update failed', 'error');
@@ -411,7 +411,7 @@ const getLoanStatusColor = (s) => ({'borrowed':'info','returned':'success','over
 onMounted(async () => {
    if(authStore.isAuthenticated) {
        await authStore.fetchUser();
-       await authStore.fetchFavorites(); // Load danh sách yêu thích
+       await authStore.fetchFavorites();
        fetchUserProfile();
        fetchUserLoans();
    }
@@ -425,15 +425,12 @@ onMounted(async () => {
 .z-index-10 { z-index: 10; }
 .text-shadow-dark { text-shadow: 0 2px 10px rgba(0,0,0,0.6); }
 
-/* Avatar Styles */
 .profile-avatar { border: 4px solid white; }
 .avatar-edit-btn { position: absolute; bottom: 5px; right: 5px; border: 2px solid white; z-index: 20; }
 
-/* Cover Hover Effect */
 .group:hover .opacity-0 { opacity: 1 !important; }
 .transition-opacity { transition: opacity 0.3s ease; }
 
-/* Gradient Backgrounds */
 .bg-gradient-primary { background: linear-gradient(135deg, #1976D2, #64B5F6); }
 .border-red-top { border-top: 4px solid #EF5350 !important; }
 

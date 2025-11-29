@@ -1,4 +1,4 @@
-<!-- frontend/src/views/StaffDashboardView.vue -->
+
 <template>
   <v-container>
     <h1 class="text-h4 mb-6">Staff Dashboard</h1>
@@ -12,7 +12,6 @@
       <v-tab value="publishers">Publisher Management</v-tab>
       <v-tab value="loans">Loan Management</v-tab>
       <v-tab value="payments">Payment History</v-tab>
-      <!-- Staff thường không quản lý users hoặc reports chi tiết như admin -->
     </v-tabs>
 
     <v-window v-model="activeTab">

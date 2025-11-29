@@ -5,21 +5,17 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const generateResponse = async (userMessage) => {
   try {
-    // 1. TÌM KIẾM SÁCH LIÊN QUAN (RAG - Retrieval Augmented Generation đơn giản)
-    // Tìm các sách có tên hoặc tác giả gần giống với câu hỏi của user
     const books = await Book.find({
       $or: [
         { tenSach: { $regex: userMessage, $options: "i" } },
         { tacGia: { $regex: userMessage, $options: "i" } },
-        { moTa: { $regex: userMessage, $options: "i" } } // Thêm tìm trong mô tả
+        { moTa: { $regex: userMessage, $options: "i" } } 
       ]
-    }).limit(10).select('tenSach tacGia availableCopies _id pricePerDay'); // Lấy nhiều hơn chút để AI chọn
+    }).limit(10).select('tenSach tacGia availableCopies _id pricePerDay');
 
-    // Nếu không tìm thấy theo từ khóa, lấy random sách "Thịnh hành" để gợi ý
     let contextBooks = books;
     if (books.length === 0) {
         const randomBooks = await Book.aggregate([{ $sample: { size: 5 } }]);
-        // Map lại cấu trúc cho giống find()
         contextBooks = randomBooks.map(b => ({
             tenSach: b.tenSach,
             tacGia: b.tacGia,
@@ -29,7 +25,6 @@ const generateResponse = async (userMessage) => {
         }));
     }
 
-    // 2. TẠO CONTEXT (NGỮ CẢNH) CHO AI
     let contextData = contextBooks.map(b => 
         `- Tên: "${b.tenSach}"
          - Tác giả: ${Array.isArray(b.tacGia) ? b.tacGia.join(', ') : b.tacGia}
@@ -38,7 +33,6 @@ const generateResponse = async (userMessage) => {
          - Trạng thái: ${b.availableCopies > 0 ? 'Có sẵn' : 'Hết hàng'}`
     ).join('\n\n');
 
-    // 3. CẤU HÌNH PROMPT (CÂU LỆNH HỆ THỐNG)
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     const prompt = `
@@ -62,7 +56,6 @@ const generateResponse = async (userMessage) => {
       6. Tuyệt đối không bịa ra sách không có trong danh sách trên.
     `;
 
-    // 4. GỬI YÊU CẦU
     const result = await model.generateContent(prompt);
     const response = await result.response;
     return response.text();

@@ -5,7 +5,6 @@ const Loan = require('../models/loan');
 
 const OVERDUE_FINE_PER_DAY = 10000; 
 
-// 1. YÊU CẦU MƯỢN
 const requestLoan = async (userId, bookId, ngayHenTra) => {
     const book = await Book.findById(bookId);
     if (!book) throw new Error('Book not found.');
@@ -14,7 +13,6 @@ const requestLoan = async (userId, bookId, ngayHenTra) => {
     const start = new Date();
     const end = new Date(ngayHenTra);
     
-    // Vẫn lưu rentCost để tham khảo (hoặc set = 0 nếu muốn miễn phí hoàn toàn)
     const diffTime = Math.abs(end - start);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1; 
     const rentCost = diffDays * (book.pricePerDay || 2000); 
@@ -26,37 +24,31 @@ const requestLoan = async (userId, bookId, ngayHenTra) => {
       ngayHenTra: end,
       rentCost: rentCost,
       status: 'pending',
-      isPaid: false // Mặc định chưa trả (nhưng không bắt buộc nữa)
+      isPaid: false 
     });
 
     return newLoan;
 };
 
-// [SỬA] 2. DUYỆT ĐƠN (BỎ KIỂM TRA THANH TOÁN)
 const confirmLoan = async (loanId, staffUserId) => {
     const loan = await loanRepository.getLoanById(loanId);
     if (!loan) throw new Error('Loan request not found.');
     if (loan.status !== 'pending') throw new Error('Loan is not in pending status.');
 
-    // [ĐÃ XÓA] Đoạn kiểm tra loan.rentCost > 0 && !loan.isPaid
-    // Bây giờ Admin có thể duyệt ngay lập tức mà không cần khách thanh toán trước.
-
     const book = await Book.findById(loan.bookId);
     if (!book || book.availableCopies <= 0) throw new Error('Book out of stock.');
 
-    // Trừ kho sách
     book.availableCopies -= 1;
     await book.save();
 
     const updatedLoan = await loanRepository.updateLoan(loanId, {
       status: 'borrowed',
-      ngayMuon: new Date() // Cập nhật ngày mượn chính thức là lúc duyệt
+      ngayMuon: new Date() 
     });
 
     return updatedLoan;
 };
 
-// 3. TRẢ SÁCH
 const processReturn = async (loanId, staffUserId) => {
     const loan = await loanRepository.getLoanById(loanId);
     if (!loan) throw new Error('Loan not found.');
@@ -64,11 +56,9 @@ const processReturn = async (loanId, staffUserId) => {
 
     const book = await Book.findById(loan.bookId);
 
-    // Tính phạt nếu quá hạn
     const ngayTraThucTe = new Date();
     let phatTien = 0;
     
-    // So sánh ngày trả thực tế với ngày hẹn
     if (ngayTraThucTe > new Date(loan.ngayHenTra)) {
       const diffTime = Math.abs(ngayTraThucTe - new Date(loan.ngayHenTra));
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -81,7 +71,6 @@ const processReturn = async (loanId, staffUserId) => {
       phatTien
     });
 
-    // Cộng lại kho
     if (book) {
         book.availableCopies += 1;
         await book.save();
@@ -109,13 +98,11 @@ const getLoanStats = async () => {
 
   const returned = await Loan.countDocuments({ status: 'returned' });
 
-  // [MỚI] Đếm số phiếu có tiền phạt > 0 VÀ chưa thanh toán
   const unpaidFines = await Loan.countDocuments({ 
       phatTien: { $gt: 0 }, 
       isFinePaid: false 
   });
 
-  // Trả về thêm unpaidFines
   return { pending, borrowed, overdue, returned, unpaidFines };
 };
 

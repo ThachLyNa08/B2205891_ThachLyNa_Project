@@ -225,7 +225,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'; // Import GỘP 1 DÒNG
+import { ref, onMounted, watch } from 'vue'; 
 import { useAuthStore } from '@/stores/auth';
 import { useRouter, useRoute } from 'vue-router';
 import api from '@/services/api.service';
@@ -271,13 +271,13 @@ watch(() => route.path, () => {
 .footer-link {
   color: rgba(255, 255, 255, 0.7);
   text-decoration: none;
-  font-size: 0.875rem; /* text-body-2 */
+  font-size: 0.875rem; 
   transition: color 0.2s ease, padding-left 0.2s ease;
 }
 
 .footer-link:hover {
   color: #ffffff;
-  padding-left: 5px; /* Hiệu ứng trượt nhẹ khi hover */
+  padding-left: 5px; 
 }
 
 .hover-white:hover {
@@ -359,13 +359,12 @@ watch(() => route.path, () => {
   left: 0;
   width: 100%;
   height: 100%;
-  /* Gradient làm tối nền */
   background: linear-gradient(to top, rgba(5, 11, 20, 1) 0%, rgba(10, 25, 47, 0.9) 50%, rgba(13, 71, 161, 0.6) 100%);
-  z-index: 1; /* Nằm trên ảnh nền */
+  z-index: 1; 
 }
 
 .footer-content {
-  z-index: 2; /* Nằm trên lớp phủ */
+  z-index: 2;
 }
 .tracking-wider { letter-spacing: 0.05em; }
 .bg-black-transparent { background-color: rgba(0,0,0,0.6); }

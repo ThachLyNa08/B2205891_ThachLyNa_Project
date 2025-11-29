@@ -13,7 +13,7 @@ const setupCronJobs = () => {
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
 
-      // 1. TÌM SÁCH SẮP HẾT HẠN (Còn 1 ngày)
+      // TÌM SÁCH SẮP HẾT HẠN (Còn 1 ngày)
       // Logic: status = borrowed VÀ ngayHenTra nằm trong ngày mai
       const startOfTomorrow = new Date(tomorrow.setHours(0,0,0,0));
       const endOfTomorrow = new Date(tomorrow.setHours(23,59,59,999));

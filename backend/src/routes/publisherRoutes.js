@@ -6,12 +6,12 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 const router = express.Router();
 
 router.route('/')
-  .get(publisherController.getPublishers) // Public access
-  .post(protect, authorize('admin', 'staff'), publisherController.createPublisher); // Admin/Staff to create publishers
+  .get(publisherController.getPublishers) 
+  .post(protect, authorize('admin', 'staff'), publisherController.createPublisher); 
 
 router.route('/:id')
-  .get(publisherController.getPublisher) // Public access
-  .put(protect, authorize('admin', 'staff'), publisherController.updatePublisher) // Admin/Staff to update publishers
-  .delete(protect, authorize('admin'), publisherController.deletePublisher); // Admin to delete publishers
+  .get(publisherController.getPublisher) 
+  .put(protect, authorize('admin', 'staff'), publisherController.updatePublisher) 
+  .delete(protect, authorize('admin'), publisherController.deletePublisher); 
 
 module.exports = router;

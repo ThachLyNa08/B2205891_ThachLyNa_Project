@@ -1,7 +1,6 @@
 const Publisher = require('../models/publisher');
 
 const getPublishers = async () => {
-  // Sắp xếp mới nhất lên đầu (-1)
   return await Publisher.find().sort({ createdAt: -1 });
 };
 
