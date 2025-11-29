@@ -78,6 +78,12 @@ const deleteCategory = async (req, res, next) => {
     if (error.message.includes('Category not found')) {
       return res.status(404).json({ message: error.message });
     }
+    
+    // [MỚI] Bắt lỗi ràng buộc dữ liệu (Nếu đang có sách thuộc thể loại này)
+    if (error.message.includes('Cannot delete')) {
+        return res.status(409).json({ message: error.message });
+    }
+    
     next(error);
   }
 };

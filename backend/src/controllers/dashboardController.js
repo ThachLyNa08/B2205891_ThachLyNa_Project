@@ -1,13 +1,14 @@
 const Book = require('../models/book');
 const User = require('../models/user');
 const Loan = require('../models/loan');
+const Payment = require('../models/payment'); // Import model Payment
 
 exports.getDashboardStats = async (req, res) => {
   try {
     const today = new Date();
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-    // 1. THỐNG KÊ SỐ LƯỢNG (Dùng Promise.all để chạy song song cho nhanh)
+    // 1. THỐNG KÊ SỐ LƯỢNG CƠ BẢN
     const [
       totalBooks,
       totalUsers,
@@ -17,9 +18,8 @@ exports.getDashboardStats = async (req, res) => {
       newUsersThisMonth
     ] = await Promise.all([
       Book.countDocuments(),
-      User.countDocuments({ role: 'reader' }), // Chỉ đếm độc giả
+      User.countDocuments({ role: 'reader' }),
       Loan.countDocuments({ status: 'borrowed' }),
-      // Đếm sách quá hạn (status là borrowed VÀ ngày hẹn < hôm nay)
       Loan.countDocuments({ 
         $or: [
            { status: 'overdue' },
@@ -30,14 +30,13 @@ exports.getDashboardStats = async (req, res) => {
       User.countDocuments({ role: 'reader', createdAt: { $gte: startOfMonth } })
     ]);
 
-    // 2. TOP SÁCH MƯỢN NHIỀU (Trending)
-    // Gom nhóm theo bookId trong bảng Loan và đếm
+    // 2. TOP SÁCH MƯỢN NHIỀU
     const trendingBooks = await Loan.aggregate([
       { $group: { _id: "$bookId", count: { $sum: 1 } } },
-      { $sort: { count: -1 } }, // Sắp xếp giảm dần
-      { $limit: 5 },            // Lấy top 5
+      { $sort: { count: -1 } }, 
+      { $limit: 5 },            
       { 
-        $lookup: { // Join với bảng Books để lấy tên sách
+        $lookup: { 
           from: "books", 
           localField: "_id", 
           foreignField: "_id", 
@@ -49,14 +48,38 @@ exports.getDashboardStats = async (req, res) => {
         $project: {
           title: "$bookInfo.tenSach",
           author: "$bookInfo.tacGia",
-          stock: "$bookInfo.stock",
+          coverUrl: "$bookInfo.coverUrl",
+          stock: "$bookInfo.soQuyen",
           borrowedCount: "$count"
         }
       }
     ]);
 
-    // 3. HOẠT ĐỘNG GẦN ĐÂY (Recent Activities)
-    // Lấy 5 phiếu mượn mới nhất
+    // 3. TOP ĐỘC GIẢ TÍCH CỰC
+    const topReaders = await Loan.aggregate([
+        { $group: { _id: "$userId", count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 5 },
+        {
+            $lookup: {
+                from: "users",
+                localField: "_id",
+                foreignField: "_id",
+                as: "userInfo"
+            }
+        },
+        { $unwind: "$userInfo" },
+        {
+            $project: {
+                username: "$userInfo.username",
+                email: "$userInfo.email",
+                avatar: "$userInfo.avatar",
+                borrowedCount: "$count"
+            }
+        }
+    ]);
+
+    // 4. HOẠT ĐỘNG GẦN ĐÂY
     const recentLoans = await Loan.find()
       .sort({ updatedAt: -1 })
       .limit(5)
@@ -79,48 +102,72 @@ exports.getDashboardStats = async (req, res) => {
       };
     });
 
-    // Tính toán % tăng trưởng giả định (Ví dụ: so với tổng số)
-    const bookGrowth = totalBooks > 0 ? ((newBooksThisMonth / totalBooks) * 100).toFixed(1) : 0;
-    const userGrowth = totalUsers > 0 ? ((newUsersThisMonth / totalUsers) * 100).toFixed(1) : 0;
-    // 4. BIỂU ĐỒ TĂNG TRƯỞNG (Mượn sách 6 tháng gần nhất)
-    const weeksAgo = new Date();
-    weeksAgo.setDate(weeksAgo.getDate() - (4 * 7)); // 8 tuần
+    // 5. THỐNG KÊ DOANH THU 6 THÁNG (Revenue Stats)
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+    sixMonthsAgo.setDate(1);
 
-    const weeklyLoans = await Loan.aggregate([
-      { 
-        $match: { createdAt: { $gte: weeksAgo } } // Chỉ lấy dữ liệu 8 tuần gần nhất
-      },
-      {
-        $group: {
-          // Gom nhóm theo Tuần trong năm (week)
-          _id: { 
-             week: { $week: "$createdAt" }, 
-             year: { $year: "$createdAt" } 
-          },
-          count: { $sum: 1 }
-        }
-      },
-      { $sort: { "_id.year": 1, "_id.week": 1 } } // Sắp xếp tăng dần
+    const revenueStats = await Payment.aggregate([
+        { 
+            $match: { 
+                status: 'completed',
+                createdAt: { $gte: sixMonthsAgo } 
+            } 
+        },
+        {
+            $group: {
+                _id: { 
+                    month: { $month: "$createdAt" }, 
+                    year: { $year: "$createdAt" } 
+                },
+                totalAmount: { $sum: "$amount" }
+            }
+        },
+        { $sort: { "_id.year": 1, "_id.month": 1 } }
     ]);
 
+    // 6. TỔNG TIỀN PHẠT ĐÃ THU (Lấy từ bảng Loan cho chính xác)
+    const fineStats = await Loan.aggregate([
+        { $match: { isFinePaid: true } }, 
+        { $group: { _id: null, total: { $sum: "$phatTien" } } }
+    ]);
+    const totalFineCollected = fineStats.length > 0 ? fineStats[0].total : 0;
+
+    // 7. BIỂU ĐỒ TĂNG TRƯỞNG (Loan Growth Chart)
+    const weeksAgo = new Date();
+    weeksAgo.setDate(weeksAgo.getDate() - (4 * 7)); 
+
+    const weeklyLoans = await Loan.aggregate([
+      { $match: { createdAt: { $gte: weeksAgo } } },
+      { $group: { _id: { week: { $week: "$createdAt" }, year: { $year: "$createdAt" } }, count: { $sum: 1 } } },
+      { $sort: { "_id.year": 1, "_id.week": 1 } } 
+    ]);
 
     const statusDist = await Loan.aggregate([
        { $group: { _id: "$status", count: { $sum: 1 } } }
     ]);
 
+    // Tính toán % tăng trưởng (Chỉ khai báo 1 lần tại đây)
+    const bookGrowth = totalBooks > 0 ? ((newBooksThisMonth / totalBooks) * 100).toFixed(1) : 0;
+    const userGrowth = totalUsers > 0 ? ((newUsersThisMonth / totalUsers) * 100).toFixed(1) : 0;
+
+    // TRẢ VỀ KẾT QUẢ
     res.json({
       stats: {
-        totalBooks,
-        totalUsers,
-        borrowedLoans,
-        overdueLoans,
-        bookGrowth,
+        totalBooks, 
+        totalUsers, 
+        borrowedLoans, 
+        overdueLoans, 
+        bookGrowth, 
         userGrowth,
+        totalFineCollected, // Tổng tiền phạt
         monthlyLoans: weeklyLoans,       
         statusDist 
       },
       trendingBooks,
-      activities
+      topReaders,
+      activities,
+      revenueStats
     });
 
   } catch (error) {

@@ -1,5 +1,6 @@
 
 const categoryRepository = require('../repositories/categoryRepository');
+const Book = require('../models/book');
 
 const getCategories = async () => {
   return await categoryRepository.getCategories();

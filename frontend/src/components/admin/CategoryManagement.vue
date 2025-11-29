@@ -263,10 +263,10 @@ const deleteItemConfirm = async () => {
   try {
     await api.delete(`/categories/${editedItem.value._id}`);
     categories.value.splice(editedIndex.value, 1);
-    snackbar.value = { show: true, message: 'Deleted successfully', color: 'success' };
+    snackbar.value = { show: true, message: 'Thể loại đã được xóa thành công!', color: 'success' };
     closeDelete();
   } catch (error) {
-    snackbar.value = { show: true, message: 'Cannot delete category in use', color: 'error' };
+    snackbar.value = { show: true, message: 'Thất bại!!! Không thể xóa do thể loại này đang có sách đang được mượn.', color: 'error' };
     closeDelete();
   }
 };

@@ -73,11 +73,11 @@
                 <div class="d-flex gap-4 mb-4 mt-4 mt-md-0">
                    <v-card width="100" class="text-center py-2 rounded-lg" elevation="2">
                       <div class="text-h6 font-weight-bold text-primary">{{ userLoans.length }}</div>
-                      <div class="text-caption text-grey">Loans</div>
+                      <div class="text-caption text-grey">Mượn/Trả</div>
                    </v-card>
                    <v-card width="100" class="text-center py-2 rounded-lg" elevation="2">
                       <div class="text-h6 font-weight-bold text-pink">{{ authStore.favorites.length }}</div>
-                      <div class="text-caption text-grey">Loved</div>
+                      <div class="text-caption text-grey">Đã thích</div>
                    </v-card>
                 </div>
            </div>
@@ -85,10 +85,10 @@
 
        <div class="mt-2 px-2">
           <v-tabs v-model="activeTab" color="primary" align-tabs="start" class="border-b ml-md-16 pl-md-16">
-             <v-tab value="info" class="text-capitalize font-weight-bold letter-spacing-1 px-6">Personal Info</v-tab>
-             <v-tab value="loans" class="text-capitalize font-weight-bold letter-spacing-1 px-6">My Loans</v-tab>
-             <v-tab value="favorites" class="text-capitalize font-weight-bold letter-spacing-1 px-6 text-pink">Favorites</v-tab>
-             <v-tab value="security" class="text-capitalize font-weight-bold letter-spacing-1 px-6 text-red-lighten-1">Security</v-tab>
+             <v-tab value="info" class="text-capitalize font-weight-bold letter-spacing-1 px-6">Thông tin cá nhân</v-tab>
+             <v-tab value="loans" class="text-capitalize font-weight-bold letter-spacing-1 px-6">Mượn/trả</v-tab>
+             <v-tab value="favorites" class="text-capitalize font-weight-bold letter-spacing-1 px-6 text-pink">Yêu thích</v-tab>
+             <v-tab value="security" class="text-capitalize font-weight-bold letter-spacing-1 px-6 text-red-lighten-1">Mật khẩu</v-tab>
           </v-tabs>
        </div>
      </v-card>
@@ -195,7 +195,7 @@
                           </div>
                        </div>
                     </v-card>
-                    <v-btn block variant="tonal" color="primary" class="mt-2" to="/my-loans">View All Loans</v-btn>
+                    <v-btn block variant="tonal" color="primary" class="mt-2" to="/my-loans">Xem tất cả</v-btn>
                  </div>
                  <v-sheet v-else class="rounded-xl pa-8 text-center border border-dashed bg-transparent">
                     <v-icon size="60" color="grey-lighten-2">mdi-bookshelf</v-icon>
@@ -207,8 +207,8 @@
               <v-window-item value="favorites" class="h-100">
                <v-card class="rounded-xl shadow-card border-none h-100 bg-transparent" elevation="0">
                   <div class="d-flex align-center justify-space-between mb-4">
-                     <h3 class="text-h5 font-weight-bold text-blue-grey-darken-3">Loved Books</h3>
-                     <v-btn to="/books?filter=favorites" variant="text" color="primary" append-icon="mdi-arrow-right">View Full List</v-btn>
+                     <h3 class="text-h5 font-weight-bold text-blue-grey-darken-3">Sách đã thích</h3>
+                     <v-btn to="/books?filter=favorites" variant="text" color="primary" append-icon="mdi-arrow-right">Xem tất cả</v-btn>
                   </div>
                   
                   <div v-if="authStore.favorites.length > 0">
@@ -249,7 +249,7 @@
                           <v-icon color="red" size="24">mdi-lock-alert</v-icon>
                        </v-avatar>
                        <div>
-                          <div class="text-h6 font-weight-bold">Change Password</div>
+                          <div class="text-h6 font-weight-bold">Đổi mật khẩu</div>
                           <div class="text-caption text-grey">Secure your account with a strong password.</div>
                        </div>
                     </div>

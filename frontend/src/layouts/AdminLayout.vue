@@ -83,12 +83,12 @@ const menuItems = ref([
   },
   { 
     title: 'Category Manager', 
-    icon: 'mdi-shape-outline', // Icon hình khối
+    icon: 'mdi-shape-outline', 
     to: '/admin-portal/categories' 
   },
   { 
     title: 'Publisher Manager', 
-    icon: 'mdi-domain', // Icon tòa nhà
+    icon: 'mdi-domain', 
     to: '/admin-portal/publishers' 
   },
   { 
@@ -97,13 +97,8 @@ const menuItems = ref([
     to: '/admin-portal/users' 
   },
   { 
-    title: 'Payment History', 
-    icon: 'mdi-credit-card-clock-outline', 
-    to: '/admin-portal/payments' 
-  },
-  { 
     title: 'Review Management', 
-    icon: 'mdi-star-circle-outline', // Icon ngôi sao
+    icon: 'mdi-star-circle-outline', 
     to: '/admin-portal/reviews' 
   },
   { 

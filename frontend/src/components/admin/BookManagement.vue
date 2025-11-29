@@ -3,7 +3,7 @@
     
     <v-tabs v-model="currentTab" color="primary" align-tabs="start" class="mb-4 border-b border-opacity-12">
       <v-tab value="all" class="text-capitalize font-weight-bold">
-        <v-icon start>mdi-book-multiple</v-icon> All Books
+        <v-icon start>mdi-book-multiple</v-icon> Tất cả sách
       </v-tab>
       <v-tab value="by-category" class="text-capitalize font-weight-bold">
         <v-icon start>mdi-shape-outline</v-icon> By Category

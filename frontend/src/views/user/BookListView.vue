@@ -1,14 +1,14 @@
 <template>
   <v-container>
     <h1 class="text-h4 mb-6 font-weight-bold text-primary">
-      {{ showFavorites ? 'My Favorite Books' : 'Our Book Catalog' }}
+      {{ showFavorites ? 'My Favorite Books' : 'Thư viện sách của chúng tôi' }}
     </h1>
 
     <v-row class="mb-4 align-center">
       <v-col cols="12" md="5">
         <v-text-field
           v-model="searchQuery"
-          label="Search Books"
+          label="Tìm kiếm sách tại đây"
           placeholder="Title, author..."
           prepend-inner-icon="mdi-magnify"
           variant="outlined"
@@ -25,7 +25,7 @@
           :items="categories"
           item-title="tenTheLoai"
           item-value="tenTheLoai" 
-          label="Category"
+          label="Thể loại"
           variant="outlined"
           density="compact"
           hide-details
@@ -56,7 +56,7 @@
           class="text-capitalize font-weight-bold border-pink"
           @click="toggleFavoritesMode"
         >
-          {{ showFavorites ? 'Loved' : 'Favorites' }}
+          {{ showFavorites ? 'Yêu thích' : 'Yêu thích' }}
         </v-btn>
       </v-col>
     </v-row>
@@ -73,7 +73,7 @@
             {{ showFavorites ? 'mdi-heart-broken' : 'mdi-book-open-page-variant-outline' }}
         </v-icon>
         <h3 class="text-h6 text-grey">
-            {{ showFavorites ? 'No favorite books match your filters.' : 'No books found matching your criteria.' }}
+            {{ showFavorites ? 'Chưa có sách nào được yêu thích,' : 'Không tìm thấy sách nào dựa trên tìm kiếm của bạn.' }}
         </h3>
         <v-btn v-if="showFavorites" variant="text" color="primary" @click="toggleFavoritesMode">
             Browse all books

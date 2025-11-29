@@ -11,7 +11,7 @@
               Library Nexus
             </h1>
             <p class="text-h6 text-grey-lighten-3 mb-6 font-weight-light text-shadow-sm" style="max-width: 700px;">
-              "A room without books is like a body without a soul."
+              "Ngày hôm nay đọc một trang sách, ngày mai khác biệt một tư duy."
             </p>
           </div>
           <v-card width="100%" max-width="700" class="glass-search rounded-pill pa-2 d-flex align-center elevation-10 animate-fade-up delay-100">
@@ -50,7 +50,7 @@
       <div class="d-flex justify-space-between align-end mb-6 border-b pb-2" style="border-color: #e0e0e0;">
         <div>
           <h2 class="text-h4 font-serif text-primary mb-1 font-weight-bold">TOP THỊNH HÀNH</h2>
-          <div class="text-subtitle-1 text-grey-darken-1">Most borrowed books this week</div>
+          <div class="text-subtitle-1 text-grey-darken-1">Sách được mượn nhiều nhất trong tuần qua</div>
         </div>
         <v-btn color="primary" variant="text" append-icon="mdi-arrow-right" to="/books" class="font-weight-bold">Xem tất cả</v-btn>
       </div>
@@ -104,8 +104,8 @@
       <v-container>
         <div class="d-flex justify-space-between align-end mb-6">
           <div>
-            <h2 class="text-h4 font-serif text-blue-grey-darken-4 mb-1 font-weight-bold">✨ Curated For You</h2>
-            <div class="text-subtitle-1 text-blue-grey">Handpicked based on your taste</div>
+            <h2 class="text-h4 font-serif text-blue-grey-darken-4 mb-1 font-weight-bold">GỢI Ý CHO BẠN</h2>
+            <div class="text-subtitle-1 text-blue-grey">Có thể bạn sẽ thích</div>
           </div>
           <v-btn color="blue-grey-darken-3" variant="text" append-icon="mdi-arrow-right" to="/books">Explore More</v-btn>
         </div>
@@ -161,10 +161,10 @@ const isListening = ref(false);
 
 const popularTags = ['Fantasy', 'Science Fiction', 'History', 'Romance', 'Self-help'];
 const quickActions = [
-  { text: 'My Loans', subtext: 'Check deadlines', icon: 'mdi-book-clock', bgColor: '#E3F2FD', iconColor: '#1976D2', route: '/my-loans' }, 
-  { text: 'Favorites', subtext: 'Your wishlist', icon: 'mdi-heart', bgColor: '#FFEBEE', iconColor: '#E53935', route: '/books?filter=favorites' },       
-  { text: 'Reading', subtext: 'Continue reading', icon: 'mdi-book-open-variant', bgColor: '#E8F5E9', iconColor: '#43A047', route: '/reading' }, 
-  { text: 'History', subtext: 'Past journeys', icon: 'mdi-history', bgColor: '#FFF3E0', iconColor: '#FB8C00', route: '/history' },              
+  { text: 'Tủ sách', subtext: 'Bạn đã đọc gì?', icon: 'mdi-book-clock', bgColor: '#E3F2FD', iconColor: '#1976D2', route: '/my-loans' }, 
+  { text: 'Favorites', subtext: 'Sách yêu thích của bạn?', icon: 'mdi-heart', bgColor: '#FFEBEE', iconColor: '#E53935', route: '/books?filter=favorites' },       
+  { text: 'Bảng xếp hạng', subtext: 'Bạn top mấy?', icon: 'mdi-podium-gold', bgColor: '#E8F5E9', iconColor: '#43A047', route: '/leaderboard' }, 
+  { text: 'Lịch sử', subtext: 'Lịch sử bạn đã mượn?', icon: 'mdi-history', bgColor: '#FFF3E0', iconColor: '#FB8C00', route: '/history' },              
 ];
 
 // --- CÁC HÀM SỰ KIỆN ---
